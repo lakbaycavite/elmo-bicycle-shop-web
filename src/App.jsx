@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 
 // Staff pages
 import StaffDashboard from './pages/staff/Dashboard'
+import Cart from './pages/post-auth/Cart'
 
 function App() {
   return (
@@ -24,16 +25,19 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          
+
           {/* Post-auth routes */}
           <Route path="/customer/home" element={<CustomerHome />} />
           <Route path="/customer/products" element={<Products />} />
-          
+          <Route path="/customer/cart" element={<Cart />} />
+
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          
+
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
+
+
         </Routes>
       </div>
     </Router>
