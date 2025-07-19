@@ -9,6 +9,7 @@ import Signup from './pages/pre-auth/Signup'
 // Post-auth pages
 import CustomerHome from './pages/post-auth/Home'
 import Products from './pages/post-auth/Products'
+import BikesCategory from './pages/post-auth/Bikes-category'
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -29,6 +30,7 @@ function App() {
           {/* Post-auth routes */}
           <Route path="/customer/home" element={<CustomerHome />} />
           <Route path="/customer/products" element={<Products />} />
+          <Route path="/customer/bikes-category" element={<BikesCategory />} />
           
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
