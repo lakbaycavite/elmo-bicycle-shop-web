@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import Sidebar from '../../components/Sidebar'
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -6,40 +7,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-800 text-white p-4">
-        <div className="mb-8">
-          <img 
-            src="/images/logos/elmo.png" 
-            alt="Elmo Bicycle Shop" 
-            className="h-10 w-auto mb-2"
-          />
-          <h2 className="text-sm font-semibold">Staff Panel</h2>
-        </div>
-        
-        <nav className="space-y-2">
-          <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-            Dashboard
-          </button>
-          <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-            Products
-          </button>
-          <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-            Orders
-          </button>
-          <button className="w-full text-left px-3 py-2 rounded text-gray-500 cursor-not-allowed">
-            Users (Limited)
-          </button>
-        </nav>
-
-        <div className="mt-8 pt-8 border-t border-gray-700">
-          <button
-            onClick={() => navigate('/')}
-            className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
+      <Sidebar userType="staff" />
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center">
