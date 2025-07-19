@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import 'react-phone-number-input/style.css';
 
 // Pre-auth pages
 import Home from './pages/pre-auth/Home'
