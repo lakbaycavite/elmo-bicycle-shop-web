@@ -13,15 +13,19 @@ function Drawer({ open, onClose, onLogin, onSignup }) {
       <div className="ml-auto w-72 max-w-full h-full bg-neutral-900 shadow-lg p-6 flex flex-col gap-8 animate-slide-in-right relative">
         {/* Close button */}
         <button
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl focus:outline-none"
+          className="absolute top-6 right-6 text-white hover:text-orange-500 text-3xl font-bold focus:outline-none z-10"
           onClick={onClose}
           aria-label="Close drawer"
         >
-          &times;
+          ×
         </button>
-        <SearchBar className="mb-4" />
-        <NavLinks className="flex-col gap-4" onClick={onClose} />
-        <AuthButtons onLogin={onLogin} onSignup={onSignup} className="mt-8" />
+        
+        {/* Content with top margin to avoid close button */}
+        <div className="mt-12 flex flex-col gap-8">
+          <SearchBar className="mb-4" />
+          <NavLinks className="flex-col gap-4" onClick={onClose} />
+          <AuthButtons onLogin={onLogin} onSignup={onSignup} className="mt-8" />
+        </div>
       </div>
       <style>{`
         @keyframes slide-in-right {

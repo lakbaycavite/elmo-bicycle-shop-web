@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import NavLinks from './NavLinks';
 import SearchBar from './SearchBar';
 import AuthButtons from './AuthButtons';
@@ -8,6 +8,18 @@ import Drawer from './Drawer';
 function Navbar({ isLoggedIn = false, userType = "customer" }) {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close drawer when screen size becomes large
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) { // md breakpoint
+        setDrawerOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Handlers for auth buttons
   const handleLogin = () => { setDrawerOpen(false); navigate('/login'); };
