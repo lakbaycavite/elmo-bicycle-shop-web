@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react';
+import { ShoppingCart, Heart, User, Bell } from 'lucide-react';
 import NavLinks from './NavLinks';
 import SearchBar from './SearchBar';
 import AuthButtons from './AuthButtons';
 import Drawer from './Drawer';
 
-function Navbar({ isLoggedIn = false, userType = "customer" }) {
+function Navbar({ isLoggedIn = false }) {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -25,53 +26,19 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
   const handleLogin = () => { setDrawerOpen(false); navigate('/login'); };
   const handleSignup = () => { setDrawerOpen(false); navigate('/signup'); };
 
-  if (isLoggedIn) {
-    // Post-auth navbar (for customers)
-    return (
-      <nav className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <div className="flex items-center cursor-pointer" onClick={() => navigate('/customer/home')}>
-            <img 
-              src="/images/logos/elmo.png" 
-              alt="Elmo Bicycle Shop" 
-              className="h-10 w-auto"
-            />
-          </div>
+  // Handlers for logged-in user actions
+  const handleCart = () => { setDrawerOpen(false); navigate('/customer/cart'); };
+  const handleWishlist = () => { setDrawerOpen(false); navigate('/customer/wishlist'); };
+  const handleProfile = () => { setDrawerOpen(false); navigate('/customer/profile'); };
+  const handleNotifications = () => { setDrawerOpen(false); navigate('/customer/notifications'); };
+  const handleLogout = () => { setDrawerOpen(false); navigate('/'); };
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => navigate('/customer/home')}
-              className="text-gray-600 hover:text-orange-600"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => navigate('/customer/products')}
-              className="text-gray-600 hover:text-orange-600"
-            >
-              Products
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-    )
-  }
-
-  // Pre-auth navbar (for homepage)
   return (
     <>
       <nav className="bg-black px-6 py-2">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}> 
+          <div className="flex items-center cursor-pointer" onClick={() => navigate(isLoggedIn ? '/customer/home' : '/')}> 
             <img 
               src="/images/logos/elmo.png" 
               alt="Elmo Bicycle Shop" 
@@ -84,10 +51,51 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
             <SearchBar />
           </div>
 
-          {/* Navigation Links & Auth Buttons (hidden on small screens) */}
+          {/* Navigation Links & Right-side Buttons (hidden on small screens) */}
           <div className="hidden md:flex items-center gap-6">
-            <NavLinks />
-            <AuthButtons onLogin={handleLogin} onSignup={handleSignup} />
+            <NavLinks isLoggedIn={isLoggedIn} />
+            
+            {isLoggedIn ? (
+              // Logged-in user icons
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleCart}
+                  className="text-white hover:text-orange-500 relative"
+                >
+                  <ShoppingCart size={24} />
+                  <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    1
+                  </span>
+                </button>
+                <button
+                  onClick={handleWishlist}
+                  className="text-white hover:text-orange-500"
+                >
+                  <Heart size={24} />
+                </button>
+                <button
+                  onClick={handleProfile}
+                  className="text-white hover:text-orange-500"
+                >
+                  <User size={24} />
+                </button>
+                <button
+                  onClick={handleNotifications}
+                  className="text-white hover:text-orange-500"
+                >
+                  <Bell size={24} />
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-2"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              // Auth buttons for logged-out users
+              <AuthButtons onLogin={handleLogin} onSignup={handleSignup} />
+            )}
           </div>
 
           {/* Hamburger Menu Icon (only on small screens) */}
@@ -100,7 +108,7 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
           </div>
         </div>
       </nav>
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onLogin={handleLogin} onSignup={handleSignup} />
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onLogin={handleLogin} onSignup={handleSignup} isLoggedIn={isLoggedIn} />
     </>
   )
 }
