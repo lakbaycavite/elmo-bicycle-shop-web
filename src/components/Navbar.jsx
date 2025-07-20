@@ -45,7 +45,7 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
 
   // Pre-auth navbar (for homepage)
   return (
-    <nav className="bg-black px-6 py-4">
+    <nav className="bg-black px-6 py-2">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}> 
@@ -56,13 +56,13 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
           />
         </div>
 
-        {/* Search Bar */}
-        <div className="flex-1 flex justify-center px-6">
+        {/* Search Bar (hidden on small screens) */}
+        <div className="flex-1 flex justify-center px-6 hidden md:flex">
           <div className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="Search"
-              className="w-full pl-4 pr-10 py-2 rounded border border-gray-600 bg-neutral-900 text-white placeholder-gray-400 focus:outline-none focus:border-orange-600"
+              className="w-full pl-4 pr-10 py-1.5 rounded border border-gray-600 bg-neutral-900 text-white placeholder-gray-400 focus:outline-none focus:border-orange-600"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -72,8 +72,8 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
           </div>
         </div>
 
-        {/* Navigation Links & Auth Buttons */}
-        <div className="flex items-center gap-6">
+        {/* Navigation Links & Auth Buttons (hidden on small screens) */}
+        <div className="hidden md:flex items-center gap-6">
           <button className="text-white hover:text-orange-500 font-normal">Home</button>
           <button className="text-white hover:text-orange-500 font-normal">Shop</button>
           <button className="text-white hover:text-orange-500 font-normal">About</button>
@@ -89,6 +89,15 @@ function Navbar({ isLoggedIn = false, userType = "customer" }) {
             className="ml-2 px-4 py-2 bg-orange-600 text-white rounded font-bold hover:bg-orange-700"
           >
             SIGN UP
+          </button>
+        </div>
+
+        {/* Hamburger Menu Icon (only on small screens) */}
+        <div className="flex md:hidden items-center">
+          <button className="text-white focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
       </div>
