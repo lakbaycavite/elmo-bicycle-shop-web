@@ -2,12 +2,13 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import 'react-phone-number-input/style.css';
 
 // Pre-auth pages
-import Home from './pages/pre-auth/Home'
 import Login from './pages/pre-auth/Login'
 import Signup from './pages/pre-auth/Signup'
 
+// Unified HomePage component
+import HomePage from './pages/HomePage'
+
 // Post-auth pages
-import CustomerHome from './pages/post-auth/Home'
 import Products from './pages/post-auth/Products'
 import BikesCategory from './pages/post-auth/Bikes-category'
 
@@ -23,13 +24,15 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
+          {/* Home routes - using unified HomePage component */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/customer/home" element={<HomePage />} />
+          
           {/* Pre-auth routes */}
-          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
           {/* Post-auth routes */}
-          <Route path="/customer/home" element={<CustomerHome />} />
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/bikes-category" element={<BikesCategory />} />
           
