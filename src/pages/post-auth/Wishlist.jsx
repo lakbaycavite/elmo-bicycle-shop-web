@@ -1,5 +1,6 @@
-import { Heart } from 'lucide-react';
+import { ArrowLeft, Heart } from 'lucide-react';
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 
 const Wishlist = () => {
 
@@ -133,6 +134,7 @@ const Wishlist = () => {
         quantity: 2
     }]
 
+    const navigate = useNavigate();
 
     const [wishlists, setWishlists] = useState(wishlistsData);
 
@@ -144,6 +146,14 @@ const Wishlist = () => {
 
                 <div className='w-full flex flex-col sm:flex-row justify-between gap-4 mb-4'>
                     <div className='flex flex-col sm:flex-row gap-3 w-72 sm:w-auto'>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-1 text-orange-500 hover:text-orange-300 transition-colors"
+                        >
+                            <ArrowLeft size={20} />
+                            <span>Back</span>
+                        </button>
+
                         <select className=" rounded-md p-2 w-full sm:w-40 text-white" aria-label="Category filter" style={{ background: "#ff6900" }}>
                             <option selected>All</option>
                             <option value="1">One</option>
