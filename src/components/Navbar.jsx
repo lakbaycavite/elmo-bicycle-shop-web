@@ -13,14 +13,16 @@ function Navbar({ isLoggedIn = false }) {
   // Close drawer when screen size becomes large
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) { // md breakpoint
+      // Use lg breakpoint for logged-in users (more items), md for logged-out users
+      const breakpoint = isLoggedIn ? 1024 : 768; // lg: 1024px, md: 768px
+      if (window.innerWidth >= breakpoint) {
         setDrawerOpen(false);
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isLoggedIn]);
 
   // Handlers for auth buttons
   const handleLogin = () => { setDrawerOpen(false); navigate('/login'); };
@@ -47,12 +49,12 @@ function Navbar({ isLoggedIn = false }) {
           </div>
 
           {/* Search Bar (hidden on small screens) */}
-          <div className="flex-1 flex justify-center px-6 hidden md:flex">
+          <div className={`flex-1 flex justify-center px-6 ${isLoggedIn ? 'hidden lg:flex' : 'hidden md:flex'}`}>
             <SearchBar />
           </div>
 
-          {/* Navigation Links & Right-side Buttons (hidden on small screens) */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Navigation Links & Right-side Buttons */}
+          <div className={`${isLoggedIn ? 'hidden lg:flex' : 'hidden md:flex'} items-center gap-6`}>
             <NavLinks isLoggedIn={isLoggedIn} />
             
             {isLoggedIn ? (
@@ -98,8 +100,8 @@ function Navbar({ isLoggedIn = false }) {
             )}
           </div>
 
-          {/* Hamburger Menu Icon (only on small screens) */}
-          <div className="flex md:hidden items-center">
+          {/* Hamburger Menu Icon */}
+          <div className={`${isLoggedIn ? 'flex lg:hidden' : 'flex md:hidden'} items-center`}>
             <button className="text-white focus:outline-none" onClick={() => setDrawerOpen(true)}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
