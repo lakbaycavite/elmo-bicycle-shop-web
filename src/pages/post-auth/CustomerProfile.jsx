@@ -12,6 +12,7 @@ import {
     LogOut,
     ArrowLeft
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const CustomerProfile = () => {
     // Dummy user data
@@ -62,12 +63,15 @@ const CustomerProfile = () => {
     // Change page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+    const navigate = useNavigate();
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed" style={{ background: "linear-gradient(135deg, black 80%, #ff6900 100%)" }}>
             {/* Back Button - Top Right */}
             <div className="container mx-auto px-4 py-4 relative">
-                <button className="absolute top-4 right-4 bg-[#ff6900] hover:bg-[#e55e00] text-white font-bold py-2 px-4 rounded-full flex items-center">
+                <button className="absolute top-4 right-4 bg-[#ff6900] hover:bg-[#e55e00] text-white font-bold py-2 px-4 rounded-full flex items-center"
+                    onClick={() => navigate('/customer/home')}
+                >
                     <ArrowLeft size={18} className="mr-1" />
                     Back
                 </button>

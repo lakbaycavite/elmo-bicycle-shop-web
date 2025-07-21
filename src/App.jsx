@@ -20,6 +20,7 @@ import StaffDashboard from './pages/staff/Dashboard'
 import Cart from './pages/post-auth/Cart'
 import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
+import Inventory from './pages/admin/Inventory';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
 
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/inventory" element={<Inventory />} />
 
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
