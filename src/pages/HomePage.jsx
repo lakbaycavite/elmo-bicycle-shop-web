@@ -19,18 +19,14 @@ function HomePage() {
             <button className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200">Explore Products</button>
           </div>
         </div>
-        {/* Right: Hero Image and Overlays */}
+        {/* Right: Hero Image (no overlays, no border, full scale) */}
         <div className="flex-1 flex flex-col items-center md:items-end mt-8 md:mt-0">
-          <div className="relative w-[320px] h-[180px] md:w-[400px] md:h-[220px]">
+          <div className="w-[320px] h-[180px] md:w-[400px] md:h-[220px] flex items-center justify-center bg-transparent">
             <img
               src="/images/icons/HeroPageImage.png"
               alt="Hero Bike"
-              className="w-full h-full object-cover rounded-lg shadow-lg border-4 border-orange-600"
+              className="w-full h-full object-contain rounded-lg shadow-lg"
             />
-            {/* Overlay: Price */}
-            <div className="absolute top-2 right-2 bg-orange-600 text-white px-4 py-2 rounded font-semibold text-sm shadow">Affordable Price</div>
-            {/* Overlay: Distance */}
-            <div className="absolute bottom-2 right-2 bg-white text-orange-600 px-3 py-1 rounded font-bold text-xs shadow">45 KM PER HOUR</div>
           </div>
         </div>
       </section>
