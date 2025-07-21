@@ -12,10 +12,6 @@ import {
 } from 'lucide-react';
 
 const Inventory = () => {
-    // Current user and time info from parameters
-    const currentDateTime = "2025-07-21 13:25:16";
-    const currentUser = "lanceballicud";
-
     // State for modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -26,6 +22,7 @@ const Inventory = () => {
 
     // State for search
     const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
 
     // State for products (dummy data with reliable images)
     const [products, setProducts] = useState([
@@ -48,10 +45,16 @@ const Inventory = () => {
     const itemsPerPage = 10;
 
     // Get filtered and sorted products
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(product => {
+        // Apply category filter
+        if (categoryFilter !== 'all' && product.category !== categoryFilter) {
+            return false;
+        }
+
+        // Apply search filter
+        return product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     const sortedProducts = [...filteredProducts].sort((a, b) => {
         switch (sortMethod) {
@@ -164,7 +167,15 @@ const Inventory = () => {
                                     Product
                                 </th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
-                                    Category
+                                    <select className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900]"
+                                        value={categoryFilter}
+                                        onChange={(e) => setCategoryFilter(e.target.value)}
+                                    >
+                                        <option value="all">All Categoriesss</option>
+                                        {categories.map((category) => (
+                                            <option key={category} value={category}>{category}</option>
+                                        ))}
+                                    </select>
                                 </th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
                                     Stock
