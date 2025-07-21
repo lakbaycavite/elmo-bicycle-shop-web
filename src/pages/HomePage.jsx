@@ -1,68 +1,40 @@
-import { useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 
 function HomePage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  
-  // Determine if user is authenticated based on the current route
-  const isAuthenticated = location.pathname === '/customer/home'
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#181818] text-white">
       {/* Navbar */}
-      <Navbar isLoggedIn={isAuthenticated} />
+      <Navbar isLoggedIn={false} />
 
-      {/* Main Content */}
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <h1 className="text-2xl text-gray-900 mb-4">Welcome to Elmo Bicycle Shop</h1>
-          <p className="text-gray-600 mb-6">Your one-stop destination for quality bicycles and accessories</p>
-          
-          {isAuthenticated ? (
-            <button
-              onClick={() => navigate('/customer/products')}
-              className="px-6 py-3 bg-orange-600 text-white rounded hover:bg-orange-700"
-            >
-              Browse Products
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/login')}
-              className="px-6 py-3 bg-orange-600 text-white rounded hover:bg-orange-700"
-            >
-              Get Started
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Access (Development Only) */}
-      <div className="fixed bottom-4 right-4">
-        <div className="bg-gray-100 p-4 rounded-lg shadow">
-          <p className="text-xs text-gray-600 mb-2">Quick Access</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate('/customer/home')}
-              className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
-            >
-              Customer
-            </button>
-            <button
-              onClick={() => navigate('/admin/dashboard')}
-              className="bg-green-500 text-white px-2 py-1 rounded text-xs"
-            >
-              Admin
-            </button>
-            <button
-              onClick={() => navigate('/customer/Bikes-category')}
-              className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
-            >
-              Bikes
-            </button>
+      {/* Hero/Header Section */}
+      <section className="w-full px-4 md:px-0 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto pt-12 pb-8">
+        {/* Left: Text Content */}
+        <div className="flex-1 md:pr-12">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">Elmo Bicycle Shop</h1>
+          <p className="text-gray-300 mb-6 max-w-lg">
+            From sleek road bikes built for speed to rugged mountain bikes designed for off-road adventures, our slider celebrates the diversity of cycling disciplines.
+          </p>
+          <div className="flex gap-4 mb-4">
+            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded transition">Shop Now</button>
+            <button className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200">Explore Products</button>
           </div>
         </div>
-      </div>
+        {/* Right: Hero Image and Overlays */}
+        <div className="flex-1 flex flex-col items-center md:items-end mt-8 md:mt-0">
+          <div className="relative w-[320px] h-[180px] md:w-[400px] md:h-[220px]">
+            <img
+              src="/images/icons/HeroPageImage.png"
+              alt="Hero Bike"
+              className="w-full h-full object-cover rounded-lg shadow-lg border-4 border-orange-600"
+            />
+            {/* Overlay: Price */}
+            <div className="absolute top-2 right-2 bg-orange-600 text-white px-4 py-2 rounded font-semibold text-sm shadow">Affordable Price</div>
+            {/* Overlay: Distance */}
+            <div className="absolute bottom-2 right-2 bg-white text-orange-600 px-3 py-1 rounded font-bold text-xs shadow">45 KM PER HOUR</div>
+          </div>
+        </div>
+      </section>
+      {/* More sections to be implemented next... */}
     </div>
   )
 }
