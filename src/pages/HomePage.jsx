@@ -30,6 +30,37 @@ function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Our Features & Facilities Section */}
+      <section className="w-full bg-[#181818] py-10">
+        <h2 className="text-center text-white text-lg md:text-xl font-bold tracking-widest mb-10 uppercase">Our Features & Facilities</h2>
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 px-4">
+          {/* Feature 1 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/icons/Job.png" alt="Spin The Wheel" className="w-14 h-14 mb-4" />
+            <h3 className="text-white font-semibold text-base mb-2 text-center">Spin The Wheel</h3>
+            <p className="text-gray-300 text-sm text-center">Try your luck and win exclusive discounts</p>
+          </div>
+          {/* Feature 2 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/icons/Sale.png" alt="Occasional Promos" className="w-14 h-14 mb-4" />
+            <h3 className="text-white font-semibold text-base mb-2 text-center">Occasional Promos</h3>
+            <p className="text-gray-300 text-sm text-center">Stay tuned for our exclusive events and limited-time promos!</p>
+          </div>
+          {/* Feature 3 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/icons/Warranty.png" alt="Warranty" className="w-14 h-14 mb-4" />
+            <h3 className="text-white font-semibold text-base mb-2 text-center">Warranty</h3>
+            <p className="text-gray-300 text-sm text-center">Only bikes are covered by warranty — reach out to learn more!</p>
+          </div>
+          {/* Feature 4 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/icons/lottery.png" alt="Maintenance" className="w-14 h-14 mb-4" />
+            <h3 className="text-white font-semibold text-base mb-2 text-center">Maintenance</h3>
+            <p className="text-gray-300 text-sm text-center">Got a defective product? No worries — we’ll handle it for you.</p>
+          </div>
+        </div>
+      </section>
       {/* More sections to be implemented next... */}
     </div>
   )
