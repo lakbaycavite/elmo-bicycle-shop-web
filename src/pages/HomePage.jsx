@@ -234,6 +234,115 @@ function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Gear, Parts & Accessories Section */}
+      <section className="w-full bg-[#181818] py-14">
+        <div className="text-center mb-2">
+          <span className="text-orange-500 font-bold tracking-widest text-xs md:text-sm uppercase">Shop</span>
+        </div>
+        <h2 className="text-center text-white text-xl md:text-2xl font-bold mb-2">Gear, Parts & Accessories</h2>
+        <p className="text-center text-gray-300 mb-10 max-w-2xl mx-auto">
+          Load up and head out. Explore the route less travelled or accelerate your daily routine with one of these rugged, versatile e-bikes.
+        </p>
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
+          {/* Card 1 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="test1" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">test1</h3>
+              <div className="text-gray-400 text-xs mb-1">Gears</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 2 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="sikand" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">sikand</h3>
+              <div className="text-gray-400 text-xs mb-1">Gears</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 3 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="qwwqwe" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">qwwqwe</h3>
+              <div className="text-gray-400 text-xs mb-1">Accessories</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 4 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="please" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">please</h3>
+              <div className="text-gray-400 text-xs mb-1">Accessories</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 5 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="sikand" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">sikand</h3>
+              <div className="text-gray-400 text-xs mb-1">Gears</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 6 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="qwwqwe" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">qwwqwe</h3>
+              <div className="text-gray-400 text-xs mb-1">Accessories</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 7 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="parts12" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">parts12</h3>
+              <div className="text-gray-400 text-xs mb-1">Parts</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+          {/* Card 8 */}
+          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+            <img src="/images/bike.png" alt="parts" className="w-32 h-28 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-white font-semibold text-base mb-1">parts</h3>
+              <div className="text-gray-400 text-xs mb-1">Parts</div>
+              <div className="flex justify-center gap-2 mt-2">
+                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* More sections to be implemented next... */}
     </div>
   )
