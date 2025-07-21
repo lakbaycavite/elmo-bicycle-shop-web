@@ -83,6 +83,40 @@ function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Our Categories Section */}
+      <section className="w-full bg-[#181818] py-14">
+        <div className="text-center mb-2">
+          <span className="text-orange-500 font-semibold tracking-widest text-xs md:text-sm uppercase">Your Ride Start Here.</span>
+        </div>
+        <h2 className="text-center text-white text-xl md:text-2xl font-bold mb-8">Our Categories</h2>
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8 px-4 items-center md:items-start">
+          {/* Left: Blue Bike Category */}
+          <div className="flex-1 bg-white rounded-lg flex flex-col items-center p-8 shadow-md mb-8 md:mb-0">
+            <img src="/images/bike 2.png" alt="Blue Bike" className="w-48 h-40 object-contain mb-4" />
+            <div className="w-full text-center">
+              <h3 className="text-black font-semibold text-base mb-2 uppercase">Bicycles</h3>
+              <p className="text-gray-700 text-sm mb-4">Close-out pricing on dozens of products</p>
+              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Discover More</button>
+            </div>
+          </div>
+          {/* Right: Accessories and Gears & Parts */}
+          <div className="flex-1 flex flex-col gap-6 w-full">
+            {/* Accessories Card */}
+            <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-md">
+              <h3 className="text-black font-semibold text-base mb-2 uppercase">Accessories</h3>
+              <p className="text-gray-700 text-sm mb-4 text-center">Close-out pricing on dozens of products</p>
+              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Shop Now</button>
+            </div>
+            {/* Gears & Parts Card */}
+            <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-md">
+              <h3 className="text-black font-semibold text-base mb-2 uppercase">Gears & Parts</h3>
+              <p className="text-gray-700 text-sm mb-4 text-center">Close-out pricing on dozens of products</p>
+              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Shop Now</button>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* More sections to be implemented next... */}
     </div>
   )
