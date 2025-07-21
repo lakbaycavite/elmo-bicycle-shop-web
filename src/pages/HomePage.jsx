@@ -236,12 +236,12 @@ function HomePage() {
       </section>
 
       {/* Gear, Parts & Accessories Section */}
-      <section className="w-full bg-[#181818] py-14">
+      <section className="w-full bg-white py-14">
         <div className="text-center mb-2">
           <span className="text-orange-500 font-bold tracking-widest text-xs md:text-sm uppercase">Shop</span>
         </div>
-        <h2 className="text-center text-white text-xl md:text-2xl font-bold mb-2">Gear, Parts & Accessories</h2>
-        <p className="text-center text-gray-300 mb-10 max-w-2xl mx-auto">
+        <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-2">Gear, Parts & Accessories</h2>
+        <p className="text-center text-gray-800 mb-10 max-w-2xl mx-auto">
           Load up and head out. Explore the route less travelled or accelerate your daily routine with one of these rugged, versatile e-bikes.
         </p>
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
