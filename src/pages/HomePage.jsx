@@ -61,6 +61,28 @@ function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Best Sellers Products This week Section */}
+      <section className="w-full bg-[#f5f5f5] py-12">
+        <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-10">Best Sellers Products<br />This week</h2>
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
+          {/* Most Popular Bike This Month */}
+          <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
+            <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bike This Month</h3>
+            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2">Show More</button>
+            <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
+          </div>
+          {/* Most Popular Bike This Week */}
+          <div className="bg-[#232323] rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
+            <h3 className="text-white font-semibold text-base mb-2 text-center">Most Popular Bike This Week</h3>
+            <div className="text-gray-400 text-sm mb-3 mt-2">COMING SOON!</div>
+            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Show More</button>
+            <div className="text-gray-400 text-xs mt-4 text-center">
+              Price: Unknown<br />Stock: Unknown<br />Weight: Unknown
+            </div>
+          </div>
+        </div>
+      </section>
       {/* More sections to be implemented next... */}
     </div>
   )
