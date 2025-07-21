@@ -19,6 +19,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 import StaffDashboard from './pages/staff/Dashboard'
 import Cart from './pages/post-auth/Cart'
 import Wishlist from './pages/post-auth/Wishlist';
+import CustomerProfile from './pages/post-auth/CustomerProfile';
 
 function App() {
   return (
@@ -28,7 +29,7 @@ function App() {
           {/* Home routes - using unified HomePage component */}
           <Route path="/" element={<HomePage />} />
           <Route path="/customer/home" element={<HomePage />} />
-          
+
           {/* Pre-auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -37,6 +38,7 @@ function App() {
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/bikes-category" element={<BikesCategory />} />
           <Route path="/customer/wishlist" element={<Wishlist />} />
+          <Route path="/customer/profile" element={<CustomerProfile />} />
 
           <Route path="/customer/cart" element={<Cart />} />
 
