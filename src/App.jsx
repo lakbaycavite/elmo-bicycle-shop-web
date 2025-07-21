@@ -18,6 +18,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 // Staff pages
 import StaffDashboard from './pages/staff/Dashboard'
 import Cart from './pages/post-auth/Cart'
+import Wishlist from './pages/post-auth/Wishlist';
 
 function App() {
   return (
@@ -35,7 +36,8 @@ function App() {
           {/* Post-auth routes */}
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/bikes-category" element={<BikesCategory />} />
-          
+          <Route path="/customer/wishlist" element={<Wishlist />} />
+
           <Route path="/customer/cart" element={<Cart />} />
 
           {/* Admin routes */}
