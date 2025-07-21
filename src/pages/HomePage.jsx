@@ -360,11 +360,17 @@ function HomePage() {
           {/* Center: Shop Links */}
           <div className="flex-1 mb-8 md:mb-0">
             <div className="font-semibold mb-2 text-white text-left">Shop</div>
-            <ul className="text-white text-sm space-y-1 text-left">
-              <li><a href="#" className="text-white no-underline hover:text-orange-500 transition">About Us</a></li>
-              <li><a href="#" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</a></li>
-              <li><a href="#" className="text-white no-underline hover:text-orange-500 transition">Our Services</a></li>
-            </ul>
+            <div className="text-white text-sm space-y-1 text-left flex flex-col">
+              <div>
+                <a href="#" className="text-white no-underline hover:text-orange-500 transition">About Us</a>
+              </div>
+              <div>
+                <a href="#" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</a>
+              </div>
+              <div>
+                <a href="#" className="text-white no-underline hover:text-orange-500 transition">Our Services</a>
+              </div>
+            </div>
           </div>
           {/* Right: About & Socials */}
           <div className="flex-1">
