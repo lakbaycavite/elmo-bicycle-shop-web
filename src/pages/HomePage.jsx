@@ -388,7 +388,7 @@ function HomePage() {
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs text-gray-400">
-           2024 Copyright Act: <a href="https://www.cyangit.com" className="text-orange-500 hover:underline">www.cyangit.com</a>
+           2024 Copyright Act: <a href="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</a>
       </div>
       </footer>
     </div>
