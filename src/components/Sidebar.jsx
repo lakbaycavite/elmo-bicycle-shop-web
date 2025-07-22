@@ -26,7 +26,7 @@ function Sidebar({ userType = "admin" }) {
             <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
               USER ACTIVITY
             </button>
-            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
+            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700" onClick={() => navigate('/admin/orders-overview')}>
               ORDERS OVERVIEW
             </button>
             <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">

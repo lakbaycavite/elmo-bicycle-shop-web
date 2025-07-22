@@ -14,6 +14,7 @@ import BikesCategory from './pages/post-auth/Bikes-category'
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard'
+import OrdersOverview from './pages/admin/OrdersOverview';
 
 // Staff pages
 import StaffDashboard from './pages/staff/Dashboard'
@@ -49,6 +50,7 @@ function App() {
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/inventory" element={<Inventory />} />
+          <Route path="/admin/orders-overview" element={<OrdersOverview />} />
 
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
