@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
 
 function Signup() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
 
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -43,22 +44,33 @@ function Signup() {
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  console.log("Form submitted"); // ✅ Check 1
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Form submitted"); // ✅ Check 1
 
-  if (validate()) {
-    console.log("Validation passed"); // ✅ Check 2
-    setLoading(true);
+    if (validate()) {
+      console.log("Validation passed"); // ✅ Check 2
+      setLoading(true);
 
-    setTimeout(() => {
-      console.log("Navigating to login"); // ✅ Check 3
-      navigate('/login');
-    }, 1500);
-  } else {
-    console.log("Validation failed", errors); // 🛑 Catch silent fail
-  }
-};
+      // setTimeout(() => {
+      //   console.log("Navigating to login"); // ✅ Check 3
+      //   navigate('/login');
+      // }, 1500);
+
+      await doCreateUserWithEmailAndPassword(email, password, firstName, lastName, phone)
+        .then(() => {
+          console.log("Signup successful"); // ✅ Check 4
+          setLoading(false);
+          navigate('/login');
+        })
+        .catch((error) => {
+          console.error("Signup failed", error);
+          setLoading(false);
+        });
+    } else {
+      console.log("Validation failed", errors); // 🛑 Catch silent fail
+    }
+  };
 
 
   return (
@@ -89,9 +101,8 @@ const handleSubmit = (e) => {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Enter First Name"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.firstName ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500`}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-transparent'
+                  } focus:ring-2 focus:ring-orange-500`}
               />
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.firstName}</p>
             </div>
@@ -103,9 +114,8 @@ const handleSubmit = (e) => {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Enter Last Name"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.lastName ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500`}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-transparent'
+                  } focus:ring-2 focus:ring-orange-500`}
               />
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.lastName}</p>
             </div>
@@ -117,26 +127,24 @@ const handleSubmit = (e) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter Email"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.email ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500`}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.email ? 'border-red-500' : 'border-transparent'
+                  } focus:ring-2 focus:ring-orange-500`}
               />
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.email}</p>
             </div>
 
             <div>
-            <label className="block text-sm font-semibold mb-1">Phone Number</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter Phone Number"
-              className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                errors.phone ? 'border-red-500' : 'border-transparent'
-              } focus:ring-2 focus:ring-orange-500`}
-            />
-            <p className="text-sm text-red-300 mt-1 mb-0">{errors.phone}</p>
-          </div>
+              <label className="block text-sm font-semibold mb-1">Phone Number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter Phone Number"
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.phone ? 'border-red-500' : 'border-transparent'
+                  } focus:ring-2 focus:ring-orange-500`}
+              />
+              <p className="text-sm text-red-300 mt-1 mb-0">{errors.phone}</p>
+            </div>
 
 
             <div className="relative">
@@ -146,9 +154,8 @@ const handleSubmit = (e) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.password ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500 pr-10`}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.password ? 'border-red-500' : 'border-transparent'
+                  } focus:ring-2 focus:ring-orange-500 pr-10`}
               />
               <button
                 type="button"
@@ -168,9 +175,8 @@ const handleSubmit = (e) => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500 pr-10`}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.confirmPassword ? 'border-red-500' : 'border-transparent'
+                  } focus:ring-2 focus:ring-orange-500 pr-10`}
               />
               <button
                 type="button"
@@ -188,9 +194,8 @@ const handleSubmit = (e) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full ${
-                loading ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'
-              } text-white py-2 rounded-lg font-semibold transition-all duration-300 shadow-md flex items-center justify-center`}
+              className={`w-full ${loading ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'
+                } text-white py-2 rounded-lg font-semibold transition-all duration-300 shadow-md flex items-center justify-center`}
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
