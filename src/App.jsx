@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import 'react-phone-number-input/style.css';
 
 // Pre-auth pages
@@ -21,8 +21,11 @@ import Cart from './pages/post-auth/Cart'
 import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
 import Inventory from './pages/admin/Inventory';
+import { useAuth } from './context/authContext/createAuthContext';
 
 function App() {
+
+  const { userLoggedIn } = useAuth();
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
@@ -32,7 +35,7 @@ function App() {
           <Route path="/customer/home" element={<HomePage />} />
 
           {/* Pre-auth routes */}
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
           <Route path="/signup" element={<Signup />} />
 
           {/* Post-auth routes */}
