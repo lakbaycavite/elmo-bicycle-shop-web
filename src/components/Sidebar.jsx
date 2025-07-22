@@ -18,34 +18,30 @@ function Sidebar({ userType = "admin" }) {
       </div>
       
       <nav className="space-y-2">
-        <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-          Dashboard
-        </button>
-        
         {isAdmin && (
-          <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-            Users
-          </button>
-        )}
-        
-        <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-          Products
-        </button>
-        
-        <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
-          Orders
-        </button>
-        
-        {!isAdmin && (
-          <button className="w-full text-left px-3 py-2 rounded text-gray-500 cursor-not-allowed">
-            Users (Limited)
-          </button>
+          <>
+            <div className="px-3 py-2 font-bold text-orange-400 uppercase cursor-default select-none">
+              INVENTORY
+            </div>
+            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
+              USER ACTIVITY
+            </button>
+            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
+              ORDERS OVERVIEW
+            </button>
+            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
+              USER MANAGEMENT
+            </button>
+            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
+              ACCOUNT MANAGE
+            </button>
+          </>
         )}
       </nav>
 
       <div className="mt-8 pt-8 border-t border-gray-700">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/')} 
           className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
         >
           Logout
