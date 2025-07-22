@@ -32,18 +32,18 @@ function Login() {
 
 const handleSubmit = (e) => {
   e.preventDefault();
-  console.log("Form submitted"); // ✅ Check 1
+  console.log("Form submitted");
 
   if (validate()) {
-    console.log("Validation passed"); // ✅ Check 2
+    console.log("Validation passed");
     setLoading(true);
 
     setTimeout(() => {
-      console.log("Navigating to login"); // ✅ Check 3
-      navigate('/login');
+      console.log("Navigating to homepage or dashboard");
+      navigate('/customer/home'); 
     }, 1500);
   } else {
-    console.log("Validation failed", errors); // 🛑 Catch silent fail
+    console.log("Validation failed", errors);
   }
 };
 

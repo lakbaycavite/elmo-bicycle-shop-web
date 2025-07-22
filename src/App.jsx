@@ -12,6 +12,7 @@ import Products from './pages/post-auth/Products'
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard'
+import AccountManage from './pages/admin/AccountManage'
 
 // Staff pages
 import StaffDashboard from './pages/staff/Dashboard'
@@ -32,6 +33,7 @@ function App() {
           
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/account-manage" element={<AccountManage />} />
           
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />

@@ -37,6 +37,12 @@ function Home() {
             >
               Staff
             </button>
+            <button
+              onClick={() => navigate('/admin/account-manage')}
+              className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+            >
+              Account Manage
+            </button>
           </div>
         </div>
       </div>
