@@ -3,7 +3,7 @@ import Sidebar from '../../components/Sidebar'
 
 function Dashboard() {
   const navigate = useNavigate()
-
+  
   return (
     <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
