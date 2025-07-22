@@ -5,6 +5,7 @@ import NavLinks from './NavLinks';
 import SearchBar from './SearchBar';
 import AuthButtons from './AuthButtons';
 import Drawer from './Drawer';
+import { doSignOut } from '../firebase/auth';
 
 function Navbar({ isLoggedIn = false }) {
   const navigate = useNavigate();
@@ -33,17 +34,27 @@ function Navbar({ isLoggedIn = false }) {
   const handleWishlist = () => { setDrawerOpen(false); navigate('/customer/wishlist'); };
   const handleProfile = () => { setDrawerOpen(false); navigate('/customer/profile'); };
   const handleNotifications = () => { setDrawerOpen(false); navigate('/customer/notifications'); };
-  const handleLogout = () => { setDrawerOpen(false); navigate('/'); };
+  const handleLogout = async () => {
+    setDrawerOpen(false);
+    await doSignOut()
+      .then(() => {
+        console.log("Logout successful");
+      })
+      .catch((error) => {
+        console.error("Logout failed", error);
+      });
+    navigate('/');
+  };
 
   return (
     <>
       <nav className="bg-black px-6 py-2">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center cursor-pointer" onClick={() => navigate(isLoggedIn ? '/customer/home' : '/')}> 
-            <img 
-              src="/images/logos/elmo.png" 
-              alt="Elmo Bicycle Shop" 
+          <div className="flex items-center cursor-pointer" onClick={() => navigate(isLoggedIn ? '/customer/home' : '/')}>
+            <img
+              src="/images/logos/elmo.png"
+              alt="Elmo Bicycle Shop"
               className="h-10 w-auto"
             />
           </div>
@@ -56,7 +67,7 @@ function Navbar({ isLoggedIn = false }) {
           {/* Navigation Links & Right-side Buttons */}
           <div className={`${isLoggedIn ? 'hidden lg:flex' : 'hidden md:flex'} items-center gap-6`}>
             <NavLinks isLoggedIn={isLoggedIn} />
-            
+
             {isLoggedIn ? (
               // Logged-in user icons
               <div className="flex items-center gap-4">
