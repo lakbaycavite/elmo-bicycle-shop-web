@@ -36,7 +36,7 @@ function App() {
 
           {/* Pre-auth routes */}
           <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/signup" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Signup />} />
 
           {/* Post-auth routes */}
           <Route path="/customer/products" element={<Products />} />

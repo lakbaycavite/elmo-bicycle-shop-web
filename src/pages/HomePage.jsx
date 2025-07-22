@@ -1,10 +1,13 @@
 import Navbar from '../components/Navbar'
+import { useAuth } from '../context/authContext/createAuthContext';
 
 function HomePage() {
+
+  const { userLoggedIn } = useAuth();
   return (
     <div className="min-h-screen bg-[#181818] text-white">
       {/* Navbar */}
-      <Navbar isLoggedIn={false} />
+      <Navbar isLoggedIn={userLoggedIn} />
 
       {/* Hero/Header Section */}
       <section className="w-full px-4 md:px-0 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto pt-12 pb-8">
@@ -340,8 +343,8 @@ function HomePage() {
                 <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
               </div>
             </div>
+          </div>
         </div>
-      </div>
       </section>
       {/* More sections to be implemented next... */}
 
@@ -378,18 +381,18 @@ function HomePage() {
             <div className="flex gap-4 mt-4">
               {/* Facebook SVG */}
               <a href="#" aria-label="Facebook" className="text-white hover:text-orange-500 transition">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H5v4h5v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H5v4h5v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
               </a>
               {/* Instagram SVG */}
               <a href="#" aria-label="Instagram" className="text-white hover:text-orange-500 transition">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.5" y2="6.5" /></svg>
               </a>
             </div>
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs text-gray-400">
-           2024 Copyright Act: <a href="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</a>
-      </div>
+          2024 Copyright Act: <a href="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</a>
+        </div>
       </footer>
     </div>
   )
