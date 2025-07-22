@@ -71,7 +71,7 @@ function AccountManage() {
           <h1 className="text-white text-3xl font-bold">Admin Profile</h1>
         </div>
         
-        <div className="flex items-center justify-between w-full mx-auto mt-8 bg-white shadow-md p-6 rounded-lg mb-10">
+        <div className="flex items-center justify-between w-full mx-auto mt-8 bg-white shadow-xl p-6 rounded-lg mb-10">
           <div className="flex items-center space-x-6">
             <CircleUser className="h-20 w-20 text-purple-800 bg-gray-200 rounded-full p-2" />
             <div>
@@ -92,8 +92,10 @@ function AccountManage() {
           </button>
         </div>
         
-        <div className="bg-white shadow-md rounded-lg w-full p-4">
-          <h1 className="text-orange-500 text-bold text-2xl mb-4">Account Management</h1>
+        <div className="bg-white shadow-xl rounded-lg w-full p-4">
+          <label className="text-orange-500 text-bold text-2xl mb-4">
+          <h1>Account Management</h1>
+          </label>
           <div className='flex flex-row gap-4 mb-6'>
               <input 
                 type='text'
@@ -111,7 +113,7 @@ function AccountManage() {
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead>
-                <tr className="bg-gray-100 text-left">
+                <tr className="bg-black text-orange-400">
                   <th className="py-3 px-4 font-semibold">Name</th>
                   <th className="py-3 px-4 font-semibold">Role</th>
                   <th className="py-3 px-4 font-semibold">Email</th>
@@ -121,14 +123,14 @@ function AccountManage() {
               </thead>
               <tbody>
                 {filteredAccounts.map((account, index) => (
-                  <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
+                  <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
                     <td className="py-3 px-4">{account.name}</td>
                     <td className="py-3 px-4">{account.role}</td>
                     <td className="py-3 px-4">{account.email}</td>
                     <td className="py-3 px-4">{account.dateCreated}</td>
                     <td className="py-3 px-4">
                       <select 
-                        className="border rounded p-1 bg-green-600 text-white font-bold"
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
                         onChange={(e) => handleActionChange(account, e.target.value)}
                         defaultValue=""
                       >
