@@ -14,13 +14,19 @@
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
+<<<<<<< HEAD
     "bootstrap-icons": "^1.13.1",
     "bootswatch": "^5.3.7",
+=======
+    "firebase": "^12.0.0",
+>>>>>>> 2951302332e6305553cbff205b4a613928db00e0
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.7.0"
+    "react-phone-number-input": "^3.4.12",
+    "react-router-dom": "^7.7.0",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

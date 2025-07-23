@@ -32,10 +32,16 @@ function Home() {
               Admin
             </button>
             <button
-              onClick={() => navigate('/customer/Bikes-category')}
+              onClick={() => navigate('/staff/dashboard')}
               className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
             >
-              Bikes
+              Staff
+            </button>
+            <button
+              onClick={() => navigate('/admin/account-manage')}
+              className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+            >
+              Account Manage
             </button>
           </div>
         </div>
