@@ -9,4 +9,4 @@ const cld = new Cloudinary({
     }
 });
 
-export default cld;
+export { cld, cloudName };

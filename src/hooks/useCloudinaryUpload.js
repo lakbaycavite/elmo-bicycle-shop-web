@@ -1,25 +1,39 @@
 import axios from "axios";
 import { useState } from "react";
-import cld from "../cloudinary/cloudinary";
+import { cld, cloudName } from "../cloudinary/cloudinary";
 
 export const useCloudinaryUpload = () => {
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const uploadImage = async (file) => {
+    const uploadImage = async (file, context = "products") => {
         try {
             setUploading(true);
             setProgress(0);
 
+            let folder = "products";
+
+            switch (context) {
+                case "products":
+                    folder = "products";
+                    break;
+                case "users":
+                    folder = "users";
+                    break;
+                default:
+                    folder = "uploads";
+                    break;
+            }
+
             // Create form data
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('upload_preset', 'your_upload_preset'); // From Cloudinary dashboard
-            formData.append('folder', 'products');
+            formData.append('upload_preset', 'Uploads'); // From Cloudinary dashboard
+            formData.append('folder', folder);
 
             // Upload to Cloudinary with progress tracking
             const response = await axios.post(
-                `https://api.cloudinary.com/v1_1/your_cloud_name/image/upload`,
+                `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
                 formData,
                 {
                     onUploadProgress: (progressEvent) => {

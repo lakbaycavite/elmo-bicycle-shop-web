@@ -8,11 +8,16 @@ import {
     X,
     ArrowUp,
     ArrowDown,
-    Upload
+    Upload,
+    Loader2
 } from 'lucide-react';
 import { useProducts } from '../../hooks/useProduct';
+import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 
 const Inventory = () => {
+
+    const { uploadImage, uploading, progress } = useCloudinaryUpload();
+
     // State for modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -57,11 +62,29 @@ const Inventory = () => {
     });
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'price' || name === 'stock' ? Number(value) : value
-        }));
+        const { name, value, type, files } = e.target;
+
+        if (type === 'file' && files.length > 0) {
+            const file = files[0];
+            setFormData(prev => ({
+                ...prev,
+                [name]: file
+            }));
+
+            // Create a preview URL
+            // const reader = new FileReader();
+            // reader.onload = () => {
+            //     setPreviewUrl(reader.result);
+            // };
+            // reader.readAsDataURL(file);
+
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: name === 'price' || name === 'stock' ? Number(value) : value
+            }));
+        }
+
     };
 
     // Pagination state
@@ -132,11 +155,28 @@ const Inventory = () => {
     };
 
     const handleEditChange = (e) => {
-        const { name, value } = e.target;
-        setEditFormData(prev => ({
-            ...prev,
-            [name]: name === 'price' || name === 'stock' ? Number(value) : value
-        }));
+        const { name, value, type, files } = e.target;
+        if (type === 'file' && files.length > 0) {
+            const file = files[0];
+            setEditFormData(prev => ({
+                ...prev,
+                [name]: file
+            }));
+
+            // Create a preview URL
+            // const reader = new FileReader();
+            // reader.onload = () => {
+            //     setPreviewUrl(reader.result);
+            // };
+            // reader.readAsDataURL(file);
+
+        } else {
+            setEditFormData(prev => ({
+                ...prev,
+                [name]: name === 'price' || name === 'stock' ? Number(value) : value
+            }));
+        }
+
     };
 
     // Categories and types for dropdowns
@@ -160,7 +200,18 @@ const Inventory = () => {
             return;
         }
 
-        await createProduct(formData)
+        let imageUrl = null;
+        if (formData.image instanceof File) {
+            imageUrl = await uploadImage(formData.image, 'products');
+        }
+
+        const productData = {
+            ...formData,
+            image: imageUrl || formData.image
+        };
+
+
+        await createProduct(productData)
             .then(() => {
                 setShowAddModal(false);
             })
@@ -182,6 +233,9 @@ const Inventory = () => {
             type: '',
             weight: ''
         });
+
+        console.log(formData)
+
     }
 
     const handleDelete = async (id) => {
@@ -206,10 +260,21 @@ const Inventory = () => {
         }
 
         try {
-            await updateProduct(editProduct.id, editFormData);
+
+            let imageUrl = null;
+            if (editFormData.image instanceof File) {
+                imageUrl = await uploadImage(editFormData.image, 'products');
+            }
+
+            const productData = {
+                ...editFormData,
+                image: imageUrl || editFormData.image
+            };
+
+            await updateProduct(editProduct.id, productData);
             setShowEditModal(false);
             // Optional: Show success message
-            console.log('Product updated successfully!');
+            console.log('Product updated successfully!:', editFormData);
         } catch (error) {
             console.error('Error updating product:', error);
             alert('Failed to update product. Please try again.');
@@ -495,7 +560,6 @@ const Inventory = () => {
                                                         <input type="file" className="sr-only"
                                                             name='image'
                                                             onChange={handleChange}
-                                                            value={formData.image}
                                                         />
                                                     </label>
                                                     <p className="pl-1">or drag and drop</p>
@@ -729,10 +793,16 @@ const Inventory = () => {
                                         </button>
                                         <button
                                             type="submit"
-                                            className="px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
+                                            className="flex flex-row px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
                                             onClick={handleEditSubmit}
+                                            disabled={uploading || loading}
                                         >
-                                            Save Changes
+                                            {uploading || loading ? (
+                                                <>
+                                                    <Loader2 className='animate-spin text-white' />
+                                                    <span className="ml-2">Updating...</span>
+                                                </>
+                                            ) : 'Update Product'}
                                         </button>
                                     </div>
                                 </form>
