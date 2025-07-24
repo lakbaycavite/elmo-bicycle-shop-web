@@ -1,29 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-    createCustomer,
-    getCustomerById,
-    getAllCustomers,
-    updateCustomer,
-    deleteCustomer,
-    searchCustomersByField,
-    subscribeToCustomers,
+    getUserById,
+    getAllUsers,
+    updateUser,
+    deleteUser,
+    searchUsersByField,
+    subscribeToUsers,
     changeUserRoleById
-} from "../services/customerService";
+} from "../services/userService";
 
-export const useCustomers = (initialCustomerId = null) => {
-    const [customers, setCustomers] = useState([]);
-    const [customer, setCustomer] = useState(null);
+export const useUsers = (initialUserId = null) => {
+    const [users, setUsers] = useState([]);
+    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Load all customers
-    const loadCustomers = useCallback(async () => {
+    // Load all users
+    const loadUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const data = await getAllCustomers();
-            setCustomers(data);
-            console.log('Loaded customers:', data);
+            const data = await getAllUsers();
+            setUsers(data);
+            console.log('Loaded users:', data);
             return data;
         } catch (err) {
             setError(err.message);
@@ -33,15 +32,15 @@ export const useCustomers = (initialCustomerId = null) => {
         }
     }, []);
 
-    // Load a specific customer
-    const loadCustomer = useCallback(async (id) => {
+    // Load a specific user
+    const loadUser = useCallback(async (id) => {
         if (!id) return null;
 
         setLoading(true);
         setError(null);
         try {
-            const data = await getCustomerById(id);
-            setCustomer(data);
+            const data = await getUserById(id);
+            setUser(data);
             return data;
         } catch (err) {
             setError(err.message);
@@ -73,36 +72,36 @@ export const useCustomers = (initialCustomerId = null) => {
     //     }
     // }, []);
 
-    // Update a customer
-    const editCustomer = useCallback(async (id, customerData) => {
+    // Update a user
+    const editUser = useCallback(async (id, userData) => {
         setLoading(true);
         setError(null);
         try {
-            const updatedCustomer = await updateCustomer(id, customerData);
-            setCustomers(prev =>
-                prev.map(c => c.id === id ? { ...c, ...updatedCustomer } : c)
+            const updatedUser = await updateUser(id, userData);
+            setUsers(prev =>
+                prev.map(u => u.id === id ? { ...u, ...updatedUser } : u)
             );
-            if (customer && customer.id === id) {
-                setCustomer({ ...customer, ...updatedCustomer });
+            if (user && user.id === id) {
+                setUser({ ...user, ...updatedUser });
             }
-            return updatedCustomer;
+            return updatedUser;
         } catch (err) {
             setError(err.message);
             throw err;
         } finally {
             setLoading(false);
         }
-    }, [customer]);
+    }, [user]);
 
-    // Delete a customer
-    const removeCustomer = useCallback(async (id) => {
+    // Delete a user
+    const removeUser = useCallback(async (id) => {
         setLoading(true);
         setError(null);
         try {
-            await deleteCustomer(id);
-            setCustomers(prev => prev.filter(c => c.id !== id));
-            if (customer && customer.id === id) {
-                setCustomer(null);
+            await deleteUser(id);
+            setUsers(prev => prev.filter(u => u.id !== id));
+            if (user && user.id === id) {
+                setUser(null);
             }
             return id;
         } catch (err) {
@@ -111,14 +110,14 @@ export const useCustomers = (initialCustomerId = null) => {
         } finally {
             setLoading(false);
         }
-    }, [customer]);
+    }, [user]);
 
-    // Search customers
-    const searchCustomers = useCallback(async (field, value) => {
+    // Search users
+    const searchUsers = useCallback(async (field, value) => {
         setLoading(true);
         setError(null);
         try {
-            const results = await searchCustomersByField(field, value);
+            const results = await searchUsersByField(field, value);
             return results;
         } catch (err) {
             setError(err.message);
@@ -134,11 +133,11 @@ export const useCustomers = (initialCustomerId = null) => {
         try {
             const result = await changeUserRoleById(userId, newRole);
 
-            // Update the local state if we have customers loaded
-            if (customers.length > 0) {
-                setCustomers(prevCustomers =>
-                    prevCustomers.map(customer =>
-                        customer.id === userId ? { ...customer, role: newRole } : customer
+            // Update the local state if we have users loaded
+            if (users.length > 0) {
+                setUsers(prevUsers =>
+                    prevUsers.map(user =>
+                        user.id === userId ? { ...user, role: newRole } : user
                     )
                 );
             }
@@ -150,47 +149,47 @@ export const useCustomers = (initialCustomerId = null) => {
         } finally {
             setLoading(false);
         }
-    }, [customers]);
+    }, [users]);
 
     // Real-time updates
     useEffect(() => {
-        const unsubscribe = subscribeToCustomers((data) => {
-            setCustomers(data);
+        const unsubscribe = subscribeToUsers((data) => {
+            setUsers(data);
 
-            // If we're tracking a specific customer, update it too
-            if (customer) {
-                const updatedCustomer = data.find(c => c.id === customer.id);
-                if (updatedCustomer) {
-                    setCustomer(updatedCustomer);
+            // If we're tracking a specific user, update it too
+            if (user) {
+                const updatedUser = data.find(u => u.id === user.id);
+                if (updatedUser) {
+                    setUser(updatedUser);
                 }
             }
         });
 
         return () => unsubscribe();
-    }, [customer]);
+    }, [user]);
 
-    // Load initial customer if ID is provided
+    // Load initial user if ID is provided
     useEffect(() => {
-        if (initialCustomerId) {
-            loadCustomer(initialCustomerId);
+        if (initialUserId) {
+            loadUser(initialUserId);
         }
-    }, [initialCustomerId, loadCustomer]);
+    }, [initialUserId, loadUser]);
 
     useEffect(() => {
-        loadCustomers();
-    }, [loadCustomers]);
+        loadUsers();
+    }, [loadUsers]);
 
     return {
-        customers,
-        customer,
+        users,
+        user,
         loading,
         error,
-        loadCustomers,
-        loadCustomer,
-        // addCustomer,
-        editCustomer,
-        removeCustomer,
-        searchCustomers,
+        loadUsers,
+        loadUser,
+        // addUser,
+        editUser,
+        removeUser,
+        searchUsers,
         changeRole
     };
 };

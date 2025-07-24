@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
-import { useCustomers } from '../../hooks/useCustomer';
+import { useUsers } from '../../hooks/useUser';
 
 function UserManagement() {
   const navigate = useNavigate();
@@ -15,15 +15,15 @@ function UserManagement() {
   ];
 
   const {
-    customers,
+    users,
     loading,
     error,
-    loadCustomers,
-    editCustomer,
-    removeCustomer
-  } = useCustomers();
+    loadUsers,
+    editUser,
+    removeUser
+  } = useUsers();
 
-  console.log('Customers:', customers);
+  console.log('Users:', users);
 
   const [accounts, setAccounts] = useState(initialAccounts);
 

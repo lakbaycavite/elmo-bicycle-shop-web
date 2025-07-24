@@ -2,121 +2,119 @@ import { ref, set, get, update, remove, push, query, orderByChild, equalTo, onVa
 import { auth } from "../firebase/firebase";
 import { database } from '../firebase/firebase';
 
+const usersRef = ref(database, "users");
 
-const customersRef = ref(database, "users");
-
-// Create a new customer
-export const createCustomer = async (customerData) => {
+// Create a new user
+export const createUser = async (userData) => {
     try {
-        const newCustomerRef = push(customersRef);
+        const newUserRef = push(usersRef);
         const timestamp = new Date().toISOString();
 
-        await set(newCustomerRef, {
-            ...customerData,
+        await set(newUserRef, {
+            ...userData,
             createdAt: timestamp,
             updatedAt: timestamp,
             createdBy: auth.currentUser?.uid || "unknown"
         });
 
-        return { id: newCustomerRef.key, ...customerData };
+        return { id: newUserRef.key, ...userData };
     } catch (error) {
-        console.error("Error creating customer:", error);
+        console.error("Error creating user:", error);
         throw error;
     }
 };
 
-// Get a specific customer by ID
-export const getCustomerById = async (customerId) => {
+// Get a specific user by ID
+export const getUserById = async (userId) => {
     try {
-        const customerRef = ref(database, `customers/${customerId}`);
-        const snapshot = await get(customerRef);
+        const userRef = ref(database, `users/${userId}`);
+        const snapshot = await get(userRef);
 
         if (snapshot.exists()) {
-            return { id: customerId, ...snapshot.val() };
+            return { id: userId, ...snapshot.val() };
         } else {
-            throw new Error("Customer not found");
+            throw new Error("User not found");
         }
     } catch (error) {
-        console.error("Error fetching customer:", error);
+        console.error("Error fetching user:", error);
         throw error;
     }
 };
 
-// Get all customers
-export const getAllCustomers = async () => {
+// Get all users
+export const getAllUsers = async () => {
     try {
-        const snapshot = await get(customersRef);
+        const snapshot = await get(usersRef);
 
         if (snapshot.exists()) {
-            const customers = [];
+            const users = [];
             snapshot.forEach((childSnapshot) => {
-                customers.push({
+                users.push({
                     id: childSnapshot.key,
                     ...childSnapshot.val()
                 });
             });
-            return customers;
+            return users;
         } else {
             return [];
         }
     } catch (error) {
-        console.error("Error fetching customers:", error);
+        console.error("Error fetching users:", error);
         throw error;
     }
 };
 
-// Update a customer
-export const updateCustomer = async (customerId, customerData) => {
+// Update a user
+export const updateUser = async (userId, userData) => {
     try {
-        const customerRef = ref(database, `customers/${customerId}`);
+        const userRef = ref(database, `users/${userId}`);
 
         // Create update object with new timestamp
         const updates = {
-            ...customerData,
+            ...userData,
             updatedAt: new Date().toISOString(),
-            updatedBy: auth.currentUser?.uid || "unknown"
         };
 
-        await update(customerRef, updates);
-        return { id: customerId, ...updates };
+        await update(userRef, updates);
+        return { id: userId, ...updates };
     } catch (error) {
-        console.error("Error updating customer:", error);
+        console.error("Error updating user:", error);
         throw error;
     }
 };
 
-// Delete a customer
-export const deleteCustomer = async (customerId) => {
+// Delete a user
+export const deleteUser = async (userId) => {
     try {
-        const customerRef = ref(database, `customers/${customerId}`);
-        await remove(customerRef);
-        return customerId;
+        const userRef = ref(database, `users/${userId}`);
+        await remove(userRef);
+        return userId;
     } catch (error) {
-        console.error("Error deleting customer:", error);
+        console.error("Error deleting user:", error);
         throw error;
     }
 };
 
-// Search customers by field
-export const searchCustomersByField = async (field, value) => {
+// Search users by field
+export const searchUsersByField = async (field, value) => {
     try {
-        const customerQuery = query(customersRef, orderByChild(field), equalTo(value));
-        const snapshot = await get(customerQuery);
+        const userQuery = query(usersRef, orderByChild(field), equalTo(value));
+        const snapshot = await get(userQuery);
 
         if (snapshot.exists()) {
-            const customers = [];
+            const users = [];
             snapshot.forEach((childSnapshot) => {
-                customers.push({
+                users.push({
                     id: childSnapshot.key,
                     ...childSnapshot.val()
                 });
             });
-            return customers;
+            return users;
         } else {
             return [];
         }
     } catch (error) {
-        console.error(`Error searching customers by ${field}:`, error);
+        console.error(`Error searching users by ${field}:`, error);
         throw error;
     }
 };
@@ -160,21 +158,21 @@ export const changeUserRoleById = async (userId, newRole) => {
 }
 
 
-// Real-time customers listener
-export const subscribeToCustomers = (callback) => {
-    onValue(customersRef, (snapshot) => {
-        const customers = [];
+// Real-time users listener
+export const subscribeToUsers = (callback) => {
+    onValue(usersRef, (snapshot) => {
+        const users = [];
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
-                customers.push({
+                users.push({
                     id: childSnapshot.key,
                     ...childSnapshot.val()
                 });
             });
         }
-        callback(customers);
+        callback(users);
     });
 
     // Return unsubscribe function
-    return () => off(customersRef);
+    return () => off(usersRef);
 };
