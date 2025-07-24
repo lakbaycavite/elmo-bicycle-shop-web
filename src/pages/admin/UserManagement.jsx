@@ -45,7 +45,7 @@ function UserManagement() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <select className='p-1 border-1 rounded-lg'>
+              <select className='p-1 border-1 rounded-lg font-bold'>
                   <option value="">All Roles</option>
               </select>
           </div>
