@@ -56,8 +56,13 @@ function Signup() {
       //   console.log("Navigating to login"); // ✅ Check 3
       //   navigate('/login');
       // }, 1500);
+      const additionalUserData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+      }
 
-      await doCreateUserWithEmailAndPassword(email, password, firstName, lastName, phone)
+      await doCreateUserWithEmailAndPassword(email, password, additionalUserData)
         .then(() => {
           console.log("Signup successful"); // ✅ Check 4
           setLoading(false);

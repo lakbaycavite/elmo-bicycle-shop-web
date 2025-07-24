@@ -19,6 +19,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 import AccountManage from './pages/admin/AccountManage'
 import OrdersOverview from './pages/admin/OrdersOverview';
 import UserManagement from './pages/admin/UserManagement';
+import UserActivity from './pages/admin/UserActivity';
 
 // Staff pages
 import StaffDashboard from './pages/staff/Dashboard'
@@ -58,6 +59,7 @@ function App() {
           <Route path="/admin/user-management" element={<UserManagement />} />
           <Route path="/admin/inventory" element={<Inventory />} />
           <Route path="/admin/orders-overview" element={<OrdersOverview />} />
+          <Route path="/admin/user-activity" element={<UserActivity />} />
 
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
