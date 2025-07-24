@@ -6,6 +6,7 @@ import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 function AccountManage() {
   const { users, loading, error, changeRole } = useUsers();
 
+  const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
@@ -31,6 +32,7 @@ function AccountManage() {
   }, [users]);
   // Filter accounts based on available fields
   const filteredAccounts = accounts.filter(account => {
+    // Search term filtering
     const searchFields = [
       account.firstName || '',
       account.lastName || '',
@@ -39,7 +41,13 @@ function AccountManage() {
       account.role || ''
     ].map(field => field.toLowerCase());
 
-    return searchFields.some(field => field.includes(searchTerm.toLowerCase()));
+    const matchesSearch = searchFields.some(field => field.includes(searchTerm.toLowerCase()));
+
+    // Role filtering
+    const matchesRole = roleFilter === 'all' || (account.role || 'customer') === roleFilter;
+
+    // Return true only if both conditions are met
+    return matchesSearch && matchesRole;
   });
 
   const handleActionChange = async (account, action) => {
@@ -224,8 +232,11 @@ function AccountManage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <select className='p-1 border-1 rounded-lg'>
-                <option value="">Sort/Filter</option>
+              <select className='p-1 border-1 rounded-lg' onChange={(e) => setRoleFilter(e.target.value)} value={roleFilter}>
+                <option value="all">All Roles</option>
+                <option value="customer">Customer</option>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 
@@ -246,7 +257,7 @@ function AccountManage() {
                     filteredAccounts.map((account, index) => (
                       <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
                         <td className="py-3 px-4">{formatUserName(account)}</td>
-                        <td className="py-3 px-4">{account.role || 'customer'}</td>
+                        <td className="py-3 px-4">{account.role ? account.role.charAt(0).toUpperCase() + account.role.slice(1) : 'Customer'}</td>
                         <td className="py-3 px-4">{account.email}</td>
                         <td className="py-3 px-4">{formatDate(account.dateCreated || account.createdAt)}</td>
                         <td className="py-3 px-4">
