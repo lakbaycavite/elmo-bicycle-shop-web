@@ -8,10 +8,16 @@ import {
     X,
     ArrowUp,
     ArrowDown,
-    Upload
+    Upload,
+    Loader2
 } from 'lucide-react';
+import { useProducts } from '../../hooks/useProduct';
+import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 
 const Inventory = () => {
+
+    const { uploadImage, uploading, progress } = useCloudinaryUpload();
+
     // State for modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -24,21 +30,62 @@ const Inventory = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
 
-    // State for products (dummy data with reliable images)
-    const [products, setProducts] = useState([
-        { id: 1, name: 'Mountain Bike XC-290', image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=80&h=80&fit=crop', category: 'Bikes', stock: 15, price: 899.99, brand: 'Trek', spec1: 'Carbon Frame', spec2: '29" Wheels', weight: '12.5kg', type: 'Frame' },
-        { id: 2, name: 'Road Helmet Pro', image: 'https://images.unsplash.com/photo-1571333250630-f0230c320b6d?w=80&h=80&fit=crop', category: 'Gears', stock: 28, price: 149.99, brand: 'Giro', spec1: 'Ventilated', spec2: 'Lightweight', weight: '250g', type: 'Headset' },
-        { id: 3, name: 'Bike Chain Ultra', image: 'https://images.unsplash.com/photo-1511994298241-608e28f14fde?w=80&h=80&fit=crop', category: 'Parts', stock: 50, price: 29.99, brand: 'Shimano', spec1: '11-speed', spec2: 'Rust-resistant', weight: '300g', type: 'Chain Guard' },
-        { id: 4, name: 'Water Bottle 750ml', image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=80&h=80&fit=crop', category: 'Accessories', stock: 60, price: 12.99, brand: 'CamelBak', spec1: 'BPA-free', spec2: 'Insulated', weight: '100g', type: null },
-        { id: 5, name: 'MTB Pedals Clip-in', image: 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?w=80&h=80&fit=crop', category: 'Parts', stock: 25, price: 89.99, brand: 'Crankbrothers', spec1: 'Aluminum', spec2: 'Sealed bearings', weight: '380g', type: 'Pedals' },
-        { id: 6, name: 'Bike Lock Heavy Duty', image: 'https://images.unsplash.com/photo-1569942126139-124d7e4f3efe?w=80&h=80&fit=crop', category: 'Accessories', stock: 35, price: 49.99, brand: 'Kryptonite', spec1: 'Steel', spec2: '12mm thickness', weight: '1.2kg', type: null },
-        { id: 7, name: 'Road Bike RX-550', image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=80&h=80&fit=crop', category: 'Bikes', stock: 8, price: 1299.99, brand: 'Specialized', spec1: 'Carbon Frame', spec2: 'Disc Brakes', weight: '8.9kg', type: 'Frame' },
-        { id: 8, name: 'Cycling Gloves Winter', image: 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=80&h=80&fit=crop', category: 'Gears', stock: 45, price: 34.99, brand: 'Pearl Izumi', spec1: 'Waterproof', spec2: 'Padded', weight: '95g', type: 'Grips/Bar Tape' },
-        { id: 9, name: 'Bike Saddle Comfort', image: 'https://images.unsplash.com/photo-1605045544284-d6c06410f27f?w=80&h=80&fit=crop', category: 'Parts', stock: 32, price: 59.99, brand: 'Brooks', spec1: 'Leather', spec2: 'Springs', weight: '450g', type: 'Saddle' },
-        { id: 10, name: 'Bike Light Set', image: 'https://images.unsplash.com/photo-1598517989151-3f83c08def4f?w=80&h=80&fit=crop', category: 'Accessories', stock: 40, price: 39.99, brand: 'Cygolite', spec1: 'USB Rechargeable', spec2: '800 lumens', weight: '150g', type: null },
-        { id: 11, name: 'Mountain Bike Tires 27.5"', image: 'https://images.unsplash.com/photo-1573113521692-9754353225e1?w=80&h=80&fit=crop', category: 'Parts', stock: 22, price: 49.99, brand: 'Maxxis', spec1: 'Tubeless', spec2: 'All-terrain', weight: '780g', type: 'Tires' },
-        { id: 12, name: 'Bike Computer GPS', image: 'https://images.unsplash.com/photo-1555514058-a033d20a6a44?w=80&h=80&fit=crop', category: 'Accessories', stock: 18, price: 199.99, brand: 'Garmin', spec1: 'Color display', spec2: '20hr battery', weight: '60g', type: null },
-    ]);
+    // hook
+    const { products, loading, error, createProduct, deleteProduct, updateProduct } = useProducts();
+
+    const [formData, setFormData] = useState({
+        name: '',
+        image: '',
+        category: '',
+        brand: '',
+        price: 0,
+        spec1: '',
+        spec1Label: '',
+        spec2: '',
+        spec2Label: '',
+        stock: 0,
+        type: '',
+        weight: ''
+    });
+
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        image: '',
+        category: '',
+        brand: '',
+        price: 0,
+        spec1: '',
+        spec2: '',
+        stock: 0,
+        type: '',
+        weight: ''
+    });
+
+    const handleChange = (e) => {
+        const { name, value, type, files } = e.target;
+
+        if (type === 'file' && files.length > 0) {
+            const file = files[0];
+            setFormData(prev => ({
+                ...prev,
+                [name]: file
+            }));
+
+            // Create a preview URL
+            // const reader = new FileReader();
+            // reader.onload = () => {
+            //     setPreviewUrl(reader.result);
+            // };
+            // reader.readAsDataURL(file);
+
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: name === 'price' || name === 'stock' ? Number(value) : value
+            }));
+        }
+
+    };
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -83,9 +130,53 @@ const Inventory = () => {
     const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
     // Open edit modal with product data
-    const handleEditClick = (product) => {
+    // const handleEditClick = (product) => {
+    //     setEditProduct(product);
+    //     setShowEditModal(true);
+    // };
+
+    // Open edit modal with product data
+    const handleEditClick = async (product) => {
         setEditProduct(product);
+        setEditFormData({
+            id: product.id,
+            name: product.name || '',
+            image: product.image || '',
+            category: product.category || '',
+            brand: product.brand || '',
+            price: product.price || 0,
+            spec1: product.spec1 || '',
+            spec2: product.spec2 || '',
+            stock: product.stock || 0,
+            type: product.type || '',
+            weight: product.weight || ''
+        });
         setShowEditModal(true);
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value, type, files } = e.target;
+        if (type === 'file' && files.length > 0) {
+            const file = files[0];
+            setEditFormData(prev => ({
+                ...prev,
+                [name]: file
+            }));
+
+            // Create a preview URL
+            // const reader = new FileReader();
+            // reader.onload = () => {
+            //     setPreviewUrl(reader.result);
+            // };
+            // reader.readAsDataURL(file);
+
+        } else {
+            setEditFormData(prev => ({
+                ...prev,
+                [name]: name === 'price' || name === 'stock' ? Number(value) : value
+            }));
+        }
+
     };
 
     // Categories and types for dropdowns
@@ -101,6 +192,95 @@ const Inventory = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.name || !formData.category || !formData.price || formData.stock < 0) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        let imageUrl = null;
+        if (formData.image instanceof File) {
+            imageUrl = await uploadImage(formData.image, 'products');
+        }
+
+        const productData = {
+            ...formData,
+            image: imageUrl || formData.image
+        };
+
+
+        await createProduct(productData)
+            .then(() => {
+                setShowAddModal(false);
+            })
+            .catch(err => {
+                console.error('Error creating product:', err);
+                alert('Failed to create product. Please try again.');
+            })
+        setFormData({
+            name: '',
+            image: '',
+            category: '',
+            brand: '',
+            price: 0,
+            spec1: '',
+            spec1Label: '',
+            spec2: '',
+            spec2Label: '',
+            stock: 0,
+            type: '',
+            weight: ''
+        });
+
+        console.log(formData)
+
+    }
+
+    const handleDelete = async (id) => {
+        console.log(`Deleting product with ID: ${id}`);
+
+        await deleteProduct(id)
+            .then(() => {
+                console.log(`Product with ID ${id} deleted successfully`);
+            })
+            .catch((error) => {
+                console.error('Error deleting product:', error);
+                alert('Failed to delete product. Please try again.');
+            })
+    }
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!editFormData.name || !editFormData.category || !editFormData.price || editFormData.stock < 0) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        try {
+
+            let imageUrl = null;
+            if (editFormData.image instanceof File) {
+                imageUrl = await uploadImage(editFormData.image, 'products');
+            }
+
+            const productData = {
+                ...editFormData,
+                image: imageUrl || editFormData.image
+            };
+
+            await updateProduct(editProduct.id, productData);
+            setShowEditModal(false);
+            // Optional: Show success message
+            console.log('Product updated successfully!:', editFormData);
+        } catch (error) {
+            console.error('Error updating product:', error);
+            alert('Failed to update product. Please try again.');
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-white flex">
@@ -191,7 +371,8 @@ const Inventory = () => {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="h-16 w-16 flex-shrink-0 mr-4">
-                                                <img className="h-16 w-16 rounded-md object-cover" src={product.image} alt={product.name} />
+                                                <img className="h-16 w-16 rounded-md object-cover" src={product.image ? product.image : null}
+                                                    alt={product.name} />
                                             </div>
                                             <div>
                                                 <div className="text-sm font-medium text-white">{product.name}</div>
@@ -218,7 +399,9 @@ const Inventory = () => {
                                             >
                                                 <Edit2 size={18} />
                                             </button>
-                                            <button className="text-red-500 hover:text-red-400 bg-gray-800 p-2 rounded-md">
+                                            <button className="text-red-500 hover:text-red-400 bg-gray-800 p-2 rounded-md"
+                                                onClick={() => handleDelete(product.id)}
+                                            >
                                                 <Trash2 size={18} />
                                             </button>
                                         </div>
@@ -304,8 +487,11 @@ const Inventory = () => {
                                         </label>
                                         <input
                                             type="text"
+                                            name='name'
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                             placeholder="Enter product name"
+                                            value={formData.name}
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -314,7 +500,12 @@ const Inventory = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Category
                                         </label>
-                                        <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]">
+                                        <select
+                                            name="category"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                                            value={formData.category}
+                                            onChange={handleChange}
+                                        >
                                             <option value="">Select category</option>
                                             {categories.map((category) => (
                                                 <option key={category} value={category}>{category}</option>
@@ -329,11 +520,14 @@ const Inventory = () => {
                                                 Price ($)
                                             </label>
                                             <input
+                                                name='price'
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                                 placeholder="0.00"
+                                                value={formData.price}
+                                                onChange={handleChange}
                                             />
                                         </div>
                                         <div>
@@ -341,10 +535,13 @@ const Inventory = () => {
                                                 Stock
                                             </label>
                                             <input
+                                                name='stock'
                                                 type="number"
                                                 min="0"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                                 placeholder="0"
+                                                value={formData.stock}
+                                                onChange={handleChange}
                                             />
                                         </div>
                                     </div>
@@ -360,7 +557,10 @@ const Inventory = () => {
                                                 <div className="flex text-sm text-gray-600">
                                                     <label className="relative cursor-pointer bg-white rounded-md font-medium text-[#ff6900] hover:text-[#e55e00]">
                                                         <span>Upload a file</span>
-                                                        <input type="file" className="sr-only" />
+                                                        <input type="file" className="sr-only"
+                                                            name='image'
+                                                            onChange={handleChange}
+                                                        />
                                                     </label>
                                                     <p className="pl-1">or drag and drop</p>
                                                 </div>
@@ -383,6 +583,7 @@ const Inventory = () => {
                                         <button
                                             type="submit"
                                             className="px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
+                                            onClick={handleSubmit}
                                         >
                                             Add Product
                                         </button>
@@ -418,6 +619,9 @@ const Inventory = () => {
                                             type="text"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                             defaultValue={editProduct.name}
+                                            name='name'
+                                            value={editFormData.name}
+                                            onChange={handleEditChange}
                                         />
                                     </div>
 
@@ -429,6 +633,9 @@ const Inventory = () => {
                                         <select
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                             defaultValue={editProduct.category}
+                                            name='category'
+                                            value={editFormData.category}
+                                            onChange={handleEditChange}
                                         >
                                             {categories.map((category) => (
                                                 <option key={category} value={category}>{category}</option>
@@ -448,6 +655,9 @@ const Inventory = () => {
                                                 step="0.01"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                                 defaultValue={editProduct.price}
+                                                name='price'
+                                                value={editFormData.price}
+                                                onChange={handleEditChange}
                                             />
                                         </div>
                                         <div>
@@ -459,6 +669,9 @@ const Inventory = () => {
                                                 min="0"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                                 defaultValue={editProduct.stock}
+                                                name='stock'
+                                                value={editFormData.stock}
+                                                onChange={handleEditChange}
                                             />
                                         </div>
                                     </div>
@@ -472,6 +685,9 @@ const Inventory = () => {
                                             type="text"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                             defaultValue={editProduct.brand}
+                                            name='brand'
+                                            value={editFormData.brand}
+                                            onChange={handleEditChange}
                                         />
                                     </div>
 
@@ -485,6 +701,9 @@ const Inventory = () => {
                                                 type="text"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                                 defaultValue={editProduct.spec1}
+                                                name='spec1'
+                                                value={editFormData.spec1}
+                                                onChange={handleEditChange}
                                             />
                                         </div>
                                         <div>
@@ -495,6 +714,9 @@ const Inventory = () => {
                                                 type="text"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                                 defaultValue={editProduct.spec2}
+                                                name='spec2'
+                                                value={editFormData.spec2}
+                                                onChange={handleEditChange}
                                             />
                                         </div>
                                     </div>
@@ -508,6 +730,9 @@ const Inventory = () => {
                                             type="text"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                             defaultValue={editProduct.weight}
+                                            name='weight'
+                                            value={editFormData.weight}
+                                            onChange={handleEditChange}
                                         />
                                     </div>
 
@@ -519,6 +744,9 @@ const Inventory = () => {
                                         <select
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
                                             defaultValue={editProduct.type || ''}
+                                            name='type'
+                                            value={editFormData.type}
+                                            onChange={handleEditChange}
                                         >
                                             <option value="">Not Applicable</option>
                                             {types.map((type) => (
@@ -534,7 +762,7 @@ const Inventory = () => {
                                         </label>
                                         <div className="flex items-center space-x-4">
                                             <img
-                                                src={editProduct.image}
+                                                src={editProduct.image ? editProduct.image : null}
                                                 alt={editProduct.name}
                                                 className="h-20 w-20 rounded-md object-cover border border-gray-300"
                                             />
@@ -543,7 +771,10 @@ const Inventory = () => {
                                                     <div className="flex text-sm text-gray-600">
                                                         <label className="relative cursor-pointer bg-white rounded-md font-medium text-[#ff6900] hover:text-[#e55e00]">
                                                             <span>Upload a new image</span>
-                                                            <input type="file" className="sr-only" />
+                                                            <input type="file" className="sr-only"
+                                                                name="image"
+                                                                onChange={handleEditChange}
+                                                            />
                                                         </label>
                                                     </div>
                                                 </div>
@@ -562,9 +793,16 @@ const Inventory = () => {
                                         </button>
                                         <button
                                             type="submit"
-                                            className="px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
+                                            className="flex flex-row px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
+                                            onClick={handleEditSubmit}
+                                            disabled={uploading || loading}
                                         >
-                                            Save Changes
+                                            {uploading || loading ? (
+                                                <>
+                                                    <Loader2 className='animate-spin text-white' />
+                                                    <span className="ml-2">Updating...</span>
+                                                </>
+                                            ) : 'Update Product'}
                                         </button>
                                     </div>
                                 </form>
