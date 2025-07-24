@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
+import { useUsers } from '../../hooks/useUser';
 
 function UserManagement() {
   const navigate = useNavigate();
@@ -13,9 +14,20 @@ function UserManagement() {
     { name: 'Raymundo Pallera', role: 'KUPAL', email: 'rassengan@gmail.com' },
   ];
 
+  const {
+    users,
+    loading,
+    error,
+    loadUsers,
+    editUser,
+    removeUser
+  } = useUsers();
+
+  console.log('Users:', users);
+
   const [accounts, setAccounts] = useState(initialAccounts);
 
-  const filteredAccounts = accounts.filter(account => 
+  const filteredAccounts = accounts.filter(account =>
     account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     account.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -31,14 +43,14 @@ function UserManagement() {
 
   return (
     <AdminLayout>
-    <div className="flex min-h-screen bg-white">  
-      <div className="flex-1 p-4">
-        <div className="bg-white shadow-xl rounded-lg w-full p-4">
-        <label className="text-orange-500 text-bold text-2xl mb-4">
-          <h1>Staffs and Customers</h1>
-          </label>
-          <div className='flex flex-row gap-4 mb-6'>
-              <input 
+      <div className="flex min-h-screen bg-white">
+        <div className="flex-1 p-4">
+          <div className="bg-white shadow-xl rounded-lg w-full p-4">
+            <label className="text-orange-500 text-bold text-2xl mb-4">
+              <h1>Staffs and Customers</h1>
+            </label>
+            <div className='flex flex-row gap-4 mb-6'>
+              <input
                 type='text'
                 placeholder='Search...'
                 className="border-1 w-[300px] h-10 rounded-lg p-2"
@@ -46,46 +58,46 @@ function UserManagement() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <select className='p-1 border-1 rounded-lg'>
-                  <option value="">All Roles</option>
+                <option value="">All Roles</option>
               </select>
-          </div>
-          
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="bg-black text-orange-400">
-                  <th className="py-3 px-4 font-semibold">Name</th>
-                  <th className="py-3 px-4 font-semibold">Role</th>
-                  <th className="py-3 px-4 font-semibold">Email</th>
-                  <th className="py-3 px-4 font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAccounts.map((account, index) => (
-                  <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
-                    <td className="py-3 px-4">{account.name}</td>
-                    <td className="py-3 px-4">{account.role}</td>
-                    <td className="py-3 px-4">{account.email}</td>
-                    <td className="py-3 px-4">
-                      <select 
-                         className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
-                        onChange={(e) => handleActionChange(account, e.target.value)}
-                        defaultValue=""
-                      >
-                        <option value="" disabled className='font-bold'>Active</option>
-                        <option value="edit" className='font-bold'>Edit</option>
-                        <option value="delete" className='font-bold'>Delete</option>
-                      </select>
-                    </td>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="bg-black text-orange-400">
+                    <th className="py-3 px-4 font-semibold">Name</th>
+                    <th className="py-3 px-4 font-semibold">Role</th>
+                    <th className="py-3 px-4 font-semibold">Email</th>
+                    <th className="py-3 px-4 font-semibold">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredAccounts.map((account, index) => (
+                    <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
+                      <td className="py-3 px-4">{account.name}</td>
+                      <td className="py-3 px-4">{account.role}</td>
+                      <td className="py-3 px-4">{account.email}</td>
+                      <td className="py-3 px-4">
+                        <select
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                          onChange={(e) => handleActionChange(account, e.target.value)}
+                          defaultValue=""
+                        >
+                          <option value="" disabled className='font-bold'>Active</option>
+                          <option value="edit" className='font-bold'>Edit</option>
+                          <option value="delete" className='font-bold'>Delete</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </AdminLayout>
   );
 }

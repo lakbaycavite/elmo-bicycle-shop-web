@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CircleUser, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
-
-{/* Mama mo blue */}
-
+import { useUsers } from '../../hooks/useUser';
+import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 function AccountManage() {
+  const { users, loading, error, changeRole } = useUsers();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [accounts, setAccounts] = useState([]);
   const [newAccount, setNewAccount] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     role: 'customer',
     password: ''
@@ -20,26 +23,53 @@ function AccountManage() {
     confirmPassword: ''
   });
 
-  const initialAccounts = [
-    { name: 'Lance Ballicud', role: 'customer', email: 'ballicudlance@yahoo.com', dateCreated: '7/15/2025' },
-    { name: 'Gabriel Lopez', role: 'kupal', email: 'tenz123@gmail.com', dateCreated: '7/18/2025' },
-    { name: 'Basil Santiago', role: 'kupal', email: 'wtf123@gmail.com', dateCreated: '7/21/2025' },
-    { name: 'Jerick Nucasa', role: 'customer', email: 'rassengan@gmail.com', dateCreated: '7/19/2025' },
-  ];
+  // Update accounts when users data changes
+  useEffect(() => {
+    if (users && users.length > 0) {
+      setAccounts(users);
+    }
+  }, [users]);
+  // Filter accounts based on available fields
+  const filteredAccounts = accounts.filter(account => {
+    const searchFields = [
+      account.firstName || '',
+      account.lastName || '',
+      account.displayName || '',
+      account.email || '',
+      account.role || ''
+    ].map(field => field.toLowerCase());
 
-  const [accounts, setAccounts] = useState(initialAccounts);
+    return searchFields.some(field => field.includes(searchTerm.toLowerCase()));
+  });
 
-  const filteredAccounts = accounts.filter(account => 
-    account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleActionChange = (account, action) => {
+  const handleActionChange = async (account, action) => {
     if (action === 'delete') {
-      setAccounts(accounts.filter(acc => acc.email !== account.email));
+      // Implement delete functionality
+      console.log(`Deleting account: ${account.email}`);
+      // You'll need to add a deleteUser function to your services
     } else if (action === 'edit') {
-      console.log(`Editing account: ${account.name}`);
+      console.log(`Editing account: ${account.email}`);
+    } else if (action === 'make-admin') {
+      try {
+        await changeRole(account.uid || account.id, 'admin');
+        alert(`${account.email} is now an admin`);
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    } else if (action === 'make-staff') {
+      try {
+        await changeRole(account.uid || account.id, 'staff');
+        alert(`${account.email} is now a staff member`);
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    } else if (action === 'make-customer') {
+      try {
+        await changeRole(account.uid || account.id, 'customer');
+        alert(`${account.email} is now a customer`);
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
     }
   };
 
@@ -59,31 +89,95 @@ function AccountManage() {
     }));
   };
 
-  const handleAddAccountSubmit = (e) => {
+  const handleAddAccountSubmit = async (e) => {
     e.preventDefault();
-    const newAccountWithDate = {
-      ...newAccount,
-      dateCreated: new Date().toLocaleDateString()
-    };
-    setAccounts([...accounts, newAccountWithDate]);
-    setNewAccount({
-      name: '',
-      email: '',
-      role: 'customer',
-      password: ''
-    });
-    setIsAddAccountModalOpen(false);
+    try {
+      // Create user in Firebase Auth
+      await createUserAsAdmin(
+        newAccount.email,
+        newAccount.password,
+        {
+          ...newAccount,
+        },
+      );
+
+      alert('Account created successfully!');
+      setNewAccount({
+        firstName: '',
+        lastName: '',
+        email: '',
+        role: 'customer',
+        password: ''
+      });
+      setIsAddAccountModalOpen(false);
+    } catch (error) {
+      alert(`Error creating account: ${error.message}`);
+      console.error("Error creating account:", error);
+    }
   };
 
-  const handleChangePasswordSubmit = (e) => {
+  // Helper function to format user name
+  const formatUserName = (user) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user.displayName) {
+      return user.displayName;
+    } else {
+      return user.email || 'Unknown User';
+    }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return dateString;
+    }
+  };
+
+  if (loading && accounts.length === 0) return (
+    <AdminLayout>
+      <div className="flex min-h-screen bg-white justify-center items-center">
+        <div className="text-xl">Loading accounts...</div>
+      </div>
+    </AdminLayout>
+  );
+
+  if (error) return (
+    <AdminLayout>
+      <div className="flex min-h-screen bg-white justify-center items-center">
+        <div className="text-xl text-red-500">Error: {error}</div>
+      </div>
+    </AdminLayout>
+  );
+
+  const handleChangePassword = async (e) => {
     e.preventDefault();
-    console.log('Password change submitted:', passwordData);
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    setIsChangePasswordModalOpen(false);
+    setIsChangePasswordModalOpen(true);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New password and confirm password do not match.");
+      return;
+    } else {
+      await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+        .then(() => {
+          alert('Password changed successfully!');
+          setPasswordData({
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
+          setIsChangePasswordModalOpen(false);
+        })
+        .catch(() => {
+          alert(`New password and confirm password do not match or wrong current password`);
+        });
+    }
   };
 
   return (
@@ -94,7 +188,7 @@ function AccountManage() {
           <div className="bg-orange-500 w-full py-4 px-6">
             <h1 className="text-white text-3xl font-bold">Admin Profile</h1>
           </div>
-          
+
           <div className="flex items-center justify-between w-full mx-auto mt-8 bg-white shadow-xl p-6 rounded-lg mb-10">
             <div className="flex items-center space-x-6">
               <CircleUser className="h-20 w-20 text-purple-800 bg-gray-200 rounded-full p-2" />
@@ -108,31 +202,33 @@ function AccountManage() {
                 </button>
               </div>
             </div>
-            
+
             <button
-              onClick={() => setIsChangePasswordModalOpen(true)}
+              onClick={
+                () => setIsChangePasswordModalOpen(true)
+              }
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded">
               Change Password
             </button>
           </div>
-          
+
           <div className="bg-white shadow-xl rounded-lg w-full p-4">
             <label className="text-orange-500 text-bold text-2xl mb-4">
               <h1>Account Management</h1>
             </label>
             <div className='flex flex-row gap-4 mb-6'>
-                <input 
-                  type='text'
-                  placeholder='Search...'
-                  className="border-1 w-[300px] h-10 rounded-lg p-2"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <select className='p-1 border-1 rounded-lg'>
-                    <option value="">Sort/Filter</option>
-                </select>
+              <input
+                type='text'
+                placeholder='Search...'
+                className="border-1 w-[300px] h-10 rounded-lg p-2"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select className='p-1 border-1 rounded-lg'>
+                <option value="">Sort/Filter</option>
+              </select>
             </div>
-            
+
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
@@ -146,25 +242,36 @@ function AccountManage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAccounts.map((account, index) => (
-                    <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
-                      <td className="py-3 px-4">{account.name}</td>
-                      <td className="py-3 px-4">{account.role}</td>
-                      <td className="py-3 px-4">{account.email}</td>
-                      <td className="py-3 px-4">{account.dateCreated}</td>
-                      <td className="py-3 px-4">
-                        <select 
-                          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
-                          onChange={(e) => handleActionChange(account, e.target.value)}
-                          defaultValue=""
-                        >
-                          <option value="" disabled className='font-bold'>Action</option>
-                          <option value="edit" className='font-bold'>Edit</option>
-                          <option value="delete" className='font-bold'>Delete</option>
-                        </select>
+                  {filteredAccounts.length > 0 ? (
+                    filteredAccounts.map((account, index) => (
+                      <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
+                        <td className="py-3 px-4">{formatUserName(account)}</td>
+                        <td className="py-3 px-4">{account.role || 'customer'}</td>
+                        <td className="py-3 px-4">{account.email}</td>
+                        <td className="py-3 px-4">{formatDate(account.dateCreated || account.createdAt)}</td>
+                        <td className="py-3 px-4">
+                          <select
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                            onChange={(e) => handleActionChange(account, e.target.value)}
+                            defaultValue=""
+                          >
+                            <option value="" disabled className='font-bold'>Action</option>
+                            <option value="edit" className='font-bold'>Edit</option>
+                            <option value="delete" className='font-bold'>Delete</option>
+                            <option value="make-admin" className='font-bold'>Make Admin</option>
+                            <option value="make-staff" className='font-bold'>Make Staff</option>
+                            <option value="make-customer" className='font-bold'>Make Customer</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr className="bg-gray-800 text-white">
+                      <td colSpan="5" className="py-4 px-4 text-center">
+                        No accounts found. {loading ? 'Loading...' : 'Add an account to get started.'}
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -176,27 +283,39 @@ function AccountManage() {
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-orange-500">Add New Account</h2>
-                  <button 
+                  <button
                     onClick={() => setIsAddAccountModalOpen(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     <X className="h-6 w-6" />
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleAddAccountSubmit}>
                   <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Name</label>
+                    <label className="block text-gray-700 mb-2">First Name</label>
                     <input
                       type="text"
-                      name="name"
-                      value={newAccount.name}
+                      name="firstName"
+                      value={newAccount.firstName}
                       onChange={handleAccountInputChange}
                       className="w-full p-2 border rounded"
                       required
                     />
                   </div>
-                  
+
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={newAccount.lastName}
+                      onChange={handleAccountInputChange}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">Email</label>
                     <input
@@ -208,7 +327,7 @@ function AccountManage() {
                       required
                     />
                   </div>
-                  
+
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">Role</label>
                     <select
@@ -218,11 +337,11 @@ function AccountManage() {
                       className="w-full p-2 border rounded"
                     >
                       <option value="customer">Customer</option>
-                      <option value="kupal">Kupal</option>
+                      <option value="staff">Staff</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
-                  
+
                   <div className="mb-6">
                     <label className="block text-gray-700 mb-2">Password</label>
                     <input
@@ -234,7 +353,7 @@ function AccountManage() {
                       required
                     />
                   </div>
-                  
+
                   <div className="flex justify-end space-x-3">
                     <button
                       type="button"
@@ -261,15 +380,15 @@ function AccountManage() {
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-orange-500">Change Password</h2>
-                  <button 
+                  <button
                     onClick={() => setIsChangePasswordModalOpen(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     <X className="h-6 w-6" />
                   </button>
                 </div>
-                
-                <form onSubmit={handleChangePasswordSubmit}>
+
+                <form onSubmit={handleChangePassword}>
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">Current Password</label>
                     <input
@@ -281,7 +400,7 @@ function AccountManage() {
                       required
                     />
                   </div>
-                  
+
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">New Password</label>
                     <input
@@ -293,7 +412,7 @@ function AccountManage() {
                       required
                     />
                   </div>
-                  
+
                   <div className="mb-6">
                     <label className="block text-gray-700 mb-2">Confirm New Password</label>
                     <input
@@ -305,7 +424,7 @@ function AccountManage() {
                       required
                     />
                   </div>
-                  
+
                   <div className="flex justify-end space-x-3">
                     <button
                       type="button"
@@ -318,7 +437,7 @@ function AccountManage() {
                       type="submit"
                       className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
                     >
-                      Change Password
+                      Save Change
                     </button>
                   </div>
                 </form>
