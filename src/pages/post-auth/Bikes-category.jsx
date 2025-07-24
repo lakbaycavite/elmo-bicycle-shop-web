@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProduct';
+import { useCart } from '../../hooks/useCart';
 
 
 
@@ -48,7 +49,7 @@ const ThemeStyles = () => (
 
 
 
-const BikeCard = ({ bike }) => (
+const BikeCard = ({ bike, onAddToCart }) => (
   <div className="col">
     <div className="card h-100 shadow-sm" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
       <img src={bike.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={bike.name} />
@@ -70,7 +71,7 @@ const BikeCard = ({ bike }) => (
         </div>
 
         <div className="d-flex gap-2">
-          <button className="btn btn-add-to-cart w-100">Add to Cart</button>
+          <button className="btn btn-add-to-cart w-100" onClick={() => onAddToCart(bike)}>Add to Cart</button>
           <button className="btn btn-details w-100">Details</button>
         </div>
       </div>
@@ -92,7 +93,7 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   );
 };
 
-const BikeListings = ({ bikes, searchTerm, onSearchChange }) => {
+const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart }) => {
   const navigate = useNavigate();
   return (
 
@@ -124,7 +125,7 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange }) => {
       </div>
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {bikes.length > 0 ? (
-          bikes.map(bike => <BikeCard key={bike.id} bike={bike} />)
+          bikes.map(bike => <BikeCard key={bike.id} bike={bike} onAddToCart={onAddToCart} />)
         ) : (
           <div className="col">
             <p style={{ color: 'var(--text-secondary)' }}>No bikes match your criteria.</p>
@@ -145,6 +146,7 @@ const BikesCategory = () => {
 
   // Get products from your hook
   const { products, loading: productsLoading } = useProducts();
+  const { addToCart } = useCart();
 
   // Get cart functionality from your hook
   // const { addToCart } = useCart();
@@ -196,6 +198,22 @@ const BikesCategory = () => {
       return typeMatch && searchMatch;
     });
   }, [bikes, selectedTypes, searchTerm]);
+
+  const handleAddToCart = async (bike) => {
+    try {
+      // Add product to cart with quantity 1
+      await addToCart(bike.id, 1, {
+        ...bike, // Spread the bike details
+      });
+
+      // Show success message
+      // toast.success(`${bike.brand} ${bike.model} added to cart!`);
+      window.alert(`${bike.brand} added to cart!`);
+    } catch (error) {
+      // toast.error(`Error adding to cart: ${error.message}`);
+      window.alert(`Error adding to cart: ${error.message}`);
+    }
+  };
 
   return (
     <>
@@ -259,7 +277,7 @@ const BikesCategory = () => {
           )}
         </div>
         <div style={{ marginLeft: isSidebarCollapsed ? '100px' : '280px', transition: 'margin-left 0.3s ease' }}>
-          <BikeListings bikes={filteredBikes} searchTerm={searchTerm} onSearchChange={handleSearchChange} />
+          <BikeListings bikes={filteredBikes} searchTerm={searchTerm} onSearchChange={handleSearchChange} onAddToCart={handleAddToCart} />
         </div>
       </div>
     </>

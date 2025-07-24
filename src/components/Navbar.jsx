@@ -6,10 +6,13 @@ import SearchBar from './SearchBar';
 import AuthButtons from './AuthButtons';
 import Drawer from './Drawer';
 import { doSignOut } from '../firebase/auth';
+import { useCart } from '../hooks/useCart';
 
 function Navbar({ isLoggedIn = false }) {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const { itemCount } = useCart()
 
   // Close drawer when screen size becomes large
   useEffect(() => {
@@ -77,7 +80,7 @@ function Navbar({ isLoggedIn = false }) {
                 >
                   <ShoppingCart size={24} />
                   <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    1
+                    {itemCount}
                   </span>
                 </button>
                 <button

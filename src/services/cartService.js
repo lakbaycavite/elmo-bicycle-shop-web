@@ -18,9 +18,9 @@ const getCurrentFormattedTime = () => {
 export const addToCart = async (productId, quantity = 1, productDetails = {}) => {
     try {
         const user = auth.currentUser;
-        if (user.role === "admin" || user.role === null || user.role === undefined) {
-            throw new Error("Admins cannot add items to cart");
-        }
+        // if (user.role === "admin" || user.role === null || user.role === undefined) {
+        //     throw new Error("Admins cannot add items to cart");
+        // }
         if (!user) throw new Error("User must be logged in to add to cart");
 
         const db = getDatabase();
