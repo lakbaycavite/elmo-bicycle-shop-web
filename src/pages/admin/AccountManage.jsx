@@ -2,12 +2,9 @@ import { useState, useEffect } from 'react';
 import { CircleUser, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
-import { createUserAsAdmin } from '../../firebase/auth';
-import { useAuth } from '../../context/authContext/createAuthContext';
-
+import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 function AccountManage() {
   const { users, loading, error, changeRole } = useUsers();
-  const { currentUser } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
@@ -96,24 +93,13 @@ function AccountManage() {
     e.preventDefault();
     try {
       // Create user in Firebase Auth
-      const userCredential = await createUserAsAdmin(
+      await createUserAsAdmin(
         newAccount.email,
         newAccount.password,
         {
           ...newAccount,
         },
       );
-
-      console.log('User created:', JSON.stringify(userCredential));
-
-      // Save additional user data to database
-      // await saveUserToDatabase(userCredential.user, {
-      //   firstName: newAccount.firstName,
-      //   lastName: newAccount.lastName,
-      //   displayName: `${newAccount.firstName} ${newAccount.lastName}`,
-      //   role: newAccount.role,
-      //   dateCreated: new Date().toISOString()
-      // });
 
       alert('Account created successfully!');
       setNewAccount({
@@ -128,18 +114,6 @@ function AccountManage() {
       alert(`Error creating account: ${error.message}`);
       console.error("Error creating account:", error);
     }
-  };
-
-  const handleChangePasswordSubmit = (e) => {
-    e.preventDefault();
-    console.log('Password change submitted:', passwordData);
-    // Implement actual password change logic here
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    setIsChangePasswordModalOpen(false);
   };
 
   // Helper function to format user name
@@ -161,6 +135,7 @@ function AccountManage() {
       const date = new Date(dateString);
       return date.toLocaleDateString();
     } catch (e) {
+      console.error("Error formatting date:", e);
       return dateString;
     }
   };
@@ -180,6 +155,30 @@ function AccountManage() {
       </div>
     </AdminLayout>
   );
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setIsChangePasswordModalOpen(true);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New password and confirm password do not match.");
+      return;
+    } else {
+      await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+        .then(() => {
+          alert('Password changed successfully!');
+          setPasswordData({
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
+          setIsChangePasswordModalOpen(false);
+        })
+        .catch(() => {
+          alert(`New password and confirm password do not match or wrong current password`);
+        });
+    }
+  };
 
   return (
     <AdminLayout>
@@ -205,7 +204,9 @@ function AccountManage() {
             </div>
 
             <button
-              onClick={() => setIsChangePasswordModalOpen(true)}
+              onClick={
+                () => setIsChangePasswordModalOpen(true)
+              }
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded">
               Change Password
             </button>
@@ -387,7 +388,7 @@ function AccountManage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleChangePasswordSubmit}>
+                <form onSubmit={handleChangePassword}>
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">Current Password</label>
                     <input
@@ -436,7 +437,7 @@ function AccountManage() {
                       type="submit"
                       className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
                     >
-                      Change Password
+                      Save Change
                     </button>
                   </div>
                 </form>
