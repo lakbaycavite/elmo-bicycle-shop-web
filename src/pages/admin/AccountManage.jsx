@@ -4,7 +4,7 @@ import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 function AccountManage() {
-  const { users, loading, error, changeRole } = useUsers();
+  const { users, loading, error, changeRole, removeUser, editUser } = useUsers();
 
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,8 +53,14 @@ function AccountManage() {
   const handleActionChange = async (account, action) => {
     if (action === 'delete') {
       // Implement delete functionality
-      console.log(`Deleting account: ${account.email}`);
-      // You'll need to add a deleteUser function to your services
+      if (confirm("Are you sure you want to delete this account?")) {
+        try {
+          await removeUser(account.id);
+          alert("Account deleted successfully!");
+        } catch (error) {
+          alert(`Error deleting account: ${error.message}`);
+        }
+      }
     } else if (action === 'edit') {
       console.log(`Editing account: ${account.email}`);
     } else if (action === 'make-admin') {
@@ -186,6 +192,8 @@ function AccountManage() {
           alert(`New password and confirm password do not match or wrong current password`);
         });
     }
+
+
   };
 
   return (
