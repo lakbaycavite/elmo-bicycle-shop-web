@@ -1,10 +1,28 @@
 import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updatePassword } from "firebase/auth";
 import { auth } from "./firebase";
+import { getDatabase, ref, set } from "firebase/database";
 
-export const doCreateUserWithEmailAndPassword = async (email, password) => {
-    return createUserWithEmailAndPassword(auth, email, password);
+export const doCreateUserWithEmailAndPassword = async (email, password, userData = {}) => {
+    try {
+        // Create the user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Save user data to Realtime Database
+        const db = getDatabase();
+        await set(ref(db, 'customers/' + user.uid), {
+            email: user.email,
+            createdAt: new Date().toISOString(),
+            // lastLogin: new Date().toISOString(),
+            ...userData
+        });
+
+        return userCredential;
+    } catch (error) {
+        console.error("Error creating user:", error);
+        throw error;
+    }
 };
-
 export const doSignInWithEmailAndPassword = async (email, password) => {
     return signInWithEmailAndPassword(auth, email, password);
 }
