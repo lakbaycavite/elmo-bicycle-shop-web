@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar'
+import BikesCategory from './post-auth/Bikes-category';
 import { useAuth } from '../context/authContext/createAuthContext';
 
 function HomePage() {
@@ -100,7 +101,9 @@ function HomePage() {
             <div className="w-full text-center">
               <h3 className="text-black font-semibold text-base mb-2 uppercase">Bicycles</h3>
               <p className="text-gray-700 text-sm mb-4">Close-out pricing on dozens of products</p>
-              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Discover More</button>
+
+              <a href='/customer/bikes-category' className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded"> Discover More</a>
+              
             </div>
           </div>
           {/* Right: Accessories and Gears & Parts */}

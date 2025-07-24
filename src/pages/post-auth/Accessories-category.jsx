@@ -1,9 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-
-
-
 const theme = {
     primaryAccent: '#ff8c00',  
     secondaryButton: '#6c757d', 
@@ -15,37 +12,34 @@ const theme = {
     borderColor: '#444444',       
 };
 
-
-
-const bikeNames = [
-    "Road Bike", "Mountain Bike", "Hybrid Bike", "Gravel Bike", "Touring Bike", "BMX Bike",
-    "Cyclocross Bike", "Folding Bike", "Electric Bike (E-Bike)", "Cruiser Bike",
-    "Fat Bike", "Fixed Gear Bike (Fixie)", "Track Bike", "Recumbent Bike",
-    "Tandem Bike", "Cargo Bike", "Commuter Bike", "Time Trial Bike",
-    "Triathlon Bike", "Kids Bike"
+const accessoriesNames = [
+    'Helmet', 'Bike Lock', 'Lights (Front/Rear)', 'Bell or Horn', 'Water Bottle', 'Water Bottle Cage', 'Bike Pump',
+        'Saddle Bag', 'Phone Mount', 'Bike Computer', 'Mirror', 'Kickstand', 'Mudguards/Fenders', 'Panniers',
+        'Handlebar Grips/Tape', 'Chain Lube', 'Multi-tool', 'Tire Levers', 'Spare Tube', 'Patch Kit', 'Cycling Gloves',
+        'Cycling Glasses', 'Bike Rack (for car or storage)', 'Frame Bag', 'Bike Cover'
 ];
 
 
-const bikes = bikeNames.map((name, index) => {
+const bikes = accessoriesNames.map((name, index) => {
     const isRoadBike = name === "Road Bike";
     return {
         id: index + 1,
         name: name,
-        brand: isRoadBike ? "Twitter" : "Generic",
+        brand: isRoadBike ? "Foxter" : "Helmet",
         model: isRoadBike ? "R10" : `X${index + 1}`,
         description: isRoadBike ? "Twitter Road Bike" : `High-quality ${name}`,
         price: isRoadBike ? 39900 : 20000 + (index * 1500),
-        tags: ["Bikes"],
-        image: `/images/bike.png`
+        tags: ["Accessories"],
+        image: `/images/bikehelmet1.png`
     };
 });
 
-const bikeTypes = bikes.map(bike => bike.name);
+const accessoriesTypes = bikes.map(bike => bike.name);
 
 
 
 const BikeIcon = () => (
-    <i class="bi bi-bicycle"></i>
+    <i class="bi bi-tools"></i>
 );
 
 const HeartIcon = () => (
@@ -131,7 +125,7 @@ const Sidebar = ({ selectedCategories, onToggleCategory }) => (
     <hr style={{ borderColor: 'var(--border-color)' }} />
     <h3 className="fs-5 mb-3">Filter by Type</h3>
     <div className="d-flex flex-wrap gap-2">
-      {bikeTypes.map(bikeType => (
+      {accessoriesTypes.map(bikeType => (
         <FilterCheckbox key={bikeType} category={bikeType} isSelected={selectedCategories.includes(bikeType)} onToggle={onToggleCategory} />
       ))}
     </div>
@@ -143,8 +137,8 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange }) => {
 return (
   
   <main className="p-4" style={{ color: 'var(--text-primary)' }}>
-    <h1 style={{ color: 'var(--primary-accent)' }}>Bike Listings</h1>
-    <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality bikes</p>
+    <h1 style={{ color: 'var(--primary-accent)' }}>Accessories Listings</h1>
+    <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality accessories</p>
     <hr style={{ borderColor: 'var(--border-color)' }}/>
     <div className="row mb-4 align-items-center">
       <div className="col-md-8 col-lg-6">
@@ -163,8 +157,8 @@ return (
         </form>
       </div>
       <div className="col-md-4 col-lg-6 text-md-end mt-2 mt-md-0">
-          <button className="btn btn-secondary" type="button" onClick={() => navigate('/customer/accessories-category')}><i class="bi bi-tools"></i>
-            Accessories
+          <button className="btn btn-secondary" type="button" onClick={() => navigate('/customer/bikes-category')}><i class="bi bi-bicycle"></i>
+            Bikes
           </button>
       </div>
     </div>
@@ -183,7 +177,7 @@ return (
 
 
 
-const BikesCategory = () => {
+const AccessoriesCategory = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -266,7 +260,7 @@ const BikesCategory = () => {
               <hr style={{ borderColor: 'var(--border-color)' }} />
               <h3 className="fs-5 mb-3">Filter by Type</h3>
               <div className="d-flex flex-wrap gap-2">
-                {bikeTypes.map(bikeType => (
+                {accessoriesTypes.map(bikeType => (
                   <FilterCheckbox key={bikeType} category={bikeType} isSelected={selectedCategories.includes(bikeType)} onToggle={toggleCategory} />
                 ))}
               </div>
@@ -281,4 +275,4 @@ const BikesCategory = () => {
   );
 };
 
-export default BikesCategory;
+export default AccessoriesCategory;

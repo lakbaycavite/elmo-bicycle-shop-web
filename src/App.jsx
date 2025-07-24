@@ -5,12 +5,14 @@ import 'react-phone-number-input/style.css';
 import Login from './pages/pre-auth/Login'
 import Signup from './pages/pre-auth/Signup'
 
+
 // Unified HomePage component
 import HomePage from './pages/HomePage'
 
 // Post-auth pages
 import Products from './pages/post-auth/Products'
 import BikesCategory from './pages/post-auth/Bikes-category'
+import AccessoriesCategory from './pages/post-auth/Accessories-category'
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -44,6 +46,7 @@ function App() {
           {/* Post-auth routes */}
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/bikes-category" element={<BikesCategory />} />
+          <Route path="/customer/accessories-category" element={<AccessoriesCategory />} />
           <Route path="/customer/wishlist" element={<Wishlist />} />
           <Route path="/customer/profile" element={<CustomerProfile />} />
 
