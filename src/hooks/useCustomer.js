@@ -6,7 +6,8 @@ import {
     updateCustomer,
     deleteCustomer,
     searchCustomersByField,
-    subscribeToCustomers
+    subscribeToCustomers,
+    changeUserRoleById
 } from "../services/customerService";
 
 export const useCustomers = (initialCustomerId = null) => {
@@ -22,6 +23,7 @@ export const useCustomers = (initialCustomerId = null) => {
         try {
             const data = await getAllCustomers();
             setCustomers(data);
+            console.log('Loaded customers:', data);
             return data;
         } catch (err) {
             setError(err.message);
@@ -50,20 +52,26 @@ export const useCustomers = (initialCustomerId = null) => {
     }, []);
 
     // Add a new customer
-    const addCustomer = useCallback(async (customerData) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const newCustomer = await createCustomer(customerData);
-            setCustomers(prev => [...prev, newCustomer]);
-            return newCustomer;
-        } catch (err) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // if adding a new customer, use the doCreateUserWithEmailAndPassword function from auth.js
+
+
+
+    // disregard this function as it is not used in the current context
+    //
+    // const addCustomer = useCallback(async (customerData) => {
+    //     setLoading(true);
+    //     setError(null);
+    //     try {
+    //         const newCustomer = await createCustomer(customerData);
+    //         setCustomers(prev => [...prev, newCustomer]);
+    //         return newCustomer;
+    //     } catch (err) {
+    //         setError(err.message);
+    //         throw err;
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }, []);
 
     // Update a customer
     const editCustomer = useCallback(async (id, customerData) => {
@@ -120,6 +128,30 @@ export const useCustomers = (initialCustomerId = null) => {
         }
     }, []);
 
+    const changeRole = useCallback(async (userId, newRole) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const result = await changeUserRoleById(userId, newRole);
+
+            // Update the local state if we have customers loaded
+            if (customers.length > 0) {
+                setCustomers(prevCustomers =>
+                    prevCustomers.map(customer =>
+                        customer.id === userId ? { ...customer, role: newRole } : customer
+                    )
+                );
+            }
+
+            return result;
+        } catch (err) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [customers]);
+
     // Real-time updates
     useEffect(() => {
         const unsubscribe = subscribeToCustomers((data) => {
@@ -144,6 +176,10 @@ export const useCustomers = (initialCustomerId = null) => {
         }
     }, [initialCustomerId, loadCustomer]);
 
+    useEffect(() => {
+        loadCustomers();
+    }, [loadCustomers]);
+
     return {
         customers,
         customer,
@@ -151,9 +187,10 @@ export const useCustomers = (initialCustomerId = null) => {
         error,
         loadCustomers,
         loadCustomer,
-        addCustomer,
+        // addCustomer,
         editCustomer,
         removeCustomer,
-        searchCustomers
+        searchCustomers,
+        changeRole
     };
 };

@@ -3,7 +3,7 @@ import { auth } from "../firebase/firebase";
 import { database } from '../firebase/firebase';
 
 
-const customersRef = ref(database, "customers");
+const customersRef = ref(database, "users");
 
 // Create a new customer
 export const createCustomer = async (customerData) => {
@@ -120,6 +120,45 @@ export const searchCustomersByField = async (field, value) => {
         throw error;
     }
 };
+
+export const changeUserRoleById = async (userId, newRole) => {
+    // Validate the role parameter
+    if (!["customer", "staff", "admin"].includes(newRole)) {
+        throw new Error("Invalid role. Role must be 'customer', 'staff', or 'admin'");
+    }
+
+    try {
+        const userRef = ref(database, `users/${userId}`);
+
+        // First check if the user exists
+        const snapshot = await get(userRef);
+        if (!snapshot.exists()) {
+            throw new Error(`User with ID ${userId} not found`);
+        }
+
+        // Format current date as YYYY-MM-DD HH:MM:SS
+        const now = new Date();
+        const formattedDate = now.toISOString();
+
+        // Update the user's role
+        await update(userRef, {
+            role: newRole,
+            updatedAt: formattedDate,
+            updatedBy: "lanceballicud"
+        });
+
+        return {
+            success: true,
+            message: `User ${userId} role changed to ${newRole}`,
+            userId,
+            newRole
+        };
+    } catch (error) {
+        console.error("Error changing user role:", error);
+        throw error;
+    }
+}
+
 
 // Real-time customers listener
 export const subscribeToCustomers = (callback) => {

@@ -10,9 +10,10 @@ export const doCreateUserWithEmailAndPassword = async (email, password, userData
 
         // Save user data to Realtime Database
         const db = getDatabase();
-        await set(ref(db, 'customers/' + user.uid), {
+        await set(ref(db, 'users/' + user.uid), {
             email: user.email,
             createdAt: new Date().toISOString(),
+            role: userData.role || 'customer',
             // lastLogin: new Date().toISOString(),
             ...userData
         });
@@ -29,7 +30,7 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
 
 export const doSignOut = async () => {
     return auth.signOut();
-}
+};
 
 // Extras
 
