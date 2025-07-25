@@ -7,6 +7,7 @@ import {
     removeFromCart as removeItemService,
     clearCart as clearCartService
 } from '../services/cartService'
+import Cart from '../pages/post-auth/Cart';
 
 export function useCart() {
     const [cart, setCart] = useState([]);
@@ -58,6 +59,7 @@ export function useCart() {
             setError(err.message);
             setLoading(false);
         });
+
 
         // Clean up subscription
         return () => unsubscribe();
@@ -119,6 +121,10 @@ export function useCart() {
 
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }, []);
+
+    useEffect(() => {
+
+    })
 
     return {
         cart,

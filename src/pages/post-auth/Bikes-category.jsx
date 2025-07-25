@@ -148,9 +148,6 @@ const BikesCategory = () => {
   const { products, loading: productsLoading } = useProducts();
   const { addToCart } = useCart();
 
-  // Get cart functionality from your hook
-  // const { addToCart } = useCart();
-
   // Filter products to only show bikes
   const bikes = useMemo(() => {
     if (!products) return [];
