@@ -19,7 +19,6 @@ import { useUsers } from '../../hooks/useUser';
 import { useOrder } from '../../hooks/useOrder';
 import { doPasswordChange, doSignOut } from '../../firebase/auth';
 import { toast } from 'sonner';
-import { set } from 'firebase/database';
 
 const CustomerProfile = () => {
     const { currentUserData } = useUsers();
