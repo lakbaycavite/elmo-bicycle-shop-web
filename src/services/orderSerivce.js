@@ -38,7 +38,7 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
             userEmail: user.email,
             userName: user.displayName || "User",
             items: cartItems,
-            status: "pending",
+            status: "pending",      
             totalAmount,
             subtotal: orderDetails.subtotal || totalAmount,
             discount: orderDetails.discount || 0,
