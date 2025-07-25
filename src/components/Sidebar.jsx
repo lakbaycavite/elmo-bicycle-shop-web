@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { doSignOut } from '../firebase/auth'
 
 function Sidebar({ userType = "admin" }) {
   const navigate = useNavigate()
@@ -14,6 +15,16 @@ function Sidebar({ userType = "admin" }) {
     { label: 'USER MANAGEMENT', route: '/admin/user-management' },
     { label: 'ACCOUNT MANAGE', route: '/admin/account-manage' },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await doSignOut();
+      console.log("Logout successful");
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   return (
     <div className="w-64 bg-gray-800 text-white p-4">
@@ -46,7 +57,7 @@ function Sidebar({ userType = "admin" }) {
       </nav>
       <div className="mt-8 pt-8 border-t border-gray-700">
         <button
-          onClick={() => navigate('/')} 
+          onClick={handleLogout} 
           className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
         >
           Logout
