@@ -4,8 +4,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { AuthContext } from "./createAuthContext";
 
 
-
-
 export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [userLoggedIn, setUserLoggedIn] = useState(false);

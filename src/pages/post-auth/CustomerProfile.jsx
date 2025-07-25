@@ -13,15 +13,17 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/authContext/createAuthContext';
+import { getUserById } from '../../services/userService';
 
 const CustomerProfile = () => {
+    const { currentUser } = useAuth();
     // Dummy user data
-    const user = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 (555) 123-4567",
-        address: "123 Main Street, Apt 4B, New York, NY 10001",
-        profileImage: "https://randomuser.me/api/portraits/men/44.jpg"
+        const user = {
+        name: currentUser?.firstName || currentUser?.lastName || "User Name",
+        email: currentUser?.email || "user@example.com",
+        phone: currentUser?.phoneNumber, 
+        profileImage: currentUser?.photoURL || "https://randomuser.me/api/portraits/men/44.jpg"
     };
 
     // Dummy transaction data
@@ -122,13 +124,6 @@ const CustomerProfile = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <MapPin className="text-[#ff6900]" size={20} />
-                                    <div>
-                                        <span className="text-gray-400 font-medium">Address:</span>
-                                        <span className="ml-2 text-white">{user.address}</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
