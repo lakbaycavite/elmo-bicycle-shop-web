@@ -4,6 +4,7 @@ import { useProducts } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist'; // Import the wishlist hook
 import { Heart } from 'lucide-react';
+import { toast } from 'sonner';
 
 
 const theme = {
@@ -183,8 +184,6 @@ const BikesCategory = () => {
     );
   }, [products]);
 
-  console.log('Bikes:', bikes);
-
   // Load wishlist when component mounts
   useEffect(() => {
     refreshWishlist();
@@ -216,7 +215,6 @@ const BikesCategory = () => {
   };
 
   const filteredBikes = useMemo(() => {
-    console.log('Filtering bikes with types:', selectedTypes, 'and search term:', searchTerm);
     return bikes.filter(bike => {
       const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(bike.type);
       const searchMatch =
@@ -233,13 +231,12 @@ const BikesCategory = () => {
       // Add product to cart with quantity 1
       await addToCart(bike.id, 1, {
         ...bike, // Spread the bike details
-      });
+      })
 
       // Show success message
-      // toast.success(`${bike.brand} ${bike.model} added to cart!`);
+      toast.success(`${bike.brand} ${bike.model} added to cart!`);
     } catch (error) {
-      // toast.error(`Error adding to cart: ${error.message}`);
-      window.alert(`Error adding to cart: ${error.message}`);
+      toast.error(`Error adding to cart: ${error.message}`);
     }
   };
 
@@ -253,7 +250,10 @@ const BikesCategory = () => {
         // Find the wishlist item id and remove it
         const wishlistItem = wishlist.find(item => item.productId === bike.id);
         if (wishlistItem) {
-          await removeItem(wishlistItem.id);
+          await removeItem(wishlistItem.id)
+            .then(() => {
+              toast.success(`${bike.brand} ${bike.name} removed from wishlist!`);
+            })
         }
       } else {
         // Add the product to wishlist
@@ -266,7 +266,10 @@ const BikesCategory = () => {
           brand: bike.brand,
           type: bike.type,
           description: bike.description || ""
-        });
+        })
+          .then(() => {
+            toast.success(`${bike.brand} ${bike.name} added to wishlist!`);
+          })
       }
 
       // Refresh wishlist after changes
