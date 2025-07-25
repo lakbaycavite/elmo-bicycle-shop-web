@@ -205,7 +205,6 @@ const BikesCategory = () => {
 
       // Show success message
       // toast.success(`${bike.brand} ${bike.model} added to cart!`);
-      window.alert(`${bike.brand} added to cart!`);
     } catch (error) {
       // toast.error(`Error adding to cart: ${error.message}`);
       window.alert(`Error adding to cart: ${error.message}`);

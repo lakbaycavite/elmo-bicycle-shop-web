@@ -8,6 +8,7 @@ import {
     clearCart as clearCartService
 } from '../services/cartService'
 import Cart from '../pages/post-auth/Cart';
+import { toast } from 'sonner';
 
 export function useCart() {
     const [cart, setCart] = useState([]);
@@ -69,6 +70,7 @@ export function useCart() {
     const addToCart = useCallback(async (productId, quantity, productDetails) => {
         try {
             setError(null);
+            toast.success(`Item ${productDetails.name} added to cart successfully!`);
             return await addToCartService(productId, quantity, productDetails);
         } catch (err) {
             setError(err.message);
@@ -91,6 +93,7 @@ export function useCart() {
     const removeItem = useCallback(async (productId) => {
         try {
             setError(null);
+            toast.success(`Item removed from cart successfully!`);
             return await removeItemService(productId);
         } catch (err) {
             setError(err.message);
@@ -102,6 +105,7 @@ export function useCart() {
     const clearCart = useCallback(async () => {
         try {
             setError(null);
+            toast.success(`Cart cleared successfully!`);
             return await clearCartService();
         } catch (err) {
             setError(err.message);

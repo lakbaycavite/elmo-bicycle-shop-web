@@ -28,6 +28,7 @@ import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
 import Inventory from './pages/admin/Inventory';
 import { useAuth } from './context/authContext/createAuthContext';
+import { Toaster } from 'sonner';
 
 function App() {
 
@@ -35,6 +36,14 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
+        <Toaster richColors toastOptions={{
+          style: {
+            fontSize: '1rem',
+            padding: '16px',
+            minHeight: '75px',
+            minWidth: '300px'
+          }
+        }} />
         <Routes>
           {/* Home routes - using unified HomePage component */}
           <Route path="/" element={<HomePage />} />
