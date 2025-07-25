@@ -10,11 +10,16 @@ import {
     Clock,
     Lock,
     LogOut,
-    ArrowLeft
+    ArrowLeft,
+    X,
+    Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../../hooks/useUser';
 import { useOrder } from '../../hooks/useOrder';
+import { doPasswordChange, doSignOut } from '../../firebase/auth';
+import { toast } from 'sonner';
+import { set } from 'firebase/database';
 
 const CustomerProfile = () => {
     const { currentUserData } = useUsers();
@@ -24,6 +29,16 @@ const CustomerProfile = () => {
     useEffect(() => {
         loadUserOrders();
     }, [loadUserOrders]);
+
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    const [loading, setLoading] = useState(false);
+
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -42,6 +57,58 @@ const CustomerProfile = () => {
 
     const email = currentUserData?.email || "Not available";
     const phone = currentUserData?.phone || "Not available";
+
+    const handleLogout = async () => {
+        await doSignOut()
+            .then(() => {
+                toast.success("Logout successful");
+            })
+            .catch((error) => {
+                toast.error("Logout failed");
+                console.error("Logout failed", error);
+            });
+        navigate('/');
+    };
+
+    const handlePasswordInputChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setIsChangePasswordModalOpen(true);
+        setLoading(true);
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error("New password and confirm password do not match.");
+            setLoading(false);
+            return;
+        } else {
+            await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+                .then(() => {
+                    toast.success("Password changed successfully");
+                    setPasswordData({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                    });
+                    setIsChangePasswordModalOpen(false);
+                })
+                .catch(() => {
+                    toast.error("New password and confirm password do not match or wrong current password");
+                })
+                .finally(() => {
+                    setLoading(false);
+                    setIsChangePasswordModalOpen(false);
+                })
+        }
+
+
+    };
 
     if (!currentUserData) {
         return (
@@ -239,17 +306,94 @@ const CustomerProfile = () => {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col md:flex-row gap-4 justify-center pb-10">
-                    <button className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md border border-[#ff6900]">
+                    <button className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md border border-[#ff6900]"
+                        onClick={
+                            () => setIsChangePasswordModalOpen(true)
+                        }>
                         <Lock size={18} className="text-[#ff6900]" />
                         <span>Change Password</span>
                     </button>
 
-                    <button className="flex items-center justify-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white font-semibold py-3 px-6 rounded-md">
+                    <button className="flex items-center justify-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white font-semibold py-3 px-6 rounded-md" onClick={handleLogout}>
                         <LogOut size={18} />
                         <span>Logout</span>
                     </button>
                 </div>
             </div>
+            {isChangePasswordModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-orange-500">Change Password</h2>
+                            <button
+                                onClick={() => setIsChangePasswordModalOpen(false)}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleChangePassword}>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 mb-2">Current Password</label>
+                                <input
+                                    type="password"
+                                    name="currentPassword"
+                                    value={passwordData.currentPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                />
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-gray-700 mb-2">New Password</label>
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    value={passwordData.newPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                />
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-gray-700 mb-2">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={passwordData.confirmPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                />
+                            </div>
+
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsChangePasswordModalOpen(false)}
+                                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className='animate-spin' />
+                                        </>
+                                    ) : "Save Password"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

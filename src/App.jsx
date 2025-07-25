@@ -67,7 +67,7 @@ function App() {
       <div className="min-h-screen bg-gray-50">
         <Toaster richColors toastOptions={{
           style: {
-            fontSize: '1rem',
+            fontSize: '',
             padding: '16px',
             minHeight: '75px',
             minWidth: '300px'
