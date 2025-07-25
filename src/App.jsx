@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import 'react-phone-number-input/style.css';
 
 // Pre-auth pages
@@ -34,18 +34,23 @@ import { useNavigate } from 'react-router-dom';
 function AuthRedirector() {
   const { userLoggedIn, role, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && userLoggedIn && role) {
-      if (role === 'admin') {
-        navigate('/admin/inventory', { replace: true });
-      } else if (role === 'staff') {
-        navigate('/staff/dashboard', { replace: true });
-      } else {
-        navigate('/customer/home', { replace: true });
+      const path = location.pathname;
+      // Only redirect if on root, login, or signup
+      if (path === '/' || path === '/login' || path === '/signup') {
+        if (role === 'admin') {
+          navigate('/admin/inventory', { replace: true });
+        } else if (role === 'staff') {
+          navigate('/staff/dashboard', { replace: true });
+        } else {
+          navigate('/customer/home', { replace: true });
+        }
       }
     }
-  }, [userLoggedIn, role, loading, navigate]);
+  }, [userLoggedIn, role, loading, navigate, location]);
 
   return null;
 }
