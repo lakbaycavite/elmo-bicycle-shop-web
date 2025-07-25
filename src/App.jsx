@@ -28,12 +28,36 @@ import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
 import Inventory from './pages/admin/Inventory';
 import { useAuth } from './context/authContext/createAuthContext';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+function AuthRedirector() {
+  const { userLoggedIn, role, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && userLoggedIn && role) {
+      if (role === 'admin') {
+        navigate('/admin/inventory', { replace: true });
+      } else if (role === 'staff') {
+        navigate('/staff/dashboard', { replace: true });
+      } else {
+        navigate('/customer/home', { replace: true });
+      }
+    }
+  }, [userLoggedIn, role, loading, navigate]);
+
+  return null;
+}
 
 function App() {
+  const { loading } = useAuth();
 
-  const { userLoggedIn } = useAuth();
+  if (loading) return null;
+
   return (
     <Router>
+      <AuthRedirector />
       <div className="min-h-screen bg-gray-50">
         <Routes>
           {/* Home routes - using unified HomePage component */}
@@ -63,8 +87,6 @@ function App() {
 
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
-
-
         </Routes>
       </div>
     </Router>

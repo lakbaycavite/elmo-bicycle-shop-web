@@ -8,13 +8,6 @@ import { useAuth } from '../../context/authContext/createAuthContext';
 function Login() {
   const navigate = useNavigate();
   const { userLoggedIn } = useAuth();
-  
-  // Redirect if already logged in
-  useEffect(() => {
-    if (userLoggedIn) {
-      navigate('/customer/home');
-    }
-  }, [userLoggedIn, navigate]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
