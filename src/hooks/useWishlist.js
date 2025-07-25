@@ -79,6 +79,7 @@ export const useWishlist = (addToCartFn) => {
 
     // Move item from wishlist to cart
     const moveItemToCart = useCallback(async (itemId) => {
+        setLoading(true);
         if (!addToCartFn) {
             setError("Add to cart function not provided");
             return false;
@@ -88,6 +89,7 @@ export const useWishlist = (addToCartFn) => {
             setError(null);
             await moveToCart(itemId, addToCartFn);
             setWishlist(current => current.filter(item => item.id !== itemId));
+            setLoading(false);
             return true;
         } catch (err) {
             setError(err.message);

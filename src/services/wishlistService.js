@@ -191,9 +191,10 @@ export const moveToCart = async (itemId, addToCartFn) => {
         }
 
         const item = snapshot.val();
+        console.log("Moving wishlist item to cart:", item);
 
         // Add to cart
-        await addToCartFn(itemId, 1, {
+        await addToCartFn(item.productId, 1, {
             id: item.productId,
             name: item.name,
             price: item.price,
