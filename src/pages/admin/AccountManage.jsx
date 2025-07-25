@@ -146,7 +146,6 @@ function AccountManage() {
         email: editAccount.email,
         role: editAccount.role,
       });
-      alert('Account updated successfully!');
       setIsEditAccountModalOpen(false);
       setEditAccount(null);
     } catch (error) {
