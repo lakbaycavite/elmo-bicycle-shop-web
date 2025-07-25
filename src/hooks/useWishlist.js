@@ -8,6 +8,7 @@ import {
     moveToCart,
     clearWishlist
 } from '../services/wishlistService';
+import { toast } from 'sonner';
 
 /**
  * Hook for managing user wishlist
@@ -53,7 +54,10 @@ export const useWishlist = (addToCartFn) => {
     const removeItem = useCallback(async (itemId) => {
         try {
             setError(null);
-            await removeFromWishlist(itemId);
+            await removeFromWishlist(itemId)
+                .then(() => {
+                    toast.success("Item removed from wishlist");
+                })
             setWishlist(current => current.filter(item => item.id !== itemId));
             return true;
         } catch (err) {
