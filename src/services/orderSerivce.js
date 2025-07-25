@@ -16,7 +16,7 @@ const getCurrentFormattedTime = () => {
 };
 
 // Create a new order from cart
-export const createOrder = async (contactInfo = {}, notes = "", orderDetails = {}) => {
+export const createOrder = async (notes = "", orderDetails = {}) => {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error("You must be logged in to place an order");
