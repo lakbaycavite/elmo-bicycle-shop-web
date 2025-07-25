@@ -72,7 +72,7 @@ export const useUsers = (initialUserId = null) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [isAdmin]);
 
     async function getUserProfile() {
         const userData = await getCurrentUserData();
