@@ -23,6 +23,10 @@ function AccountManage() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
+  const [editAccount, setEditAccount] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState(null);
 
   // Update accounts when users data changes
   useEffect(() => {
@@ -52,17 +56,11 @@ function AccountManage() {
 
   const handleActionChange = async (account, action) => {
     if (action === 'delete') {
-      // Implement delete functionality
-      if (confirm("Are you sure you want to delete this account?")) {
-        try {
-          await removeUser(account.id);
-          alert("Account deleted successfully!");
-        } catch (error) {
-          alert(`Error deleting account: ${error.message}`);
-        }
-      }
+      setAccountToDelete(account);
+      setIsDeleteModalOpen(true);
     } else if (action === 'edit') {
-      console.log(`Editing account: ${account.email}`);
+      setEditAccount(account);
+      setIsEditAccountModalOpen(true);
     } else if (action === 'make-admin') {
       try {
         await changeRole(account.uid || account.id, 'admin');
@@ -127,6 +125,43 @@ function AccountManage() {
     } catch (error) {
       alert(`Error creating account: ${error.message}`);
       console.error("Error creating account:", error);
+    }
+  };
+
+  const handleEditAccountInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditAccount(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditAccountSubmit = async (e) => {
+    e.preventDefault();
+    if (!editAccount) return;
+    try {
+      await editUser(editAccount.id, {
+        firstName: editAccount.firstName,
+        lastName: editAccount.lastName,
+        email: editAccount.email,
+        role: editAccount.role,
+      });
+      setIsEditAccountModalOpen(false);
+      setEditAccount(null);
+    } catch (error) {
+      alert(`Error updating account: ${error.message}`);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!accountToDelete) return;
+    try {
+      await removeUser(accountToDelete.id);
+      setIsDeleteModalOpen(false);
+      setAccountToDelete(null);
+    } catch (error) {
+      // Optionally show error feedback in the modal
+      alert(`Error deleting account: ${error.message}`);
     }
   };
 
@@ -460,6 +495,122 @@ function AccountManage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Account Modal */}
+          {isEditAccountModalOpen && editAccount && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-orange-500">Edit Account</h2>
+                  <button
+                    onClick={() => { setIsEditAccountModalOpen(false); setEditAccount(null); }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <form onSubmit={handleEditAccountSubmit}>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={editAccount.firstName || ''}
+                      onChange={handleEditAccountInputChange}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={editAccount.lastName || ''}
+                      onChange={handleEditAccountInputChange}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editAccount.email || ''}
+                      onChange={handleEditAccountInputChange}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Role</label>
+                    <select
+                      name="role"
+                      value={editAccount.role || 'customer'}
+                      onChange={handleEditAccountInputChange}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="customer">Customer</option>
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => { setIsEditAccountModalOpen(false); setEditAccount(null); }}
+                      className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+          {/* Delete Confirmation Modal */}
+          {isDeleteModalOpen && accountToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Delete</h2>
+                  <button
+                    onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDelete)}</span> (<span className="text-gray-600">{accountToDelete.email}</span>)?</p>
+                  <p className="text-red-500 mt-2">This action cannot be undone.</p>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           )}
