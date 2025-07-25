@@ -6,7 +6,7 @@ import {
     getOrderById as getOrderByIdService,
     getAllOrders as getAllOrdersService,
     updateOrderStatus as updateOrderStatusService
-} from '../services/orderService';
+} from '../services/orderSerivce'
 
 export function useOrder() {
     const [userOrders, setUserOrders] = useState([]);

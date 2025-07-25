@@ -16,7 +16,7 @@ const getCurrentFormattedTime = () => {
 };
 
 // Create a new order from cart
-export const createOrder = async (contactInfo, notes = "") => {
+export const createOrder = async (notes = "", orderDetails = {}) => {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error("You must be logged in to place an order");
@@ -26,7 +26,7 @@ export const createOrder = async (contactInfo, notes = "") => {
         if (!cartItems.length) throw new Error("Your cart is empty");
 
         // Calculate total amount
-        const totalAmount = cartItems.reduce((total, item) =>
+        const totalAmount = orderDetails.total || cartItems.reduce((total, item) =>
             total + (item.price * item.quantity), 0);
 
         const db = getDatabase();
@@ -35,12 +35,16 @@ export const createOrder = async (contactInfo, notes = "") => {
         // Create order object
         const newOrder = {
             userId: user.uid,
+            userEmail: user.email,
+            userName: user.displayName || "User",
             items: cartItems,
             status: "pending",
             totalAmount,
-            createdAt: getCurrentFormattedTime(),
+            subtotal: orderDetails.subtotal || totalAmount,
+            discount: orderDetails.discount || 0,
+            paymentMethod: orderDetails.paymentMethod || "Walk-in",
+            createdAt: orderDetails.orderDate || getCurrentFormattedTime(),
             notes,
-            contact: contactInfo
         };
 
         // Add to database

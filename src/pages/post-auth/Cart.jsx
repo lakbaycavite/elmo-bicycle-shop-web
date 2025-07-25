@@ -4,10 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../../hooks/useCart";
 import { useProducts } from "../../hooks/useProduct";
 import elmoLogo from '/images/logos/elmo.png'
+import OrderDetailsModal from "../../components/OrderDetailsModal";
+import { useState } from "react";
 
 
 const Cart = () => {
 
+    const [showOrderModal, setShowOrderModal] = useState(false);
     const { cart, updateQuantity, removeItem, totalPrice, addToCart } = useCart();
     const { products } = useProducts();
 
@@ -140,7 +143,9 @@ const Cart = () => {
                                     <span className="font-bold text-lg">{formatPrice(totalPrice)}</span>
                                 </div>
 
-                                <button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center">
+                                <button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center"
+                                    onClick={() => setShowOrderModal(true)}
+                                >
                                     <CreditCard size={18} className="mr-2" />
                                     Checkout
                                 </button>
@@ -203,6 +208,11 @@ const Cart = () => {
                     </div>
                 </div>
             </div>
+
+            <OrderDetailsModal
+                show={showOrderModal}
+                onClose={() => setShowOrderModal(false)}
+            />
         </div >
     )
 }
