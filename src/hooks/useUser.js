@@ -6,19 +6,61 @@ import {
     deleteUser,
     searchUsersByField,
     subscribeToUsers,
-    changeUserRoleById
+    changeUserRoleById,
+    getCurrentUserData
 } from "../services/userService";
+import { auth, database } from "../firebase/firebase";
+import { get, ref } from "firebase/database";
+
 
 export const useUsers = (initialUserId = null) => {
+
     const [users, setUsers] = useState([]);
     const [user, setUser] = useState(null);
+    const [currentUserData, setCurrentUserData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const checkAdminStatus = async () => {
+            const user = auth.currentUser;
+            if (user) {
+                try {
+
+                    const userRef = ref(database, `users/${user.uid}`);
+                    const userSnapshot = await get(userRef);
+
+                    if (userSnapshot.exists()) {
+                        const userData = userSnapshot.val();
+                        if (userData.role === 'admin' || userData.role === 'staff') {
+                            setIsAdmin(true);
+                            return;
+                        }
+                    }
+
+                    const isAdminEmail = user.email === 'admin@elmo.com';
+                    setIsAdmin(isAdminEmail);
+
+                } catch (error) {
+                    console.error("Error checking admin status:", error);
+                    setIsAdmin(false);
+                }
+            } else {
+                setIsAdmin(false);
+            }
+        };
+
+        checkAdminStatus();
+    }, []);
     // Load all users
     const loadUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
+
+        if (!isAdmin) return;
+
         try {
             const data = await getAllUsers();
             setUsers(data);
@@ -32,6 +74,20 @@ export const useUsers = (initialUserId = null) => {
         }
     }, []);
 
+    async function getUserProfile() {
+        const userData = await getCurrentUserData();
+
+        if (userData) {
+            setCurrentUserData(userData);
+            return userData;
+        }
+        else {
+            console.error("No user data found");
+            setCurrentUserData(null);
+            return null;
+        }
+    }
+
     // Load a specific user
     const loadUser = useCallback(async (id) => {
         if (!id) return null;
@@ -41,6 +97,7 @@ export const useUsers = (initialUserId = null) => {
         try {
             const data = await getUserById(id);
             setUser(data);
+
             return data;
         } catch (err) {
             setError(err.message);
@@ -49,28 +106,6 @@ export const useUsers = (initialUserId = null) => {
             setLoading(false);
         }
     }, []);
-
-    // Add a new customer
-    // if adding a new customer, use the doCreateUserWithEmailAndPassword function from auth.js
-
-
-
-    // disregard this function as it is not used in the current context
-    //
-    // const addCustomer = useCallback(async (customerData) => {
-    //     setLoading(true);
-    //     setError(null);
-    //     try {
-    //         const newCustomer = await createCustomer(customerData);
-    //         setCustomers(prev => [...prev, newCustomer]);
-    //         return newCustomer;
-    //     } catch (err) {
-    //         setError(err.message);
-    //         throw err;
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }, []);
 
     // Update a user
     const editUser = useCallback(async (id, userData) => {
@@ -177,16 +212,22 @@ export const useUsers = (initialUserId = null) => {
 
     useEffect(() => {
         loadUsers();
+
     }, [loadUsers]);
+
+    useEffect(() => {
+        getUserProfile();
+    }, []);
 
     return {
         users,
         user,
+        currentUserData,
         loading,
         error,
         loadUsers,
         loadUser,
-        // addUser,
+        getUserProfile,
         editUser,
         removeUser,
         searchUsers,

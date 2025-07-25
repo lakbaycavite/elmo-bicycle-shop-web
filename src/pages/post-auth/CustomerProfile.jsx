@@ -13,57 +13,55 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUsers } from '../../hooks/useUser';
 
 const CustomerProfile = () => {
-    // Dummy user data
-    const user = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 (555) 123-4567",
-        address: "123 Main Street, Apt 4B, New York, NY 10001",
-        profileImage: "https://randomuser.me/api/portraits/men/44.jpg"
-    };
+    const { currentUserData } = useUsers();
+    const navigate = useNavigate();
 
-    // Dummy transaction data
     const allTransactions = [
         { id: 1, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
-        { id: 2, date: "2025-07-15", description: "Monthly Subscription", amount: "$12.99", status: "Completed" },
-        { id: 3, date: "2025-07-10", description: "Grocery Store", amount: "$87.65", status: "Completed" },
-        { id: 4, date: "2025-07-05", description: "Restaurant Payment", amount: "$42.75", status: "Completed" },
-        { id: 5, date: "2025-06-30", description: "Utility Bill", amount: "$120.50", status: "Completed" },
-        { id: 6, date: "2025-06-25", description: "Gas Station", amount: "$45.00", status: "Completed" },
-        { id: 7, date: "2025-06-20", description: "Online Shopping", amount: "$78.32", status: "Completed" },
-        { id: 8, date: "2025-06-15", description: "Coffee Shop", amount: "$8.75", status: "Completed" },
-        { id: 9, date: "2025-06-10", description: "Mobile Phone Bill", amount: "$60.00", status: "Completed" },
-        { id: 10, date: "2025-06-05", description: "Streaming Service", amount: "$14.99", status: "Completed" },
-        { id: 11, date: "2025-05-30", description: "Department Store", amount: "$125.45", status: "Completed" },
-        { id: 12, date: "2025-05-25", description: "Internet Service", amount: "$65.00", status: "Completed" },
-        { id: 13, date: "2025-05-20", description: "Pharmacy Purchase", amount: "$32.99", status: "Completed" },
-        { id: 14, date: "2025-05-15", description: "Book Store", amount: "$24.99", status: "Completed" },
-        { id: 15, date: "2025-05-10", description: "Gym Membership", amount: "$50.00", status: "Completed" },
-        { id: 16, date: "2025-05-05", description: "Clothing Store", amount: "$95.80", status: "Completed" },
-        { id: 17, date: "2025-04-30", description: "Home Improvement", amount: "$210.45", status: "Completed" },
-        { id: 18, date: "2025-04-25", description: "Pet Supplies", amount: "$67.50", status: "Completed" },
-        { id: 19, date: "2025-04-20", description: "Electronics Store", amount: "$299.99", status: "Completed" },
-        { id: 20, date: "2025-04-15", description: "Furniture Purchase", amount: "$450.00", status: "Completed" },
+        { id: 2, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
+
+        { id: 3, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
+
     ];
 
-    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    // Get current transactions
     const indexOfLastTransaction = currentPage * itemsPerPage;
     const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage;
     const currentTransactions = allTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
 
-    // Calculate total pages
     const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
 
-    // Change page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    const navigate = useNavigate();
+    const fullName = currentUserData ?
+        `${currentUserData.firstName || ''} ${currentUserData.lastName || ''}`.trim() :
+        "User";
+
+    const email = currentUserData?.email || "Not available";
+    const phone = currentUserData?.phone || "Not available";
+
+    if (!currentUserData) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed flex items-center justify-center">
+                <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 max-w-md">
+                    <h2 className="text-xl font-bold mb-4 text-[#ff6900]">Loading Profile...</h2>
+                    <p>Please wait while we retrieve your information.</p>
+                    <button
+                        className="mt-4 bg-[#ff6900] hover:bg-[#e55e00] text-white font-bold py-2 px-4 rounded-full flex items-center"
+                        onClick={() => navigate('/customer/home')}
+                    >
+                        <ArrowLeft size={18} className="mr-1" />
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed" style={{ background: "linear-gradient(135deg, black 80%, #ff6900 100%)" }}>
@@ -76,18 +74,13 @@ const CustomerProfile = () => {
                     Back
                 </button>
 
-                {/* User and Datetime Info */}
-                <div className="text-white text-sm mb-6 mt-16">
-
-                </div>
-
                 {/* Top section with profile image and account details */}
-                <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
+                <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800 mt-16">
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                         {/* Profile Image */}
                         <div className="flex flex-col items-center">
                             <img
-                                src={user.profileImage}
+                                src={"https://randomuser.me/api/portraits/men/44.jpg"}
                                 alt="Profile"
                                 className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
                             />
@@ -102,7 +95,7 @@ const CustomerProfile = () => {
                                     <User className="text-[#ff6900]" size={20} />
                                     <div>
                                         <span className="text-gray-400 font-medium">Name:</span>
-                                        <span className="ml-2 text-white">{user.name}</span>
+                                        <span className="ml-2 text-white">{fullName}</span>
                                     </div>
                                 </div>
 
@@ -110,7 +103,7 @@ const CustomerProfile = () => {
                                     <Mail className="text-[#ff6900]" size={20} />
                                     <div>
                                         <span className="text-gray-400 font-medium">Email:</span>
-                                        <span className="ml-2 text-white">{user.email}</span>
+                                        <span className="ml-2 text-white">{email}</span>
                                     </div>
                                 </div>
 
@@ -118,17 +111,11 @@ const CustomerProfile = () => {
                                     <Phone className="text-[#ff6900]" size={20} />
                                     <div>
                                         <span className="text-gray-400 font-medium">Phone:</span>
-                                        <span className="ml-2 text-white">{user.phone}</span>
+                                        <span className="ml-2 text-white">{phone}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <MapPin className="text-[#ff6900]" size={20} />
-                                    <div>
-                                        <span className="text-gray-400 font-medium">Address:</span>
-                                        <span className="ml-2 text-white">{user.address}</span>
-                                    </div>
-                                </div>
+
                             </div>
                         </div>
                     </div>

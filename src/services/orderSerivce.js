@@ -83,12 +83,7 @@ export const getUserOrders = async () => {
             equalTo(user.uid)
         );
 
-        console.log("Executing query for userId:", user.uid);
-
         const snapshot = await get(userOrdersQuery);
-
-        console.log("Query response exists:", snapshot.exists());
-        console.log("Query response value:", snapshot.val());
 
         if (!snapshot.exists()) return [];
 
