@@ -1,4 +1,4 @@
-import { ArrowLeft, Heart, HeartCrack, ShoppingCart, X } from 'lucide-react';
+import { ArrowLeft, Heart, HeartCrack, ShoppingCart, Trash2, X } from 'lucide-react';
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
@@ -7,14 +7,12 @@ import { useWishlist } from '../../hooks/useWishlist';
 const Wishlist = () => {
 
     const { addToCart } = useCart();
-    const { wishlist, loading, removeItem, error, removeFromWishlist, clearItems, moveItemToCart } = useWishlist(addToCart);
+    const { wishlist, loading, removeItem, clearItems, moveItemToCart } = useWishlist(addToCart);
     const navigate = useNavigate();
 
     const [searchFilter, setSearchFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [priceSort, setPriceSort] = useState('');
-
-    console.log("Wishlist items:", wishlist);
 
     const filteredWishlist = useMemo(() => {
         return wishlist.filter(item => {
@@ -80,7 +78,21 @@ const Wishlist = () => {
                 </div>
                 <div className='bg-stone-800 w-full rounded-lg p-5 md:p-5' style={{ maxHeight: '500px' }}>
                     <div className='overflow-auto max-h-[400px]'>
-
+                        <div className="mb-4 flex justify-between">
+                            <span className="text-white">{wishlist.length} item{wishlist.length !== 1 ? 's' : ''}</span>
+                            <button
+                                onClick={() => {
+                                    if (wishlist.length === 0) {
+                                        return;
+                                    }
+                                    clearItems();
+                                }}
+                                className="text-white hover:text-[#ff6900] flex items-center"
+                            >
+                                <Trash2 size={16} className="mr-1" />
+                                Clear Wishlist
+                            </button>
+                        </div>
                         {wishlist.length === 0 ? (
                             <>
                                 <div className=" text-white rounded-lg p-8 flex flex-col items-center justify-center">
@@ -111,7 +123,7 @@ const Wishlist = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredWishlist.map((item, index) => (
+                                        {filteredWishlist.map((item) => (
                                             <tr key={item.id} style={{ background: "transparent", border: "none" }}>
                                                 <td scope="row" className="text-center" style={{ background: "transparent", color: "white", border: "none" }}>
                                                     <button

@@ -101,6 +101,7 @@ export const useWishlist = (addToCartFn) => {
             setError(null);
             await clearWishlist();
             setWishlist([]);
+            toast.success("Wishlist cleared successfully");
             return true;
         } catch (err) {
             setError(err.message);
