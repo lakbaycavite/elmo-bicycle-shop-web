@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { database } from '../firebase/firebase';
 
 import {
@@ -19,7 +20,14 @@ export const productService = {
     createProduct: async (product) => {
         const newProductRef = push(productsRef);
         product.id = newProductRef.key;
-        await set(newProductRef, product);
+        await set(newProductRef, product)
+            .then(() => {
+                toast.success(`Product ${product.name} created successfully!`);
+            })
+            .catch((error) => {
+                console.error("Error creating product:", error);
+                toast.error(`Failed to create product`);
+            });
         return product;
     },
 
@@ -47,14 +55,30 @@ export const productService = {
     // Update a product
     updateProduct: async (id, updates) => {
         const productRef = ref(database, `products/${id}`);
-        await update(productRef, updates);
+        await update(productRef, updates)
+            .then(() => {
+                toast.success(`Product ${updates.name || id} updated successfully!`);
+
+            })
+            .catch((error) => {
+                console.error("Error updating product:", error);
+                toast.error(`Failed to update product`);
+            });
         return { id, ...updates };
     },
 
     // Delete a product
     deleteProduct: async (id) => {
         const productRef = ref(database, `products/${id}`);
-        await remove(productRef);
+        await remove(productRef)
+            .then(() => {
+                toast.success(`Product deleted successfully!`);
+            })
+            .catch((error) => {
+                console.error("Error deleting product:", error);
+                toast.error(`Failed to delete product`);
+            })
+
         return id;
     },
 
