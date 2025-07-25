@@ -25,6 +25,8 @@ function AccountManage() {
   });
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState(null);
 
   // Update accounts when users data changes
   useEffect(() => {
@@ -54,15 +56,8 @@ function AccountManage() {
 
   const handleActionChange = async (account, action) => {
     if (action === 'delete') {
-      // Implement delete functionality
-      if (window.confirm(`Are you sure you want to delete the account for ${formatUserName(account)} (${account.email})? This action cannot be undone.`)) {
-        try {
-          await removeUser(account.id);
-          alert("Account deleted successfully!");
-        } catch (error) {
-          alert(`Error deleting account: ${error.message}`);
-        }
-      }
+      setAccountToDelete(account);
+      setIsDeleteModalOpen(true);
     } else if (action === 'edit') {
       setEditAccount(account);
       setIsEditAccountModalOpen(true);
@@ -156,6 +151,18 @@ function AccountManage() {
       setEditAccount(null);
     } catch (error) {
       alert(`Error updating account: ${error.message}`);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!accountToDelete) return;
+    try {
+      await removeUser(accountToDelete.id);
+      setIsDeleteModalOpen(false);
+      setAccountToDelete(null);
+    } catch (error) {
+      // Optionally show error feedback in the modal
+      alert(`Error deleting account: ${error.message}`);
     }
   };
 
@@ -569,6 +576,42 @@ function AccountManage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+          {/* Delete Confirmation Modal */}
+          {isDeleteModalOpen && accountToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Delete</h2>
+                  <button
+                    onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDelete)}</span> (<span className="text-gray-600">{accountToDelete.email}</span>)?</p>
+                  <p className="text-red-500 mt-2">This action cannot be undone.</p>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           )}
