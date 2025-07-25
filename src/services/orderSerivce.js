@@ -38,7 +38,7 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
             userEmail: user.email,
             userName: user.displayName || "User",
             items: cartItems,
-            status: "pending",      
+            status: "pending",
             totalAmount,
             subtotal: orderDetails.subtotal || totalAmount,
             discount: orderDetails.discount || 0,
@@ -71,8 +71,6 @@ export const getUserOrders = async () => {
         const user = auth.currentUser;
         if (!user) throw new Error("You must be logged in to view orders");
 
-        console.log("Getting orders for user ID:", user.uid);
-
         const db = getDatabase();
         const ordersRef = ref(db, "orders");
 
@@ -95,8 +93,6 @@ export const getUserOrders = async () => {
                 ...childSnapshot.val()
             });
         });
-
-        console.log("Found orders:", orders.length);
 
         // Sort by date (newest first)
         return orders.sort((a, b) => {

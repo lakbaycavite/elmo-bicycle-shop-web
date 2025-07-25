@@ -57,7 +57,6 @@ export function useOrder() {
     // Load user's orders
     const loadUserOrders = useCallback(async () => {
         if (!auth.currentUser) return;
-        if (!isAdmin) return
 
         try {
             setLoading(true);
@@ -70,7 +69,7 @@ export function useOrder() {
         } finally {
             setLoading(false);
         }
-    }, [isAdmin]);
+    }, []);
 
     // Load all orders (admin only)
     const loadAllOrders = useCallback(async () => {

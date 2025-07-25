@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     User,
     Mail,
@@ -14,27 +14,25 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../../hooks/useUser';
+import { useOrder } from '../../hooks/useOrder';
 
 const CustomerProfile = () => {
     const { currentUserData } = useUsers();
     const navigate = useNavigate();
+    const { userOrders, loadUserOrders } = useOrder();
 
-    const allTransactions = [
-        { id: 1, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
-        { id: 2, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
-
-        { id: 3, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
-
-    ];
+    useEffect(() => {
+        loadUserOrders();
+    }, [loadUserOrders]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     const indexOfLastTransaction = currentPage * itemsPerPage;
     const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage;
-    const currentTransactions = allTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+    const currentTransactions = userOrders.slice(indexOfFirstTransaction, indexOfLastTransaction);
 
-    const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
+    const totalPages = Math.ceil(userOrders.length / itemsPerPage);
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -121,61 +119,79 @@ const CustomerProfile = () => {
                     </div>
                 </div>
 
-                {/* Transaction History */}
                 <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
                     <h2 className="text-2xl font-bold mb-4 text-[#ff6900] border-b border-gray-700 pb-2 flex items-center">
                         <FileText className="text-[#ff6900] mr-2" size={24} />
                         Transaction History
                     </h2>
 
-                    <div className="overflow-x-auto">
-                        <table className="table-auto w-full">
-                            <thead className="bg-gray-800">
-                                <tr>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">#</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <Calendar size={16} className="mr-1" />
-                                            Date
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <FileText size={16} className="mr-1" />
-                                            Description
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <DollarSign size={16} className="mr-1" />
-                                            Amount
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <Clock size={16} className="mr-1" />
-                                            Status
-                                        </div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentTransactions.map((transaction) => (
-                                    <tr key={transaction.id} className="border-b border-gray-800 hover:bg-gray-800">
-                                        <td className="py-3 px-4">{transaction.id}</td>
-                                        <td className="py-3 px-4">{transaction.date}</td>
-                                        <td className="py-3 px-4">{transaction.description}</td>
-                                        <td className="py-3 px-4 font-medium">{transaction.amount}</td>
-                                        <td className="py-3 px-4">
-                                            <span className="px-2 py-1 bg-green-900 text-green-300 rounded-full text-xs">
-                                                {transaction.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    {/* Format date helper function */}
+                    {(() => {
+                        const formatDate = (dateString) => {
+                            if (!dateString) return "N/A";
+                            const date = new Date(dateString);
+                            if (isNaN(date.getTime())) return dateString;
+                            return date.toLocaleString('en-US', {
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                        };
+
+                        return (
+                            <div className="overflow-x-auto">
+                                <table className="table-auto w-full">
+                                    <thead className="bg-gray-800">
+                                        <tr>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">#</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <Calendar size={16} className="mr-1" />
+                                                    Date
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <FileText size={16} className="mr-1" />
+                                                    Payment Method
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <DollarSign size={16} className="mr-1" />
+                                                    Amount
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <Clock size={16} className="mr-1" />
+                                                    Status
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentTransactions.map((transaction) => (
+                                            <tr key={transaction.id} className="border-b border-gray-800 hover:bg-gray-800">
+                                                <td className="py-3 px-4">{transaction.id}</td>
+                                                <td className="py-3 px-4">{formatDate(transaction.createdAt)}</td>
+                                                <td className="py-3 px-4">{transaction.paymentMethod}</td>
+                                                <td className="py-3 px-4 font-medium">{transaction.totalAmount}</td>
+                                                <td className="py-3 px-4">
+                                                    <span className="px-2 py-1 bg-green-900 text-green-300 rounded-full text-xs">
+                                                        {transaction.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    })()}
 
                     {/* Pagination */}
                     <nav className="mt-6 flex justify-center">
