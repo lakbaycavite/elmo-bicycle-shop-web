@@ -105,7 +105,6 @@ export function useCart() {
     const clearCart = useCallback(async () => {
         try {
             setError(null);
-            toast.success(`Cart cleared successfully!`);
             return await clearCartService();
         } catch (err) {
             setError(err.message);

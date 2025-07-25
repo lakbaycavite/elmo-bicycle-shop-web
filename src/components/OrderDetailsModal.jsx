@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import { useOrder } from '../hooks/useOrder';
+import { toast } from 'sonner';
 
 const OrderDetailsModal = ({ show, onClose }) => {
     const { cart, totalPrice, clearCart } = useCart();
@@ -30,7 +31,14 @@ const OrderDetailsModal = ({ show, onClose }) => {
             };
 
             // Create the order
-            const result = await createOrder({}, notes, orderDetails);
+            await createOrder({}, notes, orderDetails)
+                .then(() => {
+                    toast.success('Order placed successfully!');
+                })
+                .catch((error) => {
+                    console.error("Error placing order:", error);
+                    toast.error(`Failed to place order`);
+                });
 
             // Clear the cart
             await clearCart();
@@ -38,11 +46,6 @@ const OrderDetailsModal = ({ show, onClose }) => {
             // Close the modal
             onClose();
 
-            // Show success message
-            alert('Your order has been placed successfully!');
-
-            // Redirect to order confirmation
-            window.location.href = `/customer/order-confirmation/${result.orderId}`;
         } catch (error) {
             alert(`Error placing order: ${error.message}`);
         } finally {
@@ -82,7 +85,7 @@ const OrderDetailsModal = ({ show, onClose }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    backgroundColor: '#ff8c00', /* Your primary-accent color */
+                    backgroundColor: '#ff6900', /* Your primary-accent color */
                     color: 'white',
                     borderRadius: '8px 8px 0 0'
                 }}>
@@ -330,7 +333,7 @@ const OrderDetailsModal = ({ show, onClose }) => {
                         disabled={cart.length === 0 || isProcessing}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#ff8c00',
+                            backgroundColor: '#ff6900',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',

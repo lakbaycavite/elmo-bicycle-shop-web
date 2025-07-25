@@ -7,6 +7,7 @@ import {
     getAllOrders as getAllOrdersService,
     updateOrderStatus as updateOrderStatusService
 } from '../services/orderSerivce'
+import { get, getDatabase, ref } from 'firebase/database';
 
 export function useOrder() {
     const [userOrders, setUserOrders] = useState([]);
@@ -21,10 +22,30 @@ export function useOrder() {
         const checkAdminStatus = async () => {
             const user = auth.currentUser;
             if (user) {
-                // You'd need to implement this function based on how you store user roles
-                // For example, checking a 'role' field in your user database
-                // This is just a placeholder
-                setIsAdmin(user.email === 'admin@example.com'); // Replace with your admin check logic
+                try {
+                    const db = getDatabase();
+
+                    // Check if user has admin/staff role in users collection
+                    const userRef = ref(db, `users/${user.uid}`);
+                    const userSnapshot = await get(userRef);
+
+                    if (userSnapshot.exists()) {
+                        const userData = userSnapshot.val();
+                        // Check if the user has a role field with value 'admin' or 'staff'
+                        if (userData.role === 'admin' || userData.role === 'staff') {
+                            setIsAdmin(true);
+                            return; // Exit early if we found a role
+                        }
+                    }
+
+                    // Fallback to email check if no role found
+                    const isAdminEmail = user.email === 'admin@elmo.com';
+                    setIsAdmin(isAdminEmail);
+
+                } catch (error) {
+                    console.error("Error checking admin status:", error);
+                    setIsAdmin(false);
+                }
             } else {
                 setIsAdmin(false);
             }
@@ -36,6 +57,7 @@ export function useOrder() {
     // Load user's orders
     const loadUserOrders = useCallback(async () => {
         if (!auth.currentUser) return;
+        if (!isAdmin) return
 
         try {
             setLoading(true);
@@ -48,7 +70,7 @@ export function useOrder() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [isAdmin]);
 
     // Load all orders (admin only)
     const loadAllOrders = useCallback(async () => {

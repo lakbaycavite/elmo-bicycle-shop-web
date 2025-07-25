@@ -16,7 +16,7 @@ const getCurrentFormattedTime = () => {
 };
 
 // Create a new order from cart
-export const createOrder = async (notes = "", orderDetails = {}) => {
+export const createOrder = async (contactInfo = {}, notes = "", orderDetails = {}) => {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error("You must be logged in to place an order");
@@ -32,9 +32,9 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
         const db = getDatabase();
         const ordersRef = ref(db, "orders");
 
-        // Create order object
+        // Create order object - matching validation rules structure
         const newOrder = {
-            userId: user.uid,
+            userId: user.uid,  // Used for user-specific access
             userEmail: user.email,
             userName: user.displayName || "User",
             items: cartItems,
@@ -71,17 +71,25 @@ export const getUserOrders = async () => {
         const user = auth.currentUser;
         if (!user) throw new Error("You must be logged in to view orders");
 
+        console.log("Getting orders for user ID:", user.uid);
+
         const db = getDatabase();
         const ordersRef = ref(db, "orders");
 
-        // Query orders for current user
+        // Query orders for current user using the indexed userId field
         const userOrdersQuery = query(
             ordersRef,
             orderByChild("userId"),
             equalTo(user.uid)
         );
 
+        console.log("Executing query for userId:", user.uid);
+
         const snapshot = await get(userOrdersQuery);
+
+        console.log("Query response exists:", snapshot.exists());
+        console.log("Query response value:", snapshot.val());
+
         if (!snapshot.exists()) return [];
 
         // Format orders with their IDs
@@ -93,10 +101,15 @@ export const getUserOrders = async () => {
             });
         });
 
+        console.log("Found orders:", orders.length);
+
         // Sort by date (newest first)
-        return orders.sort((a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
-        );
+        return orders.sort((a, b) => {
+            // Safe handling of date comparison
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateB - dateA;
+        });
     } catch (error) {
         console.error("Error getting user orders:", error);
         throw error;
