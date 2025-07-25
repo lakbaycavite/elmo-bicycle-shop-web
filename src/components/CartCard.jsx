@@ -6,6 +6,7 @@ const CartCard = ({
     description1,
     image,
     productId,
+    viewDetails,
     rating = 0,
     addToCart,
     children,
@@ -47,13 +48,25 @@ const CartCard = ({
             {description1 && <p className="text-gray-600">{description1}</p>}
             {children}
 
-            {/* Add to Cart button */}
-            <button
-                onClick={() => addToCart(productId, 1, { ...productDetails })}
-                className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition duration-200"
-            >
-                Add to Cart
-            </button>
+            <div className="mt-4 flex gap-2">
+
+
+
+                <button
+                    onClick={viewDetails}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded transition duration-200"
+                >
+                    Details
+                </button>
+
+                {/* Add to Cart button */}
+                <button
+                    onClick={() => addToCart(productId, 1, { ...productDetails })}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition duration-200"
+                >
+                    Add to Cart
+                </button>
+            </div>
         </div>
     )
 }
