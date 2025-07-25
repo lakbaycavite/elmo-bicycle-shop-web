@@ -1,12 +1,21 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { doSignInWithEmailAndPassword } from '../../firebase/auth';
+import { getUserById } from '../../services/userService';
+import { useAuth } from '../../context/authContext/createAuthContext';
 
 function Login() {
-
-
   const navigate = useNavigate();
+  const { userLoggedIn } = useAuth();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (userLoggedIn) {
+      navigate('/customer/home');
+    }
+  }, [userLoggedIn, navigate]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -48,11 +57,38 @@ function Login() {
       if (!isSigningIn) {
         setIsSigningIn(true);
         await doSignInWithEmailAndPassword(email, password)
-          .then(() => {
+          .then(async (userCredential) => {
             console.log("Login successful"); // ✅ Check 4
+            console.log("UserCredential:", userCredential); // Debug log
+            
+            // Get user from userCredential
+            const user = userCredential.user;
+            console.log("User UID:", user.uid); // Debug log
+            
+            try {
+              const userRecord = await getUserById(user.uid);
+              console.log('Fetched user record:', userRecord); // Debug log
+              const role = userRecord.role || 'customer';
+              console.log('Role:', role); // Debug log
+              // Redirect based on role
+              if (role === 'admin') {
+                console.log('Redirecting to admin inventory');
+                navigate('/admin/inventory');
+              } else if (role === 'staff') {
+                console.log('Redirecting to staff dashboard');
+                navigate('/staff/dashboard');
+              } else {
+                console.log('Redirecting to customer home');
+                navigate('/customer/home');
+              }
+            } catch (err) {
+              console.error('Failed to fetch user role:', err);
+              // Fallback: go to customer home
+              navigate('/customer/home');
+            }
+            
             setIsSigningIn(false);
             setLoading(false);
-
           })
           .catch((error) => {
             console.error("Login failed", error);
