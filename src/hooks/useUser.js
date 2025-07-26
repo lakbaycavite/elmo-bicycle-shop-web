@@ -11,6 +11,7 @@ import {
 } from "../services/userService";
 import { auth, database } from "../firebase/firebase";
 import { get, ref } from "firebase/database";
+import { toast } from "sonner";
 
 
 export const useUsers = (initialUserId = null) => {
@@ -125,6 +126,7 @@ export const useUsers = (initialUserId = null) => {
             throw err;
         } finally {
             setLoading(false);
+            toast.success('User updated successfully');
         }
     }, [user]);
 

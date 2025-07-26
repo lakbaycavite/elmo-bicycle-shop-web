@@ -2,6 +2,7 @@ import { useState } from 'react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { useUserStatus } from '../../hooks/useUserStatus';
+import { Loader2 } from 'lucide-react';
 
 function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,17 +21,14 @@ function UserManagement() {
   const {
     users,
     loading,
-    error,
     loadUsers,
     editUser,
-    removeUser
   } = useUsers();
 
   const {
     disableUser,
     reactivateUser,
     loading: statusLoading,
-    error: statusError
   } = useUserStatus({
     currentUserLogin,
     currentDateTime
@@ -235,7 +233,11 @@ function UserManagement() {
                   className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
                   onClick={handleEditSubmit}
                 >
-                  Save Changes
+                  {loading ? (
+                    <Loader2 className='animate-spin' />
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>
@@ -268,7 +270,7 @@ function UserManagement() {
 
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
                 <button
                   className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded mr-2"
                   onClick={() => setShowDisableModal(false)}
@@ -280,7 +282,13 @@ function UserManagement() {
                   onClick={handleDisableSubmit}
                   disabled={disableReason.trim() === ''}
                 >
-                  Disable User
+                  {statusLoading ? (
+                    <Loader2 className='animate-spin' />
+                  ) : (
+                    <>
+                      Disable User
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -317,7 +325,7 @@ function UserManagement() {
                 ></textarea> */}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
                 <button
                   className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded mr-2"
                   onClick={() => setShowReactivateModal(false)}

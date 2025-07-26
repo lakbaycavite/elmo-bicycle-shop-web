@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
-import { ref, update, get, push, serverTimestamp } from 'firebase/database';
+import { ref, update, get, serverTimestamp } from 'firebase/database';
 import { database } from "../firebase/firebase";
+import { useAuth } from '../context/authContext/createAuthContext';
+import { toast } from 'sonner';
 
 /**
  * Hook for managing user status in Firebase
@@ -9,9 +11,10 @@ import { database } from "../firebase/firebase";
  * @param {string} config.currentDateTime - Current date/time (default: '2025-07-26 06:17:23')
  * @returns {Object} - User status management methods and state
  */
-export function useUserStatus(config = {}) {
-    const currentUserLogin = config.currentUserLogin || 'lanceballicud';
-    const currentDateTime = config.currentDateTime || '2025-07-26 06:17:23';
+export function useUserStatus() {
+    const { currentUser } = useAuth();
+    const currentUserLogin = currentUser?.email;
+    const currentDateTime = Date.now();
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -42,11 +45,11 @@ export function useUserStatus(config = {}) {
                 disabledReason: reason || 'No reason provided',
                 lastStatusChange: statusChange
             });
-            
+
+            toast.success('User account disabled successfully');
             // Add to status history
             // await push(ref(database, `users/${uid}/statusHistory`), statusChange);
 
-            console.log(`User ${uid} disabled at ${currentDateTime} by ${currentUserLogin}`);
             return true;
         } catch (err) {
             console.error('Error disabling user:', err);
@@ -84,10 +87,10 @@ export function useUserStatus(config = {}) {
                 lastStatusChange: statusChange
             });
 
+            toast.success('User account reactivated successfully');
             // Add to status history
-            await push(ref(database, `users/${uid}/statusHistory`), statusChange);
+            // await push(ref(database, `users/${uid}/statusHistory`), statusChange);
 
-            console.log(`User ${uid} reactivated at ${currentDateTime} by ${currentUserLogin}`);
             return true;
         } catch (err) {
             console.error('Error reactivating user:', err);
