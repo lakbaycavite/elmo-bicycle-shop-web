@@ -3,8 +3,12 @@ import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { useUserStatus } from '../../hooks/useUserStatus';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/authContext/createAuthContext';
 
 function UserManagement() {
+
+  const { currentUser } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -59,8 +63,8 @@ function UserManagement() {
     if (selectedAccount && selectedAccount.role === 'staff') {
       await editUser(selectedAccount.id, {
         pageAccess: selectedPageAccess,
-        accessUpdatedAt: currentDateTime,
-        accessUpdatedBy: currentUserLogin
+        accessUpdatedAt: Date.now(),
+        accessUpdatedBy: currentUser.email
       });
 
       // Log the access change to history if needed
@@ -78,7 +82,6 @@ function UserManagement() {
     setShowEditModal(false);
   };
 
-  console.log('selectedAccount:', selectedAccount);
 
   const handleDisableSubmit = async () => {
     if (selectedAccount && disableReason.trim()) {

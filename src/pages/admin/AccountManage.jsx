@@ -4,6 +4,7 @@ import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 import { useUserStatus } from '../../hooks/useUserStatus';
+import { toast } from 'sonner';
 function AccountManage() {
   const { users, loading, error, changeRole, editUser, loadUsers } = useUsers();
   const { disableUser, reactivateUser } = useUserStatus();
@@ -70,24 +71,24 @@ function AccountManage() {
       setIsEditAccountModalOpen(true);
     } else if (action === 'make-admin') {
       try {
-        await changeRole(account.uid || account.id, 'admin');
-        alert(`${account.email} is now an admin`);
+        await changeRole(account.uid || account.id, 'admin')
+        toast.success(`${account.email} is now an admin`);
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        toast.error(`Error: ${error.message}`);
       }
     } else if (action === 'make-staff') {
       try {
         await changeRole(account.uid || account.id, 'staff');
-        alert(`${account.email} is now a staff member`);
+        toast.success(`${account.email} is now a staff member`);
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        toast.error(`Error: ${error.message}`);
       }
     } else if (action === 'make-customer') {
       try {
         await changeRole(account.uid || account.id, 'customer');
-        alert(`${account.email} is now a customer`);
+        toast.success(`${account.email} is now a customer`);
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        toast.error(`Error: ${error.message}`);
       }
     }
   };
@@ -118,9 +119,11 @@ function AccountManage() {
         {
           ...newAccount,
         },
-      );
+      )
+        .then(() => {
+          toast.success('Account created successfully!');
+        })
 
-      alert('Account created successfully!');
       setNewAccount({
         firstName: '',
         lastName: '',
@@ -130,7 +133,7 @@ function AccountManage() {
       });
       setIsAddAccountModalOpen(false);
     } catch (error) {
-      alert(`Error creating account: ${error.message}`);
+      toast.error(`Error creating account: ${error.message}`);
       console.error("Error creating account:", error);
     }
   };
@@ -153,10 +156,11 @@ function AccountManage() {
         email: editAccount.email,
         role: editAccount.role,
       });
+      toast.success('Account updated successfully!');
       setIsEditAccountModalOpen(false);
       setEditAccount(null);
     } catch (error) {
-      alert(`Error updating account: ${error.message}`);
+      toast.error(`Error updating account: ${error.message}`);
     }
   };
 
@@ -169,7 +173,7 @@ function AccountManage() {
       setAccountToDelete(null);
     } catch (error) {
       // Optionally show error feedback in the modal
-      alert(`Error deleting account: ${error.message}`);
+      toast.error(`Error deleting account: ${error.message}`);
     }
   };
 
@@ -230,12 +234,12 @@ function AccountManage() {
     setIsChangePasswordModalOpen(true);
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New password and confirm password do not match.");
+      toast.error("New password and confirm password do not match.");
       return;
     } else {
       await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
         .then(() => {
-          alert('Password changed successfully!');
+          toast.success('Password changed successfully!');
           setPasswordData({
             currentPassword: '',
             newPassword: '',
@@ -244,7 +248,7 @@ function AccountManage() {
           setIsChangePasswordModalOpen(false);
         })
         .catch(() => {
-          alert(`New password and confirm password do not match or wrong current password`);
+          toast.error(`New password and confirm password do not match or wrong current password`);
         });
     }
 

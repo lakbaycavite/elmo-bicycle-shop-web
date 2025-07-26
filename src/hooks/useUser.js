@@ -168,7 +168,7 @@ export const useUsers = (initialUserId = null) => {
         setLoading(true);
         setError(null);
         try {
-            const result = await changeUserRoleById(userId, newRole);
+            const result = await changeUserRoleById(userId, newRole)
 
             // Update the local state if we have users loaded
             if (users.length > 0) {
