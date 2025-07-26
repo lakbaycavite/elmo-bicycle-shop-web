@@ -18,6 +18,7 @@ function UserManagement() {
   const [selectedPageAccess, setSelectedPageAccess] = useState('');
   const [disableReason, setDisableReason] = useState('');
   const [reactivateReason, setReactivateReason] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
 
   const {
@@ -38,7 +39,8 @@ function UserManagement() {
       account?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account?.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const roleFilter = selectedRole === 'all' || selectedRole === '' || account.role.toLowerCase() === selectedRole.toLowerCase();
-    return searchFilter && roleFilter;
+    const statusFilter = selectedStatus === 'all' || selectedStatus === '' || (selectedStatus === 'disabled' && account.accountStatus === 'disabled') || (selectedStatus === 'active' && account.accountStatus !== 'disabled');
+    return searchFilter && roleFilter && statusFilter;
   });
 
   const handleActionChange = (account, action) => {
@@ -126,6 +128,12 @@ function UserManagement() {
                 <option value="admin">Admin</option>
                 <option value="staff">Staff</option>
                 <option value="customer">Customer</option>
+              </select>
+
+              <select className='p-1 border-1 rounded-lg' onChange={(e) => setSelectedStatus(e.target.value)} value={selectedStatus}>
+                <option value="all">All</option>
+                <option value="disabled">Disabled</option>
+                <option value="active">Active</option>
               </select>
             </div>
 
