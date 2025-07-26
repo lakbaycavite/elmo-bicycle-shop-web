@@ -132,6 +132,8 @@ export const useUsers = (initialUserId = null) => {
 
     // Delete a user
     const removeUser = useCallback(async (id) => {
+        // the email in the real time database is removed but in the authentication is still there.
+        // backend and firebase sdk needed to be updated to remove the user from authentication as well.
         setLoading(true);
         setError(null);
         try {
