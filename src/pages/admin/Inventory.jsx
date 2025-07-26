@@ -9,7 +9,8 @@ import {
     ArrowUp,
     ArrowDown,
     Upload,
-    Loader2
+    Loader2,
+    Eye
 } from 'lucide-react';
 import { useProducts } from '../../hooks/useProduct';
 import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
@@ -21,7 +22,9 @@ const Inventory = () => {
     // State for modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false); // New state for details modal
     const [editProduct, setEditProduct] = useState(null);
+    const [viewProduct, setViewProduct] = useState(null); // New state to store product for viewing
 
     // State for sorting
     const [sortMethod, setSortMethod] = useState('nameAsc');
@@ -60,6 +63,10 @@ const Inventory = () => {
         type: '',
         weight: ''
     });
+
+    const formatPrice = (price) => {
+        return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+    };
 
     const handleChange = (e) => {
         const { name, value, type, files } = e.target;
@@ -130,12 +137,6 @@ const Inventory = () => {
     const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
     // Open edit modal with product data
-    // const handleEditClick = (product) => {
-    //     setEditProduct(product);
-    //     setShowEditModal(true);
-    // };
-
-    // Open edit modal with product data
     const handleEditClick = async (product) => {
         setEditProduct(product);
         setEditFormData({
@@ -152,6 +153,12 @@ const Inventory = () => {
             weight: product.weight || ''
         });
         setShowEditModal(true);
+    };
+
+    // Open details modal with product data
+    const handleViewDetails = (product) => {
+        setViewProduct(product);
+        setShowDetailsModal(true);
     };
 
     const handleEditChange = (e) => {
@@ -291,7 +298,8 @@ const Inventory = () => {
             <div className="flex-1 p-8 overflow-x-auto">
                 {/* User and DateTime Info */}
                 <div className="text-sm text-gray-500 mb-4">
-
+                    {/* Added timestamp information here */}
+                    <p>Current Time: 2025-07-26 10:31:30 | User: lanceballicud</p>
                 </div>
 
                 {/* Header */}
@@ -351,7 +359,7 @@ const Inventory = () => {
                                         value={categoryFilter}
                                         onChange={(e) => setCategoryFilter(e.target.value)}
                                     >
-                                        <option value="all">All Categoriesss</option>
+                                        <option value="all">All Categories</option>
                                         {categories.map((category) => (
                                             <option key={category} value={category}>{category}</option>
                                         ))}
@@ -376,7 +384,7 @@ const Inventory = () => {
                                             </div>
                                             <div>
                                                 <div className="text-sm font-medium text-white">{product.name}</div>
-                                                <div className="text-sm text-gray-400">${product.price.toFixed(2)}</div>
+                                                <div className="text-sm text-gray-400">{formatPrice(product.price)}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -392,7 +400,14 @@ const Inventory = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div className="flex space-x-4">
+                                        <div className="flex space-x-2">
+                                            {/* New View Details Button */}
+                                            <button
+                                                className="text-blue-400 hover:text-blue-300 bg-gray-800 p-2 rounded-md"
+                                                onClick={() => handleViewDetails(product)}
+                                            >
+                                                <Eye size={18} />
+                                            </button>
                                             <button
                                                 className="text-[#ff6900] hover:text-[#e55e00] bg-gray-800 p-2 rounded-md"
                                                 onClick={() => handleEditClick(product)}
@@ -517,7 +532,7 @@ const Inventory = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Price ($)
+                                                Price (₱)
                                             </label>
                                             <input
                                                 name='price'
@@ -647,7 +662,7 @@ const Inventory = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Price ($)
+                                                Price (₱)
                                             </label>
                                             <input
                                                 type="number"
@@ -806,6 +821,130 @@ const Inventory = () => {
                                         </button>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Product Details Modal - NEW */}
+                {showDetailsModal && viewProduct && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900">Product Details</h2>
+                                    <button
+                                        className="text-gray-500 hover:text-gray-700"
+                                        onClick={() => setShowDetailsModal(false)}
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+
+                                <div className="mb-6">
+                                    {/* Product Image and Basic Info */}
+                                    <div className="flex flex-col md:flex-row mb-6 gap-4">
+                                        <div className="w-full md:w-1/3">
+                                            <img
+                                                src={viewProduct.image || 'https://via.placeholder.com/300'}
+                                                alt={viewProduct.name}
+                                                className="w-full h-auto rounded-lg object-cover shadow-md"
+                                            />
+                                        </div>
+
+                                        <div className="w-full md:w-2/3">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-2">{viewProduct.name}</h3>
+
+                                            <div className="flex items-center mb-2">
+                                                <span className="px-2 py-1 text-xs rounded-full bg-[#ff6900] text-white font-semibold">
+                                                    {viewProduct.category}
+                                                </span>
+                                                {viewProduct.brand && (
+                                                    <span className="ml-2 text-gray-600">
+                                                        Brand: <span className="font-semibold">{viewProduct.brand}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="text-2xl font-bold text-[#ff6900] mb-4">
+                                                {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                            </div>
+
+                                            <div className="mb-2">
+                                                <span className="font-semibold">Stock:</span> {viewProduct.stock} units
+                                                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${viewProduct.stock < 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                    }`}>
+                                                    {viewProduct.stock < 10 ? 'Low Stock' : 'In Stock'}
+                                                </span>
+                                            </div>
+
+                                            {viewProduct.type && (
+                                                <div className="mb-2">
+                                                    <span className="font-semibold">Type:</span> {viewProduct.type}
+                                                </div>
+                                            )}
+
+                                            {viewProduct.weight && (
+                                                <div className="mb-2">
+                                                    <span className="font-semibold">Weight:</span> {viewProduct.weight}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Product ID */}
+                                    <div className="mb-4 px-3 py-2 bg-gray-100 rounded-md">
+                                        <span className="font-semibold">Product ID:</span> {viewProduct.id}
+                                    </div>
+
+                                    {/* Specifications */}
+                                    <div className="border-t border-gray-200 pt-4">
+                                        <h4 className="text-lg font-semibold mb-3">Specifications</h4>
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <tbody className="divide-y divide-gray-200">
+                                                {viewProduct.spec1Label && viewProduct.spec1 && (
+                                                    <tr>
+                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{viewProduct.spec1Label}</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec1}</td>
+                                                    </tr>
+                                                )}
+                                                {!viewProduct.spec1Label && viewProduct.spec1 && (
+                                                    <tr>
+                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Specification 1</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec1}</td>
+                                                    </tr>
+                                                )}
+                                                {viewProduct.spec2Label && viewProduct.spec2 && (
+                                                    <tr>
+                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{viewProduct.spec2Label}</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec2}</td>
+                                                    </tr>
+                                                )}
+                                                {!viewProduct.spec2Label && viewProduct.spec2 && (
+                                                    <tr>
+                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Specification 2</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec2}</td>
+                                                    </tr>
+                                                )}
+                                                {!viewProduct.spec1 && !viewProduct.spec2 && (
+                                                    <tr>
+                                                        <td colSpan="2" className="px-4 py-3 text-sm text-gray-500 text-center">No specifications available</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+                                        onClick={() => setShowDetailsModal(false)}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
