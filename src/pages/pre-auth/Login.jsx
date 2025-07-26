@@ -59,25 +59,35 @@ function Login() {
             try {
               const userRecord = await getUserById(user.uid);
               const role = userRecord.role || 'customer';
-              console.log('Role:', role);
+
               // Redirect based on role
               if (role === 'admin' || role === 'staff') {
                 navigate('/admin/inventory');
               } else {
                 navigate('/customer/home');
               }
-            } catch (err) {
-              console.error('Failed to fetch user role:', err);
-              // Fallback: go to customer home
-              navigate('/customer/home');
+            } catch (error) {
+              if (error.message === 'ACCOUNT_DISABLED') {
+                toast.error('Your account has been disabled. Please contact support.');
+              } else {
+                toast.error(error.code === 'auth/invalid-credential'
+                  ? 'Invalid email or password'
+                  : `Login error: ${error.message}`);
+              }
+              navigate('/login');
             }
 
             setIsSigningIn(false);
             setLoading(false);
           })
           .catch((error) => {
-            console.error("Login failed", error);
-            toast.error("Login failed. Please check your credentials.");
+            if (error.message === 'ACCOUNT_DISABLED') {
+              toast.error('Your account has been disabled. Please contact support.');
+            } else {
+              toast.error(error.code === 'auth/invalid-credential'
+                ? 'Invalid email or password'
+                : `Login error: ${error.message}`);
+            }
           })
           .finally(() => {
             setLoading(false);

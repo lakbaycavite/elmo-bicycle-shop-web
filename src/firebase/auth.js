@@ -1,6 +1,6 @@
 import { createUserWithEmailAndPassword, EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updatePassword } from "firebase/auth";
 import { auth } from "./firebase";
-import { getDatabase, ref, set } from "firebase/database";
+import { get, getDatabase, ref, set } from "firebase/database";
 
 
 export const doCreateUserWithEmailAndPassword = async (email, password, userData = {}) => {
@@ -82,7 +82,34 @@ export const createUserAsAdmin = async (email, password, userData = {}) => {
 
 
 export const doSignInWithEmailAndPassword = async (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
+    try {
+        // First, perform the Firebase authentication
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        // After successful authentication, check if the account is disabled
+        const db = getDatabase();
+        const userRef = ref(db, 'users/' + userCredential.user.uid);
+        const userSnapshot = await get(userRef);
+
+        if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+
+            // Check if the account is disabled
+            if (userData.accountStatus === "disabled") {
+                // Sign out the user immediately
+                await auth.signOut();
+                throw new Error("ACCOUNT_DISABLED");
+            }
+
+            // Update last login time
+            await set(ref(db, 'users/' + userCredential.user.uid + '/lastLogin'), new Date().toISOString());
+        }
+
+        return userCredential;
+    } catch (error) {
+        console.error("Login error:", error);
+        throw error;
+    }
 }
 
 export const doSignOut = async () => {

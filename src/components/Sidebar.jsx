@@ -89,7 +89,6 @@ function Sidebar() {
       localStorage.removeItem('elmo_user_email');
 
       await doSignOut();
-      console.log("Logout successful");
       navigate('/login');
     } catch (error) {
       console.error("Logout failed", error);

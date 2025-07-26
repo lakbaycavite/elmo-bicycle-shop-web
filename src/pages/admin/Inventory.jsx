@@ -321,7 +321,6 @@ const Inventory = () => {
 
         try {
             await deleteProduct(id);
-            toast.success('Product deleted successfully');
         } catch (error) {
             console.error('Error deleting product:', error);
             alert('Failed to delete product. Please try again.');
