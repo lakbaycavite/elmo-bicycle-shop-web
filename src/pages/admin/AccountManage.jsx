@@ -6,7 +6,7 @@ import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 import { useUserStatus } from '../../hooks/useUserStatus';
 import { toast } from 'sonner';
 function AccountManage() {
-  const { users, loading, error, changeRole, editUser, loadUsers } = useUsers();
+  const { users, loading, error, editUser, loadUsers, removeUser } = useUsers();
   const { disableUser, reactivateUser } = useUserStatus();
 
   const [roleFilter, setRoleFilter] = useState('all');
@@ -28,10 +28,13 @@ function AccountManage() {
   });
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
   const [editAccount, setEditAccount] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState(null);
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [accountToDisable, setAccountToDisable] = useState(null);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState(null);
+
 
   // Update accounts when users data changes
   useEffect(() => {
@@ -60,36 +63,23 @@ function AccountManage() {
   });
 
   const handleActionChange = async (account, action) => {
+
     if (action === 'disable') {
+      setAccountToDisable(account);
+      setIsDisableModalOpen(true);
+    }
+    else if (action === 'action') {
+      handleActionChange(null, ''); // Reset action
+    }
+    else if (action === 'delete') {
       setAccountToDelete(account);
       setIsDeleteModalOpen(true);
     } else if (action === 'reactivate') {
       setAccountToReactivate(account);
       setIsActivateModalOpen(true);
-    } else if (action === 'edit') {
+    } else if (action === 'reset-password') {
       setEditAccount(account);
       setIsEditAccountModalOpen(true);
-    } else if (action === 'make-admin') {
-      try {
-        await changeRole(account.uid || account.id, 'admin')
-        toast.success(`${account.email} is now an admin`);
-      } catch (error) {
-        toast.error(`Error: ${error.message}`);
-      }
-    } else if (action === 'make-staff') {
-      try {
-        await changeRole(account.uid || account.id, 'staff');
-        toast.success(`${account.email} is now a staff member`);
-      } catch (error) {
-        toast.error(`Error: ${error.message}`);
-      }
-    } else if (action === 'make-customer') {
-      try {
-        await changeRole(account.uid || account.id, 'customer');
-        toast.success(`${account.email} is now a customer`);
-      } catch (error) {
-        toast.error(`Error: ${error.message}`);
-      }
     }
   };
 
@@ -164,16 +154,16 @@ function AccountManage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!accountToDelete) return;
+  const handleDisableAccount = async () => {
+    if (!accountToDisable) return;
     try {
       // await removeUser(accountToDelete.id);
-      await disableUser({ uid: accountToDelete.id, reason: 'Account deleted by admin' });
-      setIsDeleteModalOpen(false);
-      setAccountToDelete(null);
+      await disableUser({ uid: accountToDisable.id, reason: 'Account disabled by admin' });
+      setIsDisableModalOpen(false);
+      setAccountToDisable(null);
     } catch (error) {
       // Optionally show error feedback in the modal
-      toast.error(`Error deleting account: ${error.message}`);
+      toast.error(`Error disabling account: ${error.message}`);
     }
   };
 
@@ -188,6 +178,17 @@ function AccountManage() {
     setAccountToReactivate(null);
     setIsActivateModalOpen(false);
   };
+
+  const handleDeleteSubmit = async () => {
+    if (accountToDelete) {
+      await removeUser(accountToDelete.id);
+      loadUsers();
+    }
+    setAccountToDelete(null);
+    setIsDeleteModalOpen(false);
+
+
+  }
 
   // Helper function to format user name
   const formatUserName = (user) => {
@@ -329,20 +330,18 @@ function AccountManage() {
                         <td className="py-3 px-4">{formatDate(account.dateCreated || account.createdAt)}</td>
                         <td className="py-3 px-4">
                           <select
-                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 text-center rounded shadow transition-colors duration-150 w-36"
                             onChange={(e) => handleActionChange(account, e.target.value)}
-                            defaultValue=""
+                            defaultValue="action"
                           >
-                            <option value="" disabled className='font-bold'>Action</option>
-                            <option value="edit" className='font-bold'>Edit</option>
+                            <option value="action" selected disabled className='font-bold'>Action</option>
+                            <option value="reset-password" className='font-bold'>Reset Password</option>
                             {account.accountStatus === 'disabled' ? (
                               <option value="reactivate" className='font-bold'>Reactivate</option>
                             ) : (
                               <option value="disable" className='font-bold'>Disable</option>
                             )}
-                            <option value="make-admin" className='font-bold'>Make Admin</option>
-                            <option value="make-staff" className='font-bold'>Make Staff</option>
-                            <option value="make-customer" className='font-bold'>Make Customer</option>
+                            <option value="delete" className='font-bold'>Delete</option>
                           </select>
                         </td>
                       </tr>
@@ -606,36 +605,36 @@ function AccountManage() {
               </div>
             </div>
           )}
-          {/* Delete Confirmation Modal */}
-          {isDeleteModalOpen && accountToDelete && (
+          {/* Disable Confirmation Modal */}
+          {isDisableModalOpen && accountToDisable && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-red-500">Confirm Delete</h2>
+                  <h2 className="text-xl font-bold text-red-500">Confirm Disable</h2>
                   <button
-                    onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
+                    onClick={() => { setIsDisableModalOpen(false); setAccountToDisable(null); }}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     <X className="h-6 w-6" />
                   </button>
                 </div>
                 <div className="mb-6">
-                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDelete)}</span> (<span className="text-gray-600">{accountToDelete.email}</span>)?</p>
+                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDisable)}</span> (<span className="text-gray-600">{accountToDisable.email}</span>)?</p>
                 </div>
                 <div className="flex justify-end space-x-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
+                    onClick={() => { setIsDisableModalOpen(false); setAccountToDisable(null); }}
                     className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    onClick={handleDeleteAccount}
+                    onClick={handleDisableAccount}
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
-                    Delete
+                    Disable
                   </button>
                 </div>
               </div>
@@ -671,6 +670,46 @@ function AccountManage() {
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
                     Reactivate
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {isDeleteModalOpen && accountToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Delete</h2>
+                  <button
+                    onClick={() => {
+                      setIsDeleteModalOpen(false); setAccountToDelete(null); // Reset action
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDelete)}</span> (<span className="text-gray-600">{accountToDelete.email}</span>)?</p>
+                </div>
+                <div className="flex justify-end space-x-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDeleteModalOpen(false); setAccountToDelete(null); // Reset action
+                    }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteSubmit}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Delete
                   </button>
                 </div>
               </div>

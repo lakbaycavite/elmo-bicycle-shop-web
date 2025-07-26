@@ -140,7 +140,9 @@ export const useUsers = (initialUserId = null) => {
             if (user && user.id === id) {
                 setUser(null);
             }
+            toast.success('User deleted successfully');
             return id;
+
         } catch (err) {
             setError(err.message);
             throw err;
