@@ -1,10 +1,21 @@
 import { useState } from 'react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
+import { useUserStatus } from '../../hooks/useUserStatus';
 
 function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [selectedPageAccess, setSelectedPageAccess] = useState('');
+  const [disableReason, setDisableReason] = useState('');
+  const [reactivateReason, setReactivateReason] = useState('');
+
+  const currentUserLogin = 'lanceballicud';
+  const currentDateTime = '2025-07-26 06:17:23';
 
   const {
     users,
@@ -15,6 +26,16 @@ function UserManagement() {
     removeUser
   } = useUsers();
 
+  const {
+    disableUser,
+    reactivateUser,
+    loading: statusLoading,
+    error: statusError
+  } = useUserStatus({
+    currentUserLogin,
+    currentDateTime
+  });
+
   const filteredAccounts = users.filter(account => {
     const searchFilter = account?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -23,13 +44,70 @@ function UserManagement() {
     return searchFilter && roleFilter;
   });
 
-  // const handleActionChange = (account, action) => {
-  //   if (action === 'delete') {
-  //     setAccounts(accounts.filter(acc => acc.email !== account.email));
-  //   } else if (action === 'edit') {
-  //     console.log(`Editing account: ${account.firstName} ${account.lastName}`);
-  //   }
-  // };
+  const handleActionChange = (account, action) => {
+    setSelectedAccount(account);
+
+    if (action === 'edit') {
+      // Set the initial page access value for staff
+      if (account.role === 'staff') {
+        setSelectedPageAccess(account.pageAccess || 'orders');
+        setShowEditModal(true);
+      }
+    } else if (action === 'disable') {
+      setDisableReason('');
+      setShowDisableModal(true);
+    } else if (action === 'reactivate') {
+      setReactivateReason('');
+      setShowReactivateModal(true);
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    if (selectedAccount && selectedAccount.role === 'staff') {
+      await editUser(selectedAccount.id, {
+        pageAccess: selectedPageAccess,
+        accessUpdatedAt: currentDateTime,
+        accessUpdatedBy: currentUserLogin
+      });
+
+      // Log the access change to history if needed
+      // await editUser(selectedAccount.id, {
+      //   [`accessHistory/${Date.now()}`]: {
+      //     type: 'page_access_update',
+      //     timestamp: Date.now(),
+      //     recordedAt: currentDateTime,
+      //     by: currentUserLogin,
+      //     pageAccess: selectedPageAccess
+      //   }
+      // });
+      loadUsers(); // Reload users to get updated data
+    }
+    setShowEditModal(false);
+  };
+
+  console.log('selectedAccount:', selectedAccount);
+
+  const handleDisableSubmit = async () => {
+    if (selectedAccount && disableReason.trim()) {
+      await disableUser({
+        uid: selectedAccount.id,
+        reason: disableReason
+      });
+      loadUsers(); // Reload users to get updated data
+    }
+    setShowDisableModal(false);
+  };
+
+  const handleReactivateSubmit = async () => {
+    if (selectedAccount) {
+      await reactivateUser({
+        uid: selectedAccount.id,
+        reason: reactivateReason || 'Administrative reactivation'
+      });
+      loadUsers(); // Reload users to get updated data
+    }
+    setShowReactivateModal(false);
+  };
 
   return (
     <AdminLayout>
@@ -47,7 +125,7 @@ function UserManagement() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <select className='p-1 border-1 rounded-lg' onClick={(e) => setSelectedRole(e.target.value)} defaultValue={selectedRole}>
+              <select className='p-1 border-1 rounded-lg' onChange={(e) => setSelectedRole(e.target.value)} value={selectedRole}>
                 <option value="all">All Roles</option>
                 <option value="admin">Admin</option>
                 <option value="staff">Staff</option>
@@ -63,7 +141,9 @@ function UserManagement() {
                     <th className="py-3 px-4 font-semibold">Name</th>
                     <th className="py-3 px-4 font-semibold">Role</th>
                     <th className="py-3 px-4 font-semibold">Email</th>
+                    <th className="py-3 px-4 font-semibold">Status</th>
                     <th className="py-3 px-4 font-semibold">Action</th>
+                    <th className="py-3 px-4 font-semibold">Page Access</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -73,15 +153,44 @@ function UserManagement() {
                       <td className="py-3 px-4">{account.role}</td>
                       <td className="py-3 px-4">{account.email}</td>
                       <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded ${account.accountStatus === 'disabled' ? 'bg-red-500' : 'bg-green-500'}`}>
+                          {account.accountStatus === 'disabled' ? 'Disabled' : 'Active'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
                         <select
                           className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
                           onChange={(e) => handleActionChange(account, e.target.value)}
-                          defaultValue=""
+                          value=""
                         >
-                          <option value="" disabled className='font-bold'>Active</option>
-                          <option value="edit" className='font-bold'>Edit</option>
-                          <option value="delete" className='font-bold'>Delete</option>
+                          <option value="" disabled className='font-bold'>Select Action</option>
+
+                          {/* Show Edit only for staff */}
+                          {account.role === 'staff' && account.accountStatus !== 'disabled' && (
+                            <option value="edit" className='font-bold'>Edit Access</option>
+                          )}
+
+                          {/* Show Disable for active accounts */}
+                          {account.accountStatus !== 'disabled' && (
+                            <option value="disable" className='font-bold'>Disable</option>
+                          )}
+
+
+                          {account.accountStatus === 'disabled' && (
+                            <option value="reactivate" className='font-bold'>Reactivate</option>
+                          )}
                         </select>
+                      </td>
+                      <td className="">
+                        {account.pageAccess === 'orders' ? (
+                          <span className="text-green-500 font-bold">Orders Overview</span>
+                        ) : account.pageAccess === 'inventory' ? (
+                          <span className="text-green-500 font-bold">Inventory</span>
+                        ) : account.role === "admin" ? (
+                          <span className="text-green-500 font-bold">All Pages</span>
+                        ) : (
+                          <span className="text-red-500 font-bold">No Access</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -91,7 +200,142 @@ function UserManagement() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+
+      {/* Edit Modal */}
+      {
+        showEditModal && selectedAccount && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-96">
+              <h2 className="text-xl font-bold mb-4 text-orange-500">Edit Staff Access</h2>
+
+              <div className="mb-4">
+                <p className="text-gray-700 mb-2">Staff: {selectedAccount.firstName} {selectedAccount.lastName}</p>
+                <label className="block text-gray-700 mb-2">Page Access:</label>
+                <select
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={selectedPageAccess}
+                  onChange={(e) => setSelectedPageAccess(e.target.value)}
+                >
+                  <option value="orders">Orders Overview</option>
+                  <option value="inventory">Inventory</option>
+                </select>
+                <p className="text-sm text-gray-500 mt-2">
+                  * Staff will only have access to the selected page
+                </p>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded mr-2"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
+                  onClick={handleEditSubmit}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Disable Modal */}
+      {
+        showDisableModal && selectedAccount && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-96">
+              <h2 className="text-xl font-bold mb-4 text-red-500">Disable User</h2>
+
+              <div className="mb-4">
+                <p className="text-gray-700 mb-2">User: {selectedAccount.firstName} {selectedAccount.lastName}</p>
+                <p className="text-gray-700 mb-4">Role: {selectedAccount.role}</p>
+
+                <label className="block text-gray-700 mb-2">Reason for disabling:</label>
+                <textarea
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows="3"
+                  value={disableReason}
+                  onChange={(e) => setDisableReason(e.target.value)}
+                  placeholder="Please provide a reason for disabling this user"
+                ></textarea>
+                {disableReason.trim() === '' && (
+                  <p className="text-sm text-red-500 mt-1">Reason is required</p>
+                )}
+
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded mr-2"
+                  onClick={() => setShowDisableModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                  onClick={handleDisableSubmit}
+                  disabled={disableReason.trim() === ''}
+                >
+                  Disable User
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Reactivate Modal */}
+      {
+        showReactivateModal && selectedAccount && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-96">
+              <h2 className="text-xl font-bold mb-4 text-green-500">Reactivate User</h2>
+
+              <div className="mb-4">
+                <p className="text-gray-700 mb-2">User: {selectedAccount.firstName} {selectedAccount.lastName}</p>
+                <p className="text-gray-700 mb-4">Role: {selectedAccount.role}</p>
+
+                {
+                  selectedAccount.disabledReason && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      {selectedAccount.disabledReason ? `Reason for disabling: ${selectedAccount.disabledReason}` : 'No reason provided for disabling this user.'}
+                    </p>
+                  )
+                }
+
+                {/* <label className="block text-gray-700 mb-2">Reason for reactivation (optional):</label>
+                <textarea
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+                  rows="3"
+                  value={reactivateReason}
+                  onChange={(e) => setReactivateReason(e.target.value)}
+                  placeholder="Optional reason for reactivating this user"
+                ></textarea> */}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded mr-2"
+                  onClick={() => setShowReactivateModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                  onClick={handleReactivateSubmit}
+                >
+                  Reactivate User
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </AdminLayout >
   );
 }
 

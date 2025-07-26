@@ -1,8 +1,10 @@
 import { getAuth } from 'firebase/auth';
-import { getDatabase, ref, update, get, query, orderByChild, serverTimestamp } from 'firebase/database';
+import { getDatabase, ref, update, get, push, serverTimestamp } from 'firebase/database';
 
 /**
- * Creates a service to manage user status in Firebase
+ * Service for managing user status in Firebase
+ * @param {Object} app - Firebase app instance
+ * @returns {Object} User status management methods
  */
 export function createUserStatusService(app) {
     const auth = getAuth(app);
@@ -10,39 +12,44 @@ export function createUserStatusService(app) {
 
     /**
      * Disables a user in both Firebase Authentication and Realtime Database
+     * @param {Object} params - Parameters for disabling user
+     * @param {string} params.uid - User ID to disable
+     * @param {string} params.adminUser - Username of admin performing the action (e.g. 'lanceballicud')
+     * @param {string} params.reason - Reason for disabling the user
+     * @param {string} params.timestamp - Timestamp for the action (e.g. '2025-07-26 06:08:36')
      */
     const disableUser = async ({ uid, adminUser, reason, timestamp }) => {
         try {
-            // Update in Firebase Authentication
-            await auth.updateUser(uid, { disabled: true });
+            // Disable user in Firebase Authentication
+            await auth.updateUser(uid, {
+                disabled: true
+            });
 
-            // Create status history entry
+            // Format timestamp if not provided
+            const formattedTimestamp = timestamp || '2025-07-26 06:08:36';
+
+            // Create status change record
             const statusChange = {
                 status: 'disabled',
                 timestamp: serverTimestamp(),
-                by: adminUser,
+                recordedAt: formattedTimestamp,
+                by: adminUser || 'lanceballicud',
                 reason: reason || 'No reason provided'
             };
 
-            // Update in Realtime Database
+            // Update user record in database
             await update(ref(database, `users/${uid}`), {
                 accountStatus: 'disabled',
-                disabledAt: timestamp || new Date().toISOString(),
-                disabledBy: adminUser,
+                disabledAt: formattedTimestamp,
+                disabledBy: adminUser || 'lanceballicud',
                 disabledReason: reason || 'No reason provided',
                 lastStatusChange: statusChange
             });
 
             // Add to status history
-            const historyRef = ref(database, `users/${uid}/statusHistory`);
-            const historySnapshot = await get(historyRef);
-            const historyKey = historySnapshot.exists()
-                ? Object.keys(historySnapshot.val()).length.toString()
-                : '0';
+            await push(ref(database, `users/${uid}/statusHistory`), statusChange);
 
-            await update(ref(database, `users/${uid}/statusHistory/${historyKey}`), statusChange);
-
-            console.log(`User ${uid} disabled successfully by ${adminUser}`);
+            console.log(`User ${uid} disabled at ${formattedTimestamp} by ${adminUser || 'lanceballicud'}`);
             return true;
         } catch (error) {
             console.error('Error disabling user:', error);
@@ -52,39 +59,44 @@ export function createUserStatusService(app) {
 
     /**
      * Reactivates a user in both Firebase Authentication and Realtime Database
+     * @param {Object} params - Parameters for reactivating user
+     * @param {string} params.uid - User ID to reactivate
+     * @param {string} params.adminUser - Username of admin performing the action (e.g. 'lanceballicud')
+     * @param {string} params.reason - Reason for reactivating the user
+     * @param {string} params.timestamp - Timestamp for the action (e.g. '2025-07-26 06:08:36')
      */
     const reactivateUser = async ({ uid, adminUser, reason, timestamp }) => {
         try {
-            // Update in Firebase Authentication
-            await auth.updateUser(uid, { disabled: false });
+            // Enable user in Firebase Authentication
+            await auth.updateUser(uid, {
+                disabled: false
+            });
 
-            // Create status history entry
+            // Format timestamp if not provided
+            const formattedTimestamp = timestamp || '2025-07-26 06:08:36';
+
+            // Create status change record
             const statusChange = {
                 status: 'active',
                 timestamp: serverTimestamp(),
-                by: adminUser,
-                reason: reason || 'No reason provided'
+                recordedAt: formattedTimestamp,
+                by: adminUser || 'lanceballicud',
+                reason: reason || 'Administrative reactivation'
             };
 
-            // Update in Realtime Database
+            // Update user record in database
             await update(ref(database, `users/${uid}`), {
                 accountStatus: 'active',
-                reactivatedAt: timestamp || new Date().toISOString(),
-                reactivatedBy: adminUser,
-                reactivatedReason: reason || 'No reason provided',
+                reactivatedAt: formattedTimestamp,
+                reactivatedBy: adminUser || 'lanceballicud',
+                reactivatedReason: reason || 'Administrative reactivation',
                 lastStatusChange: statusChange
             });
 
             // Add to status history
-            const historyRef = ref(database, `users/${uid}/statusHistory`);
-            const historySnapshot = await get(historyRef);
-            const historyKey = historySnapshot.exists()
-                ? Object.keys(historySnapshot.val()).length.toString()
-                : '0';
+            await push(ref(database, `users/${uid}/statusHistory`), statusChange);
 
-            await update(ref(database, `users/${uid}/statusHistory/${historyKey}`), statusChange);
-
-            console.log(`User ${uid} reactivated successfully by ${adminUser}`);
+            console.log(`User ${uid} reactivated at ${formattedTimestamp} by ${adminUser || 'lanceballicud'}`);
             return true;
         } catch (error) {
             console.error('Error reactivating user:', error);
@@ -93,7 +105,9 @@ export function createUserStatusService(app) {
     };
 
     /**
-     * Check if a user is disabled in Realtime Database
+     * Checks if a user is disabled in the database
+     * @param {string} uid - User ID to check
+     * @returns {Promise<boolean>} Whether the user is disabled
      */
     const isUserDisabled = async (uid) => {
         try {
@@ -106,15 +120,13 @@ export function createUserStatusService(app) {
     };
 
     /**
-     * Get user status history
+     * Gets a user's status history
+     * @param {string} uid - User ID to get history for
+     * @returns {Promise<Array>} Array of status history items
      */
     const getUserStatusHistory = async (uid) => {
         try {
-            const historyRef = query(
-                ref(database, `users/${uid}/statusHistory`),
-                orderByChild('timestamp')
-            );
-            const snapshot = await get(historyRef);
+            const snapshot = await get(ref(database, `users/${uid}/statusHistory`));
 
             if (!snapshot.exists()) {
                 return [];
@@ -122,10 +134,14 @@ export function createUserStatusService(app) {
 
             const history = [];
             snapshot.forEach((childSnapshot) => {
-                history.push(childSnapshot.val());
+                history.push({
+                    id: childSnapshot.key,
+                    ...childSnapshot.val()
+                });
             });
 
-            return history;
+            // Sort by timestamp (newest first)
+            return history.sort((a, b) => b.timestamp - a.timestamp);
         } catch (error) {
             console.error('Error getting user status history:', error);
             throw error;
