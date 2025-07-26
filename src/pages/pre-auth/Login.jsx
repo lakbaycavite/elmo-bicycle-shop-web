@@ -52,24 +52,18 @@ function Login() {
         setIsSigningIn(true);
         await doSignInWithEmailAndPassword(email, password)
           .then(async (userCredential) => {
-            console.log("Login successful");
-            console.log("UserCredential:", userCredential);
 
             // Get user from userCredential
             const user = userCredential.user;
-            console.log("User UID:", user.uid);
 
             try {
               const userRecord = await getUserById(user.uid);
-              console.log('Fetched user record:', userRecord);
               const role = userRecord.role || 'customer';
               console.log('Role:', role);
               // Redirect based on role
               if (role === 'admin' || role === 'staff') {
-                console.log('Redirecting to admin inventory');
                 navigate('/admin/inventory');
               } else {
-                console.log('Redirecting to customer home');
                 navigate('/customer/home');
               }
             } catch (err) {

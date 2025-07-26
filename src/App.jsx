@@ -72,6 +72,7 @@ function App() {
 
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
+          <Route path="*" element={<Navigate to="/" />} />
 
 
         </Routes>
