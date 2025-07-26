@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import 'react-phone-number-input/style.css';
 
 // Pre-auth pages
@@ -28,59 +28,21 @@ import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
 import Inventory from './pages/admin/Inventory';
 import { useAuth } from './context/authContext/createAuthContext';
-import { Toaster } from 'sonner';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-function AuthRedirector() {
-  const { userLoggedIn, role, loading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (!loading && userLoggedIn && role) {
-      const path = location.pathname;
-      // Only redirect if on root, login, or signup
-      if (path === '/' || path === '/login' || path === '/signup') {
-        if (role === 'admin') {
-          navigate('/admin/inventory', { replace: true });
-        } else if (role === 'staff') {
-          navigate('/staff/dashboard', { replace: true });
-        } else {
-          navigate('/customer/home', { replace: true });
-        }
-      }
-    }
-  }, [userLoggedIn, role, loading, navigate, location]);
-
-  return null;
-}
 
 function App() {
-  const { loading } = useAuth();
 
-  if (loading) return null;
-
+  const { userLoggedIn } = useAuth();
   return (
     <Router>
-      <AuthRedirector />
       <div className="min-h-screen bg-gray-50">
-        <Toaster richColors toastOptions={{
-          style: {
-            fontSize: '1rem',
-            padding: '16px',
-            minHeight: '75px',
-            minWidth: '300px'
-          }
-        }} />
         <Routes>
           {/* Home routes - using unified HomePage component */}
           <Route path="/" element={<HomePage />} />
           <Route path="/customer/home" element={<HomePage />} />
 
           {/* Pre-auth routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
+          <Route path="/signup" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Signup />} />
 
           {/* Post-auth routes */}
           <Route path="/customer/products" element={<Products />} />
@@ -101,6 +63,8 @@ function App() {
 
           {/* Staff routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
+
+
         </Routes>
       </div>
     </Router>
