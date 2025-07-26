@@ -170,11 +170,11 @@ const BikesCategory = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Get products from your hook
-  const { products, loading: productsLoading } = useProducts();
+  const { products } = useProducts();
   const { addToCart } = useCart();
 
   // Add wishlist hook
-  const { wishlist, addItem, removeItem, isInWishlist, refreshWishlist } = useWishlist(addToCart);
+  const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
 
   // Filter products to only show bikes
   const bikes = useMemo(() => {

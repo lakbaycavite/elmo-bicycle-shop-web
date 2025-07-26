@@ -16,7 +16,7 @@ import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 
 const Inventory = () => {
 
-    const { uploadImage, uploading, progress } = useCloudinaryUpload();
+    const { uploadImage, uploading } = useCloudinaryUpload();
 
     // State for modals
     const [showAddModal, setShowAddModal] = useState(false);
@@ -31,7 +31,7 @@ const Inventory = () => {
     const [categoryFilter, setCategoryFilter] = useState('all');
 
     // hook
-    const { products, loading, error, createProduct, deleteProduct, updateProduct } = useProducts();
+    const { products, loading, createProduct, deleteProduct, updateProduct } = useProducts();
 
     const [formData, setFormData] = useState({
         name: '',

@@ -1,13 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { doSignInWithEmailAndPassword } from '../../firebase/auth';
 import { getUserById } from '../../services/userService';
-import { useAuth } from '../../context/authContext/createAuthContext';
 
 function Login() {
   const navigate = useNavigate();
-  const { userLoggedIn } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,11 +51,11 @@ function Login() {
           .then(async (userCredential) => {
             console.log("Login successful"); // ✅ Check 4
             console.log("UserCredential:", userCredential); // Debug log
-            
+
             // Get user from userCredential
             const user = userCredential.user;
             console.log("User UID:", user.uid); // Debug log
-            
+
             try {
               const userRecord = await getUserById(user.uid);
               console.log('Fetched user record:', userRecord); // Debug log
@@ -79,7 +77,7 @@ function Login() {
               // Fallback: go to customer home
               navigate('/customer/home');
             }
-            
+
             setIsSigningIn(false);
             setLoading(false);
           })
