@@ -113,7 +113,7 @@ function UserManagement() {
         <div className="flex-1 p-4">
           <div className="bg-white shadow-xl rounded-lg w-full p-4">
             <label className="text-orange-500 text-bold text-2xl mb-4">
-              <h1>Staffs and Customers</h1>
+              <h1>Staffs</h1>
             </label>
             <div className='flex flex-row gap-4 mb-6'>
               <input

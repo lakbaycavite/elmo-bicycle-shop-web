@@ -12,7 +12,7 @@ function Sidebar({ userType = "admin" }) {
     { label: 'INVENTORY', route: '/admin/inventory' },
     { label: 'USER ACTIVITY', route: '/admin/user-activity' },
     { label: 'ORDERS OVERVIEW', route: '/admin/orders-overview' },
-    { label: 'USER MANAGEMENT', route: '/admin/user-management' },
+    { label: 'STAFF MANAGEMENT', route: '/admin/staff-management' },
     { label: 'ACCOUNT MANAGE', route: '/admin/account-manage' },
   ];
 
@@ -29,9 +29,9 @@ function Sidebar({ userType = "admin" }) {
   return (
     <div className="w-64 bg-gray-800 text-white p-4">
       <div className="mb-8">
-        <img 
-          src="/images/logos/elmo.png" 
-          alt="Elmo Bicycle Shop" 
+        <img
+          src="/images/logos/elmo.png"
+          alt="Elmo Bicycle Shop"
           className="h-10 w-auto mb-2"
         />
         {/* Removed Admin Panel label */}
@@ -57,7 +57,7 @@ function Sidebar({ userType = "admin" }) {
       </nav>
       <div className="mt-8 pt-8 border-t border-gray-700">
         <button
-          onClick={handleLogout} 
+          onClick={handleLogout}
           className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
         >
           Logout
