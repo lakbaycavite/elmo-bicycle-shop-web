@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
-import { Loader2, Edit, UserX } from 'lucide-react';
+import { Loader2, Edit } from 'lucide-react';
+import { useAuth } from '../../context/authContext/createAuthContext';
 
 function UserManagement() {
-  const currentDateTime = '2025-07-26 10:09:03';
-  const currentUserLogin = 'lanceballicud';
+
+  const { currentUser } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [selectedPageAccess, setSelectedPageAccess] = useState('orders');
 
-  // Inventory permissions state
+  // Inventory permissions state (using object structure as in your code)
   const [inventoryPermissions, setInventoryPermissions] = useState({
     addProduct: false,
     readProduct: false,
@@ -71,7 +72,6 @@ function UserManagement() {
     setShowEditModal(true);
   };
 
-
   // Handle inventory permission checkbox changes
   const handlePermissionChange = (permission) => {
     setInventoryPermissions(prev => ({
@@ -84,17 +84,24 @@ function UserManagement() {
     if (selectedAccount && selectedAccount.role === 'staff') {
       const updateData = {
         pageAccess: selectedPageAccess,
-        accessUpdatedAt: currentDateTime,
-        accessUpdatedBy: currentUserLogin
+        accessUpdatedAt: new Date().toISOString(),
+        accessUpdatedBy: currentUser?.email || 'Admin'
       };
 
       // Only include inventory permissions if inventory is selected
       if (selectedPageAccess === 'inventory') {
         updateData.inventoryPermissions = inventoryPermissions;
+      } else {
+        // If orders is selected, remove any inventory permissions
+        updateData.inventoryPermissions = null;
       }
 
-      await editUser(selectedAccount.id, updateData);
-      loadUsers(); // Reload users to get updated data
+      try {
+        await editUser(selectedAccount.id, updateData);
+        loadUsers(); // Reload users to get updated data
+      } catch (error) {
+        console.error("Error updating user access:", error);
+      }
     }
     setShowEditModal(false);
   };
@@ -179,7 +186,6 @@ function UserManagement() {
                           >
                             <Edit size={16} className="mr-1" /> Edit Access
                           </button>
-
                         </td>
                       </tr>
                     ))
@@ -294,7 +300,8 @@ function UserManagement() {
               )}
 
               <p className="text-sm text-gray-500 mt-4">
-                Last updated: {currentDateTime} by {currentUserLogin}
+                Last updated: {selectedAccount.accessUpdatedAt || 'Never'}
+                {selectedAccount.accessUpdatedBy ? ` by ${selectedAccount.accessUpdatedBy}` : ''}
               </p>
             </div>
 
@@ -321,8 +328,6 @@ function UserManagement() {
           </div>
         </div>
       )}
-
-
     </AdminLayout>
   );
 }
