@@ -3,8 +3,10 @@ import { CircleUser, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
+import { useUserStatus } from '../../hooks/useUserStatus';
 function AccountManage() {
-  const { users, loading, error, changeRole, removeUser, editUser } = useUsers();
+  const { users, loading, error, changeRole, editUser, loadUsers } = useUsers();
+  const { disableUser, reactivateUser } = useUserStatus();
 
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +29,8 @@ function AccountManage() {
   const [editAccount, setEditAccount] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState(null);
+  const [accountToReactivate, setAccountToReactivate] = useState(null);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
 
   // Update accounts when users data changes
   useEffect(() => {
@@ -55,9 +59,12 @@ function AccountManage() {
   });
 
   const handleActionChange = async (account, action) => {
-    if (action === 'delete') {
+    if (action === 'disable') {
       setAccountToDelete(account);
       setIsDeleteModalOpen(true);
+    } else if (action === 'reactivate') {
+      setAccountToReactivate(account);
+      setIsActivateModalOpen(true);
     } else if (action === 'edit') {
       setEditAccount(account);
       setIsEditAccountModalOpen(true);
@@ -156,7 +163,8 @@ function AccountManage() {
   const handleDeleteAccount = async () => {
     if (!accountToDelete) return;
     try {
-      await removeUser(accountToDelete.id);
+      // await removeUser(accountToDelete.id);
+      await disableUser({ uid: accountToDelete.id, reason: 'Account deleted by admin' });
       setIsDeleteModalOpen(false);
       setAccountToDelete(null);
     } catch (error) {
@@ -165,14 +173,26 @@ function AccountManage() {
     }
   };
 
+  const handleReactivateSubmit = async () => {
+    if (accountToReactivate) {
+      await reactivateUser({
+        uid: accountToReactivate.id,
+        reason: 'Administrative reactivation'
+      });
+      loadUsers(); // Reload users to get updated data
+    }
+    setAccountToReactivate(null);
+    setIsActivateModalOpen(false);
+  };
+
   // Helper function to format user name
   const formatUserName = (user) => {
-    if (user.firstName && user.lastName) {
+    if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
-    } else if (user.displayName) {
+    } else if (user?.displayName) {
       return user.displayName;
     } else {
-      return user.email || 'Unknown User';
+      return user?.email || 'Unknown User';
     }
   };
 
@@ -311,7 +331,11 @@ function AccountManage() {
                           >
                             <option value="" disabled className='font-bold'>Action</option>
                             <option value="edit" className='font-bold'>Edit</option>
-                            <option value="delete" className='font-bold'>Delete</option>
+                            {account.accountStatus === 'disabled' ? (
+                              <option value="reactivate" className='font-bold'>Reactivate</option>
+                            ) : (
+                              <option value="disable" className='font-bold'>Disable</option>
+                            )}
                             <option value="make-admin" className='font-bold'>Make Admin</option>
                             <option value="make-staff" className='font-bold'>Make Staff</option>
                             <option value="make-customer" className='font-bold'>Make Customer</option>
@@ -593,9 +617,8 @@ function AccountManage() {
                 </div>
                 <div className="mb-6">
                   <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDelete)}</span> (<span className="text-gray-600">{accountToDelete.email}</span>)?</p>
-                  <p className="text-red-500 mt-2">This action cannot be undone.</p>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-3 gap-2">
                   <button
                     type="button"
                     onClick={() => { setIsDeleteModalOpen(false); setAccountToDelete(null); }}
@@ -609,6 +632,41 @@ function AccountManage() {
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
                     Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isActivateModalOpen && accountToReactivate && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Reactivate</h2>
+                  <button
+                    onClick={() => { setIsActivateModalOpen(false); setAccountToReactivate(null); }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to reactivate the account for <span className="font-bold">{formatUserName(accountToReactivate)}</span> (<span className="text-gray-600">{accountToReactivate.email}</span>)?</p>
+                </div>
+                <div className="flex justify-end space-x-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setIsActivateModalOpen(false); setAccountToReactivate(null); }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReactivateSubmit}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Reactivate
                   </button>
                 </div>
               </div>

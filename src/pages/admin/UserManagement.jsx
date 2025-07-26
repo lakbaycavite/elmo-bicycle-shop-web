@@ -15,8 +15,6 @@ function UserManagement() {
   const [disableReason, setDisableReason] = useState('');
   const [reactivateReason, setReactivateReason] = useState('');
 
-  const currentUserLogin = 'lanceballicud';
-  const currentDateTime = '2025-07-26 06:17:23';
 
   const {
     users,
@@ -29,10 +27,7 @@ function UserManagement() {
     disableUser,
     reactivateUser,
     loading: statusLoading,
-  } = useUserStatus({
-    currentUserLogin,
-    currentDateTime
-  });
+  } = useUserStatus();
 
   const filteredAccounts = users.filter(account => {
     const searchFilter = account?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
