@@ -1,18 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 
 function UserManagement() {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-
-  const initialAccounts = [
-    { name: 'Angelo Martinez', role: 'CUSTOMER', email: 'gelomartineze@yahoo.com' },
-    { name: 'Gabriel Lopez', role: 'KUPAL', email: 'tenz123@gmail.com' },
-    { name: 'Alfonso Mabale', role: 'KUPAL', email: 'abby123@gmail.com' },
-    { name: 'Raymundo Pallera', role: 'KUPAL', email: 'rassengan@gmail.com' },
-  ];
+  const [selectedRole, setSelectedRole] = useState('');
 
   const {
     users,
@@ -23,23 +15,21 @@ function UserManagement() {
     removeUser
   } = useUsers();
 
-  console.log('Users:', users);
+  const filteredAccounts = users.filter(account => {
+    const searchFilter = account?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      account?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      account?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const roleFilter = selectedRole === 'all' || selectedRole === '' || account.role.toLowerCase() === selectedRole.toLowerCase();
+    return searchFilter && roleFilter;
+  });
 
-  const [accounts, setAccounts] = useState(initialAccounts);
-
-  const filteredAccounts = accounts.filter(account =>
-    account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleActionChange = (account, action) => {
-    if (action === 'delete') {
-      setAccounts(accounts.filter(acc => acc.email !== account.email));
-    } else if (action === 'edit') {
-      console.log(`Editing account: ${account.name}`);
-    }
-  };
+  // const handleActionChange = (account, action) => {
+  //   if (action === 'delete') {
+  //     setAccounts(accounts.filter(acc => acc.email !== account.email));
+  //   } else if (action === 'edit') {
+  //     console.log(`Editing account: ${account.firstName} ${account.lastName}`);
+  //   }
+  // };
 
   return (
     <AdminLayout>
@@ -57,8 +47,11 @@ function UserManagement() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <select className='p-1 border-1 rounded-lg'>
-                <option value="">All Roles</option>
+              <select className='p-1 border-1 rounded-lg' onClick={(e) => setSelectedRole(e.target.value)} defaultValue={selectedRole}>
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="staff">Staff</option>
+                <option value="customer">Customer</option>
               </select>
             </div>
 
@@ -76,7 +69,7 @@ function UserManagement() {
                 <tbody>
                   {filteredAccounts.map((account, index) => (
                     <tr key={index} className="bg-gray-800 text-white border-b border-gray-700">
-                      <td className="py-3 px-4">{account.name}</td>
+                      <td className="py-3 px-4">{account.firstName} {account.lastName}</td>
                       <td className="py-3 px-4">{account.role}</td>
                       <td className="py-3 px-4">{account.email}</td>
                       <td className="py-3 px-4">
