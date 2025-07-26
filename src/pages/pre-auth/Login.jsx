@@ -62,12 +62,10 @@ function Login() {
               const role = userRecord.role || 'customer';
               console.log('Role:', role); // Debug log
               // Redirect based on role
-              if (role === 'admin') {
+              if (role === 'admin' || role === 'staff') {
                 console.log('Redirecting to admin inventory');
                 navigate('/admin/inventory');
-              } else if (role === 'staff') {
-                console.log('Redirecting to staff dashboard');
-                navigate('/staff/dashboard');
+
               } else {
                 console.log('Redirecting to customer home');
                 navigate('/customer/home');

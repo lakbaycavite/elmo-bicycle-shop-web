@@ -1,20 +1,60 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { doSignOut } from '../firebase/auth'
+import { useUsers } from '../hooks/useUser';
+import { useCallback, useEffect, useMemo } from 'react';
 
-function Sidebar({ userType = "admin" }) {
+function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation();
-
-  const isAdmin = userType === "admin"
+  const { currentUserData } = useUsers();
 
   // Define menu items with their routes
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { label: 'INVENTORY', route: '/admin/inventory' },
     { label: 'USER ACTIVITY', route: '/admin/user-activity' },
     { label: 'ORDERS OVERVIEW', route: '/admin/orders-overview' },
     { label: 'STAFF MANAGEMENT', route: '/admin/staff-management' },
     { label: 'ACCOUNT MANAGE', route: '/admin/account-manage' },
-  ];
+
+  ], []);
+
+  // Filter menu items based on user role and pageAccess
+  const getFilteredMenuItems = useCallback(() => {
+    // If currentUserData is not yet loaded, return empty array to prevent showing wrong menus
+    if (!currentUserData) {
+      return [];
+    }
+
+    // If admin, show all menu items
+    if (currentUserData.role === "admin") {
+      return menuItems;
+    }
+
+    // If staff with specific pageAccess, only show relevant menu
+    if (currentUserData.role === "staff" && currentUserData.pageAccess) {
+      if (currentUserData.pageAccess === "inventory") {
+        return menuItems.filter(item => item.label === 'INVENTORY');
+      }
+      if (currentUserData.pageAccess === "orders") {
+        return menuItems.filter(item => item.label === 'ORDERS OVERVIEW');
+      }
+    }
+
+    // Default: return empty array for security
+    return [];
+  }, [currentUserData, menuItems]);
+
+  // Auto-redirect to appropriate page on role change or initial load
+  useEffect(() => {
+    if (currentUserData) {
+      const filteredItems = getFilteredMenuItems();
+
+      // If user has no access to current page, redirect to first allowed page
+      if (filteredItems.length > 0 && !filteredItems.some(item => item.route === location.pathname)) {
+        navigate(filteredItems[0].route);
+      }
+    }
+  }, [currentUserData, location.pathname, navigate, getFilteredMenuItems]);
 
   const handleLogout = async () => {
     try {
@@ -34,12 +74,16 @@ function Sidebar({ userType = "admin" }) {
           alt="Elmo Bicycle Shop"
           className="h-10 w-auto mb-2"
         />
-        {/* Removed Admin Panel label */}
+        {/* User info and timestamp */}
+        <div className="text-xs text-gray-400 mt-2">
+          <div>{currentUserData?.email}</div>
+          <div className="text-orange-400 font-semibold">{currentUserData?.role || 'Loading...'}</div>
+        </div>
       </div>
       <nav className="space-y-2">
-        {isAdmin && (
+        {currentUserData && (
           <>
-            {menuItems.map((item) => {
+            {getFilteredMenuItems().map((item) => {
               const isActive = location.pathname === item.route;
               return (
                 <button
@@ -67,4 +111,4 @@ function Sidebar({ userType = "admin" }) {
   )
 }
 
-export default Sidebar 
+export default Sidebar

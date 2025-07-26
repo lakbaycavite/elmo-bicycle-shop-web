@@ -10,12 +10,47 @@ import {
     ArrowDown,
     Upload,
     Loader2,
-    Eye
+    Eye,
+    AlertCircle // Added for permission alerts
 } from 'lucide-react';
 import { useProducts } from '../../hooks/useProduct';
 import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
+import { useUsers } from '../../hooks/useUser'; // Added for user data
+import { toast } from 'sonner';
 
 const Inventory = () => {
+    // Added auth and permissions
+    const { currentUserData } = useUsers();
+
+    // Permission state
+    const [permissions, setPermissions] = useState({
+        canView: true, // Default to true for existing functionality
+        canAdd: true,
+        canEdit: true,
+        canDelete: true
+    });
+    // Check permissions when user data is loaded
+    useEffect(() => {
+        if (currentUserData) {
+            const isAdmin = currentUserData.role === 'admin';
+
+            // Admin has all permissions, staff permissions are based on inventory settings
+            setPermissions({
+                canView: isAdmin || (currentUserData.role === 'staff' &&
+                    currentUserData.pageAccess === 'inventory' &&
+                    currentUserData.inventoryPermissions?.readProduct),
+                canAdd: isAdmin || (currentUserData.role === 'staff' &&
+                    currentUserData.pageAccess === 'inventory' &&
+                    currentUserData.inventoryPermissions?.addProduct),
+                canEdit: isAdmin || (currentUserData.role === 'staff' &&
+                    currentUserData.pageAccess === 'inventory' &&
+                    currentUserData.inventoryPermissions?.editProduct),
+                canDelete: isAdmin || (currentUserData.role === 'staff' &&
+                    currentUserData.pageAccess === 'inventory' &&
+                    currentUserData.inventoryPermissions?.deleteProduct)
+            });
+        }
+    }, [currentUserData]);
 
     const { uploadImage, uploading } = useCloudinaryUpload();
 
@@ -136,8 +171,14 @@ const Inventory = () => {
     // Calculate total pages
     const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
-    // Open edit modal with product data
+    // Modified to check permissions before opening edit modal
     const handleEditClick = async (product) => {
+        // Check if user has edit permission
+        if (!permissions.canEdit) {
+            toast.error("You don't have permission to edit products");
+            return;
+        }
+
         setEditProduct(product);
         setEditFormData({
             id: product.id,
@@ -155,8 +196,14 @@ const Inventory = () => {
         setShowEditModal(true);
     };
 
-    // Open details modal with product data
+    // Modified to check permissions before opening details modal
     const handleViewDetails = (product) => {
+        // Check if user has view permission
+        if (!permissions.canView) {
+            toast.error("You don't have permission to view product details");
+            return;
+        }
+
         setViewProduct(product);
         setShowDetailsModal(true);
     };
@@ -200,8 +247,26 @@ const Inventory = () => {
         setCurrentPage(1);
     }, [searchTerm]);
 
+    // Modified to check permissions before opening add modal
+    const handleAddButtonClick = () => {
+        if (!permissions.canAdd) {
+            toast.error("You don't have permission to add products");
+            return;
+        }
+
+        setShowAddModal(true);
+    };
+
+    // Modified to check permissions before submitting
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Verify permission again as a security measure
+        if (!permissions.canAdd) {
+            toast.error("You don't have permission to add products");
+            return;
+        }
+
         if (!formData.name || !formData.category || !formData.price || formData.stock < 0) {
             alert('Please fill in all required fields.');
             return;
@@ -214,52 +279,64 @@ const Inventory = () => {
 
         const productData = {
             ...formData,
-            image: imageUrl || formData.image
+            image: imageUrl || formData.image,
+            createdAt: '2025-07-26 10:55:20',
+            createdBy: 'lanceballicud'
         };
 
+        try {
+            await createProduct(productData);
+            setShowAddModal(false);
+            toast.success('Product added successfully');
 
-        await createProduct(productData)
-            .then(() => {
-                setShowAddModal(false);
-            })
-            .catch(err => {
-                console.error('Error creating product:', err);
-                alert('Failed to create product. Please try again.');
-            })
-        setFormData({
-            name: '',
-            image: '',
-            category: '',
-            brand: '',
-            price: 0,
-            spec1: '',
-            spec1Label: '',
-            spec2: '',
-            spec2Label: '',
-            stock: 0,
-            type: '',
-            weight: ''
-        });
+            setFormData({
+                name: '',
+                image: '',
+                category: '',
+                brand: '',
+                price: 0,
+                spec1: '',
+                spec1Label: '',
+                spec2: '',
+                spec2Label: '',
+                stock: 0,
+                type: '',
+                weight: ''
+            });
+        } catch (err) {
+            console.error('Error creating product:', err);
+            alert('Failed to create product. Please try again.');
+        }
+    };
 
-        console.log(formData)
-
-    }
-
+    // Modified to check permissions before deleting
     const handleDelete = async (id) => {
+        // Verify permission
+        if (!permissions.canDelete) {
+            toast.error("You don't have permission to delete products");
+            return;
+        }
+
         console.log(`Deleting product with ID: ${id}`);
 
-        await deleteProduct(id)
-            .then(() => {
-                console.log(`Product with ID ${id} deleted successfully`);
-            })
-            .catch((error) => {
-                console.error('Error deleting product:', error);
-                alert('Failed to delete product. Please try again.');
-            })
-    }
+        try {
+            await deleteProduct(id);
+            toast.success('Product deleted successfully');
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            alert('Failed to delete product. Please try again.');
+        }
+    };
 
+    // Modified to check permissions before submitting edit
     const handleEditSubmit = async (e) => {
         e.preventDefault();
+
+        // Verify permission again as a security measure
+        if (!permissions.canEdit) {
+            toast.error("You don't have permission to edit products");
+            return;
+        }
 
         if (!editFormData.name || !editFormData.category || !editFormData.price || editFormData.stock < 0) {
             alert('Please fill in all required fields.');
@@ -267,7 +344,6 @@ const Inventory = () => {
         }
 
         try {
-
             let imageUrl = null;
             if (editFormData.image instanceof File) {
                 imageUrl = await uploadImage(editFormData.image, 'products');
@@ -275,12 +351,14 @@ const Inventory = () => {
 
             const productData = {
                 ...editFormData,
-                image: imageUrl || editFormData.image
+                image: imageUrl || editFormData.image,
+                updatedAt: '2025-07-26 10:55:20',
+                updatedBy: 'lanceballicud'
             };
 
             await updateProduct(editProduct.id, productData);
             setShowEditModal(false);
-            // Optional: Show success message
+            toast.success('Product updated successfully');
             console.log('Product updated successfully!:', editFormData);
         } catch (error) {
             console.error('Error updating product:', error);
@@ -288,18 +366,37 @@ const Inventory = () => {
         }
     };
 
+    // If user doesn't have view permission, show access denied
+    // if (!permissions.canView && currentUserData) {
+    //     return (
+    //         <div className="min-h-screen bg-white flex">
+    //             <Sidebar userType={"admin"} />
+    //             <div className="flex-1 p-8 flex items-center justify-center">
+    //                 <div className="text-center bg-red-50 p-8 rounded-lg max-w-md shadow-lg">
+    //                     <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+    //                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+    //                     <p className="text-gray-600 mb-4">
+    //                         You don't have permission to view the inventory.
+    //                     </p>
+    //                     <p className="text-sm text-gray-500">
+    //                         Please contact an administrator if you believe this is an error.
+    //                     </p>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="min-h-screen bg-white flex">
             {/* Sidebar */}
-            <Sidebar userType="admin" />
+            <Sidebar />
 
             {/* Main Content */}
             <div className="flex-1 p-8 overflow-x-auto">
                 {/* User and DateTime Info */}
                 <div className="text-sm text-gray-500 mb-4">
                     {/* Added timestamp information here */}
-                    <p>Current Time: 2025-07-26 10:31:30 | User: lanceballicud</p>
                 </div>
 
                 {/* Header */}
@@ -307,14 +404,18 @@ const Inventory = () => {
 
                 {/* Controls Container */}
                 <div className="flex justify-between items-center mb-6">
-                    {/* Left: Add Product Button */}
-                    <button
-                        className="flex items-center bg-[#ff6900] hover:bg-[#e55e00] text-white py-2 px-4 rounded-md"
-                        onClick={() => setShowAddModal(true)}
-                    >
-                        <Plus size={18} className="mr-2" />
-                        Add Product
-                    </button>
+                    {/* Left: Add Product Button - Only show if user has permission */}
+                    {permissions.canAdd ? (
+                        <button
+                            className="flex items-center bg-[#ff6900] hover:bg-[#e55e00] text-white py-2 px-4 rounded-md"
+                            onClick={handleAddButtonClick}
+                        >
+                            <Plus size={18} className="mr-2" />
+                            Add Product
+                        </button>
+                    ) : (
+                        <div></div> // Empty div to maintain layout
+                    )}
 
                     {/* Right: Search and Sort */}
                     <div className="flex space-x-3">
@@ -401,24 +502,34 @@ const Inventory = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex space-x-2">
-                                            {/* New View Details Button */}
-                                            <button
-                                                className="text-blue-400 hover:text-blue-300 bg-gray-800 p-2 rounded-md"
-                                                onClick={() => handleViewDetails(product)}
-                                            >
-                                                <Eye size={18} />
-                                            </button>
-                                            <button
-                                                className="text-[#ff6900] hover:text-[#e55e00] bg-gray-800 p-2 rounded-md"
-                                                onClick={() => handleEditClick(product)}
-                                            >
-                                                <Edit2 size={18} />
-                                            </button>
-                                            <button className="text-red-500 hover:text-red-400 bg-gray-800 p-2 rounded-md"
-                                                onClick={() => handleDelete(product.id)}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            {/* View button - Only show if user has view permission */}
+                                            {permissions.canView && (
+                                                <button
+                                                    className="text-blue-400 hover:text-blue-300 bg-gray-800 p-2 rounded-md"
+                                                    onClick={() => handleViewDetails(product)}
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                            )}
+
+                                            {/* Edit button - Only show if user has edit permission */}
+                                            {permissions.canEdit && (
+                                                <button
+                                                    className="text-[#ff6900] hover:text-[#e55e00] bg-gray-800 p-2 rounded-md"
+                                                    onClick={() => handleEditClick(product)}
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                            )}
+
+                                            {/* Delete button - Only show if user has delete permission */}
+                                            {permissions.canDelete && (
+                                                <button className="text-red-500 hover:text-red-400 bg-gray-800 p-2 rounded-md"
+                                                    onClick={() => handleDelete(product.id)}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
