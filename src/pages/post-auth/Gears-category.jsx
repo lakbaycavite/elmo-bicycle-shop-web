@@ -523,7 +523,7 @@ const GearsCategory = () => {
                             <hr style={{ borderColor: 'var(--border-color)' }} />
                             <h3 className="fs-5 mb-3">Filter by Type</h3>
                             <div className="d-flex flex-wrap gap-2">
-                                {gearPartsCategories.map(category => (
+                                {gearTypes.map(category => (
                                     <FilterCheckbox
                                         key={category}
                                         category={category}
