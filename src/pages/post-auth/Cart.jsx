@@ -5,32 +5,75 @@ import { useCart } from "../../hooks/useCart";
 import { useProducts } from "../../hooks/useProduct";
 import elmoLogo from '/images/logos/elmo.png'
 import OrderDetailsModal from "../../components/OrderDetailsModal";
+import ProductRatingModal from "../../components/ProductRatingModal";
 import { useState } from "react";
-
+import ProductDetailsModal from "../../components/ProductsDetailsModal";
+import { toast } from "sonner";
 
 const Cart = () => {
-
     const [showOrderModal, setShowOrderModal] = useState(false);
-    const { cart, updateQuantity, removeItem, totalPrice, addToCart } = useCart();
-    const { products } = useProducts();
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [orderCompleted, setOrderCompleted] = useState(false);
+    const [completedCartItems, setCompletedCartItems] = useState([]);
+    const [viewProduct, setViewProduct] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+    const { cart, updateQuantity, removeItem, totalPrice, addToCart, clearCart } = useCart();
+    const { products, getProduct } = useProducts();
 
     const navigate = useNavigate();
 
 
-    const handleUpdateQuantity = async (id, newQuantity) => {
-        if (newQuantity < 1) return; // Prevent negative quantities
-
-
-        await updateQuantity(id, newQuantity)
+    // Handle checkout completion
+    const handleCheckoutComplete = () => {
+        setCompletedCartItems([...cart]);
+        setShowOrderModal(false);
+        setOrderCompleted(true);
+        setShowRatingModal(true);
     };
 
-    // Handle item removal
+    const handleShowDetailsModal = async (product) => {
+        if (!product) {
+            console.error("No product data provided for details modal");
+            return;
+        }
+        await getProduct(product.id)
+            .then(() => {
+                setViewProduct(product);
+                setShowDetailsModal(true);
+            })
+            .catch((error) => {
+                console.error("Error fetching product details:", error);
+                toast.error(`Failed to load product details`);
+            });
+    }
+
+    // Handle rating submission
+    const handleRatingSubmit = async (ratings) => {
+        try {
+            // Here you would send the ratings to your backend
+            console.log("Submitting ratings:", ratings);
+
+            // You might want to call an API here
+            // await submitProductRatings(ratings);
+
+            // After successful submission, clear the cart and redirect
+            clearCart();
+            navigate("/");
+        } catch (error) {
+            console.error("Error submitting ratings:", error);
+        }
+    };
+
+    const handleUpdateQuantity = async (id, newQuantity) => {
+        if (newQuantity < 1) return; // Prevent negative quantities
+        await updateQuantity(id, newQuantity);
+    };
 
     // Format price to Philippine Peso
     const formatPrice = (price) => {
         return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
     };
-
 
     return (
         <div className="w-full h-full flex flex-col space-y-4 items-center justify-center p-4 bg-gray-950">
@@ -118,10 +161,6 @@ const Cart = () => {
                 <div className="w-full border-t border-gray-200 bg-white p-5 rounded-b-xl">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center">
-                            {/* <button className="flex items-center text-gray-600 hover:text-orange-500 mr-4">
-                                <RefreshCw size={16} className="mr-1" />
-                                <span>Update Cart</span>
-                            </button> */}
                             <button className="flex items-center text-gray-600 hover:text-orange-500" onClick={() => navigate("/")}>
                                 <ArrowLeft size={16} className="mr-1" />
                                 <span>Continue Shopping</span>
@@ -136,7 +175,6 @@ const Cart = () => {
                                 </div>
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-gray-600">Discount:</span>
-                                    {/* <span className="font-medium">{formatPrice(discount)}</span> */}
                                 </div>
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                     <span className="font-bold text-lg">Grand Total:</span>
@@ -197,6 +235,7 @@ const Cart = () => {
                                 <CartCard
                                     productDetails={product}
                                     title={product.name}
+                                    handleShowDetailsModal={handleShowDetailsModal}
                                     productId={product.id}
                                     description1={product.spec1}
                                     rating={product.rating}
@@ -209,11 +248,28 @@ const Cart = () => {
                 </div>
             </div>
 
+            {/* Order Details Modal */}
             <OrderDetailsModal
                 show={showOrderModal}
                 onClose={() => setShowOrderModal(false)}
+                onComplete={handleCheckoutComplete}
             />
-        </div >
+
+            {/* Product Rating Modal */}
+            <ProductRatingModal
+                show={showRatingModal}
+                onClose={() => setShowRatingModal(false)}
+                cartItems={orderCompleted ? completedCartItems : []}
+                onSubmitRatings={handleRatingSubmit}
+            />
+
+            <ProductDetailsModal
+                viewProduct={viewProduct}
+                showDetailsModal={showDetailsModal}
+                setShowDetailsModal={setShowDetailsModal}
+                formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`} // Example price formatting function
+            />
+        </div>
     )
 }
 

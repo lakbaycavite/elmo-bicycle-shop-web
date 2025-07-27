@@ -65,7 +65,6 @@ export const useUsers = (initialUserId = null) => {
         try {
             const data = await getAllUsers();
             setUsers(data);
-            console.log('Loaded users:', data);
             return data;
         } catch (err) {
             setError(err.message);

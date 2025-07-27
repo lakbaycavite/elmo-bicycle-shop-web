@@ -6,7 +6,7 @@ const CartCard = ({
     description1,
     image,
     productId,
-    viewDetails,
+    handleShowDetailsModal,
     rating = 0,
     addToCart,
     children,
@@ -53,7 +53,7 @@ const CartCard = ({
 
 
                 <button
-                    onClick={viewDetails}
+                    onClick={() => handleShowDetailsModal(productDetails)}
                     className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded transition duration-200"
                 >
                     Details

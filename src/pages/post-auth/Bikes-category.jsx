@@ -2,9 +2,13 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
-import { useWishlist } from '../../hooks/useWishlist'; // Import the wishlist hook
+import { useWishlist } from '../../hooks/useWishlist';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
+import { onValue, ref } from 'firebase/database';
+import { database } from '../../firebase/firebase';
+import ProductDetailsModal from '../../components/ProductsDetailsModal';
+
 
 
 const theme = {
@@ -17,7 +21,6 @@ const theme = {
   textSecondary: '#a0a0a0',
   borderColor: '#444444',
 };
-
 
 const BikeIcon = () => (
   <i className="bi bi-bicycle"></i>
@@ -46,10 +49,7 @@ const ThemeStyles = () => (
     `}</style>
 );
 
-
-
-
-const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist }) => (
+const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings, handleShowDetailsModal }) => (
   <div className="col">
     <div className="card h-100 shadow-sm" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
       <img src={bike.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={bike.name} />
@@ -76,15 +76,24 @@ const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist }) => (
           </p>
         </div>
 
+        {/* Ratings display */}
+        {averageRating && totalRatings > 0 ? (
+          <div className="mb-2">
+            <span style={{ color: 'gold' }}>★ {averageRating}</span>
+            <small className="ms-1" style={{ color: 'var(--text-secondary)' }}>({totalRatings} rating{totalRatings !== 1 ? 's' : ''})</small>
+          </div>
+        ) : (
+          <div className="mb-2" style={{ color: 'var(--text-secondary)' }}>No ratings yet</div>
+        )}
+
         <div className="d-flex gap-2">
           <button className="btn btn-add-to-cart w-100" onClick={() => onAddToCart(bike)}>Add to Cart</button>
-          <button className="btn btn-details w-100">Details</button>
+          <button className="btn btn-details w-100" onClick={() => handleShowDetailsModal(bike)}>Details</button>
         </div>
       </div>
     </div>
   </div>
 );
-
 
 const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   const id = `btn-check-${category.replace(/\s+/g, '-')}`;
@@ -99,10 +108,9 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   );
 };
 
-const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist }) => {
+const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter, handleShowDetailsModal }) => {
   const navigate = useNavigate();
 
-  // Helper function to check if a bike is in wishlist
   const isInWishlist = (bikeId) => {
     return wishlistItems.some(item => item.productId === bikeId);
   };
@@ -141,17 +149,72 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
           </button>
         </div>
       </div>
+
+      {/* Rating Filter Dropdown */}
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <div className="d-flex align-items-center">
+            <label htmlFor="ratingFilter" className="form-label me-2 mb-0" style={{ color: 'var(--text-primary)' }}>
+              Filter by Rating:
+            </label>
+            <select
+              id="ratingFilter"
+              className="form-select"
+              style={{
+                backgroundColor: 'var(--card-background)',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-color)',
+                maxWidth: '200px'
+              }}
+              value={selectedRatingFilter}
+              onChange={(e) => setSelectedRatingFilter(e.target.value)}
+            >
+              <option value="all">All Ratings</option>
+              <option value="5">5 Stars & Above</option>
+              <option value="4">4 Stars & Above</option>
+              <option value="3">3 Stars & Above</option>
+              <option value="2">2 Stars & Above</option>
+              <option value="1">1 Star & Above</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {bikes.length > 0 ? (
-          bikes.map(bike => (
-            <BikeCard
-              key={bike.id}
-              bike={bike}
-              onAddToCart={onAddToCart}
-              isInWishlist={isInWishlist(bike.id)}
-              onToggleWishlist={onToggleWishlist}
-            />
-          ))
+          bikes.map(bike => {
+            // Get ratings for this bike
+            const bikeRatings = ratingsMap[bike.id] || {};
+            const ratingsArray = Object.values(bikeRatings);
+
+            // Calculate average rating
+            let averageRating = null;
+            let totalRatings = 0;
+
+            if (ratingsArray.length > 0) {
+              const validRatings = ratingsArray.filter(rating =>
+                rating && rating.rating && !isNaN(Number(rating.rating))
+              );
+
+              if (validRatings.length > 0) {
+                const sum = validRatings.reduce((total, rating) => total + Number(rating.rating), 0);
+                averageRating = (sum / validRatings.length).toFixed(1);
+                totalRatings = validRatings.length;
+              }
+            }
+
+            return (
+              <BikeCard
+                key={bike.id}
+                bike={bike}
+                averageRating={averageRating}
+                totalRatings={totalRatings}
+                onAddToCart={onAddToCart}
+                isInWishlist={isInWishlist(bike.id)}
+                onToggleWishlist={onToggleWishlist}
+                handleShowDetailsModal={handleShowDetailsModal}
+              />
+            );
+          })
         ) : (
           <div className="col">
             <p style={{ color: 'var(--text-secondary)' }}>No bikes match your criteria.</p>
@@ -162,21 +225,37 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
   );
 }
 
-
-
 const BikesCategory = () => {
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [ratingsMap, setRatingsMap] = useState({});
+  const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [viewProduct, setViewProduct] = useState(null);
 
-  // Get products from your hook
   const { products } = useProducts();
   const { addToCart } = useCart();
-
-  // Add wishlist hook
   const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
+  const { getProduct } = useProducts();
 
-  // Filter products to only show bikes
+
+  const handleShowDetailsModal = async (product) => {
+    if (!product) {
+      console.error("No product data provided for details modal");
+      return;
+    }
+    await getProduct(product.id)
+      .then(() => {
+        setViewProduct(product);
+        setShowDetailsModal(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching product details:", error);
+        toast.error(`Failed to load product details`);
+      });
+  }
+
   const bikes = useMemo(() => {
     if (!products) return [];
     return products.filter(product =>
@@ -184,19 +263,44 @@ const BikesCategory = () => {
     );
   }, [products]);
 
-  // Load wishlist when component mounts
+  // Load ratings data - FIXED to match your Firebase structure
   useEffect(() => {
-    refreshWishlist();
-  }, [refreshWishlist]);
+    const ratingsRef = ref(database, 'ratings');
+
+    const unsubscribe = onValue(ratingsRef, (snapshot) => {
+      const data = snapshot.val();
+
+      if (data) {
+        // Data structure: ratings/{productId}/{ratingId}
+        const processedRatings = {};
+
+        Object.keys(data).forEach(productId => {
+          const productRatings = data[productId];
+
+          if (productRatings && typeof productRatings === 'object') {
+            processedRatings[productId] = productRatings;
+          }
+        });
+
+        setRatingsMap(processedRatings);
+      } else {
+        setRatingsMap({});
+      }
+    }, (error) => {
+      console.error('Error loading ratings:', error);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const bikeTypes = useMemo(() => {
     if (!bikes.length) return [];
-    // Extract unique bike types from the products
     const types = new Set();
     bikes.forEach(bike => {
       if (bike.type) types.add(bike.type);
     });
-
     return Array.from(types);
   }, [bikes]);
 
@@ -219,34 +323,55 @@ const BikesCategory = () => {
       const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(bike.type);
       const searchMatch =
         (bike.name && bike.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        // (bike.description && bike.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (bike.brand && bike.brand.toLowerCase().includes(searchTerm.toLowerCase()));
-      // (bike.model && bike.model.toLowerCase().includes(searchTerm.toLowerCase()));
-      return typeMatch && searchMatch;
+
+      // Rating filter logic
+      let ratingMatch = true;
+      if (selectedRatingFilter !== 'all') {
+        const bikeRatings = ratingsMap[bike.id] || {};
+        const ratingsArray = Object.values(bikeRatings);
+
+        if (ratingsArray.length > 0) {
+          const validRatings = ratingsArray.filter(rating =>
+            rating && rating.rating && !isNaN(Number(rating.rating))
+          );
+
+          if (validRatings.length > 0) {
+            const sum = validRatings.reduce((total, rating) => total + Number(rating.rating), 0);
+            const averageRating = sum / validRatings.length;
+
+            // Filter based on rating range
+            const filterValue = parseInt(selectedRatingFilter);
+            ratingMatch = Math.floor(averageRating) >= filterValue;
+          } else {
+            // No valid ratings - only show if "all" is selected
+            ratingMatch = false;
+          }
+        } else {
+          // No ratings at all - only show if "all" is selected
+          ratingMatch = false;
+        }
+      }
+
+      return typeMatch && searchMatch && ratingMatch;
     });
-  }, [bikes, selectedTypes, searchTerm]);
+  }, [bikes, selectedTypes, searchTerm, selectedRatingFilter, ratingsMap]);
 
   const handleAddToCart = async (bike) => {
     try {
-      // Add product to cart with quantity 1
       await addToCart(bike.id, 1, {
-        ...bike, // Spread the bike details
+        ...bike,
       })
-
-      // Show success message
     } catch (error) {
       toast.error(`Error adding to cart: ${error.message}`);
     }
   };
 
-  // Handle toggling wishlist
   const handleToggleWishlist = async (bike) => {
     try {
-      // Check if product is already in wishlist
       const inWishlist = wishlist.some(item => item.productId === bike.id);
 
       if (inWishlist) {
-        // Find the wishlist item id and remove it
         const wishlistItem = wishlist.find(item => item.productId === bike.id);
         if (wishlistItem) {
           await removeItem(wishlistItem.id)
@@ -255,7 +380,6 @@ const BikesCategory = () => {
             })
         }
       } else {
-        // Add the product to wishlist
         await addItem({
           id: bike.id,
           name: bike.name,
@@ -271,7 +395,6 @@ const BikesCategory = () => {
           })
       }
 
-      // Refresh wishlist after changes
       refreshWishlist();
     } catch (error) {
       console.error("Error updating wishlist:", error);
@@ -286,13 +409,12 @@ const BikesCategory = () => {
         <div
           className={`d-flex flex-column flex-shrink-0 p-3 vh-100 position-fixed ${isSidebarCollapsed ? 'collapsed-sidebar' : ''}`}
           style={{
-            width: isSidebarCollapsed ? '75px' : '280px', // Increased collapsed width
+            width: isSidebarCollapsed ? '75px' : '280px',
             backgroundColor: 'var(--background-sidebar)',
             color: 'var(--text-primary)',
             transition: 'width 0.3s ease',
           }}
         >
-
           <div className="d-flex align-items-center mb-3">
             <div
               className="burger-icon"
@@ -348,9 +470,19 @@ const BikesCategory = () => {
             onAddToCart={handleAddToCart}
             wishlistItems={wishlist}
             onToggleWishlist={handleToggleWishlist}
+            ratingsMap={ratingsMap}
+            selectedRatingFilter={selectedRatingFilter}
+            setSelectedRatingFilter={setSelectedRatingFilter}
+            handleShowDetailsModal={handleShowDetailsModal}
           />
         </div>
       </div>
+      <ProductDetailsModal
+        viewProduct={viewProduct}
+        showDetailsModal={showDetailsModal}
+        setShowDetailsModal={setShowDetailsModal}
+        formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`} // Example price formatting function
+      />
     </>
   );
 };
