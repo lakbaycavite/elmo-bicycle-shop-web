@@ -7,7 +7,7 @@ import {
     getAllOrders as getAllOrdersService,
     updateOrderStatus as updateOrderStatusService
 } from '../services/orderSerivce'
-import { get, getDatabase, ref } from 'firebase/database';
+import { get, getDatabase, ref, onValue, off, query, orderByChild, equalTo } from 'firebase/database';
 
 export function useOrder() {
     const [userOrders, setUserOrders] = useState([]);
@@ -54,7 +54,127 @@ export function useOrder() {
         checkAdminStatus();
     }, []);
 
-    // Load user's orders
+    // Real-time listener for user's orders
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (!user) {
+            setUserOrders([]);
+            return;
+        }
+
+        const db = getDatabase();
+        const ordersRef = ref(db, "orders");
+
+        // Query orders for current user
+        const userOrdersQuery = query(
+            ordersRef,
+            orderByChild("userId"),
+            equalTo(user.uid)
+        );
+
+        const unsubscribe = onValue(userOrdersQuery, (snapshot) => {
+            if (!snapshot.exists()) {
+                setUserOrders([]);
+                return;
+            }
+
+            // Format orders with their IDs
+            const orders = [];
+            snapshot.forEach((childSnapshot) => {
+                orders.push({
+                    id: childSnapshot.key,
+                    ...childSnapshot.val()
+                });
+            });
+
+            // Sort by date (newest first)
+            const sortedOrders = orders.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateB - dateA;
+            });
+
+            setUserOrders(sortedOrders);
+        }, (error) => {
+            console.error("Error listening to user orders:", error);
+            setError(error.message);
+        });
+
+        // Cleanup listener on unmount
+        return () => {
+            off(userOrdersQuery, 'value', unsubscribe);
+        };
+    }, []);
+
+    // Real-time listener for all orders (admin only)
+    useEffect(() => {
+        if (!isAdmin) {
+            setAdminOrders([]);
+            return;
+        }
+
+        const db = getDatabase();
+        const ordersRef = ref(db, "orders");
+
+        const unsubscribe = onValue(ordersRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                setAdminOrders([]);
+                return;
+            }
+
+            const orders = [];
+            snapshot.forEach((childSnapshot) => {
+                orders.push({
+                    id: childSnapshot.key,
+                    ...childSnapshot.val()
+                });
+            });
+
+            // Sort by date (newest first)
+            const sortedOrders = orders.sort((a, b) =>
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+
+            setAdminOrders(sortedOrders);
+        }, (error) => {
+            console.error("Error listening to all orders:", error);
+            setError(error.message);
+        });
+
+        // Cleanup listener on unmount
+        return () => {
+            off(ordersRef, 'value', unsubscribe);
+        };
+    }, [isAdmin]);
+
+    // Real-time listener for a specific order
+    const subscribeToOrder = useCallback((orderId) => {
+        if (!orderId) return () => { };
+
+        const db = getDatabase();
+        const orderRef = ref(db, `orders/${orderId}`);
+
+        const unsubscribe = onValue(orderRef, (snapshot) => {
+            if (snapshot.exists()) {
+                setCurrentOrder({
+                    id: orderId,
+                    ...snapshot.val()
+                });
+            } else {
+                setCurrentOrder(null);
+                setError("Order not found");
+            }
+        }, (error) => {
+            console.error(`Error listening to order ${orderId}:`, error);
+            setError(error.message);
+        });
+
+        return () => {
+            off(orderRef, 'value', unsubscribe);
+        };
+    }, []);
+
+    // Load user's orders (kept for backward compatibility, but real-time listener is preferred)
     const loadUserOrders = useCallback(async () => {
         if (!auth.currentUser) return;
 
@@ -71,7 +191,7 @@ export function useOrder() {
         }
     }, []);
 
-    // Load all orders (admin only)
+    // Load all orders (kept for backward compatibility, but real-time listener is preferred)
     const loadAllOrders = useCallback(async () => {
         if (!auth.currentUser || !isAdmin) return;
 
@@ -88,7 +208,7 @@ export function useOrder() {
         }
     }, [isAdmin]);
 
-    // Load a specific order by ID
+    // Load a specific order by ID (one-time load)
     const loadOrderById = useCallback(async (orderId) => {
         if (!auth.currentUser) return null;
 
@@ -118,9 +238,7 @@ export function useOrder() {
             setError(null);
             const result = await createOrderService(notes, contactInfo);
 
-            // Refresh user orders after creating a new one
-            await loadUserOrders();
-
+            // No need to manually refresh - real-time listener will handle it
             return result;
         } catch (err) {
             console.error('Error creating order:', err);
@@ -129,7 +247,7 @@ export function useOrder() {
         } finally {
             setLoading(false);
         }
-    }, [loadUserOrders]);
+    }, []);
 
     // Update order status (admin only)
     const updateOrderStatus = useCallback(async (orderId, status, cancelReason) => {
@@ -147,14 +265,7 @@ export function useOrder() {
 
             const result = await updateOrderStatusService(orderId, status, cancelReason);
 
-            // Update the order in our state
-            if (currentOrder && currentOrder.id === orderId) {
-                setCurrentOrder(prev => ({ ...prev, status }));
-            }
-
-            // Refresh admin orders
-            await loadAllOrders();
-
+            // No need to manually refresh - real-time listeners will handle it
             return result;
         } catch (err) {
             console.error('Error updating order status:', err);
@@ -163,17 +274,7 @@ export function useOrder() {
         } finally {
             setLoading(false);
         }
-    }, [isAdmin, currentOrder, loadAllOrders]);
-
-    // Load user orders on mount and when user changes
-    useEffect(() => {
-        loadUserOrders();
-
-        // If admin, also load all orders
-        if (isAdmin) {
-            loadAllOrders();
-        }
-    }, [loadUserOrders, loadAllOrders, isAdmin]);
+    }, [isAdmin]);
 
     // Format date as "YYYY-MM-DD HH:MM:SS"
     const formatTimestamp = useCallback(() => {
@@ -212,12 +313,13 @@ export function useOrder() {
         isAdmin,
 
         // Functions
-        loadUserOrders,
-        loadAllOrders,
+        loadUserOrders, // Keep for backward compatibility
+        loadAllOrders, // Keep for backward compatibility
         loadOrderById,
         createOrder,
         updateOrderStatus,
         formatTimestamp,
-        getOrderStats
+        getOrderStats,
+        subscribeToOrder // New function for subscribing to specific order updates
     };
 }
