@@ -7,6 +7,9 @@ import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { onValue, ref } from 'firebase/database';
 import { database } from '../../firebase/firebase';
+import ProductDetailsModal from '../../components/ProductsDetailsModal';
+
+
 
 const theme = {
   primaryAccent: '#ff8c00',
@@ -46,7 +49,7 @@ const ThemeStyles = () => (
     `}</style>
 );
 
-const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings }) => (
+const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings, handleShowDetailsModal }) => (
   <div className="col">
     <div className="card h-100 shadow-sm" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
       <img src={bike.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={bike.name} />
@@ -85,7 +88,7 @@ const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRa
 
         <div className="d-flex gap-2">
           <button className="btn btn-add-to-cart w-100" onClick={() => onAddToCart(bike)}>Add to Cart</button>
-          <button className="btn btn-details w-100">Details</button>
+          <button className="btn btn-details w-100" onClick={() => handleShowDetailsModal(bike)}>Details</button>
         </div>
       </div>
     </div>
@@ -105,7 +108,7 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   );
 };
 
-const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter }) => {
+const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter, handleShowDetailsModal }) => {
   const navigate = useNavigate();
 
   const isInWishlist = (bikeId) => {
@@ -211,6 +214,7 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
                 onAddToCart={onAddToCart}
                 isInWishlist={isInWishlist(bike.id)}
                 onToggleWishlist={onToggleWishlist}
+                handleShowDetailsModal={handleShowDetailsModal}
               />
             );
           })
@@ -230,10 +234,31 @@ const BikesCategory = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [ratingsMap, setRatingsMap] = useState({});
   const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [viewProduct, setViewProduct] = useState(null);
 
   const { products } = useProducts();
   const { addToCart } = useCart();
   const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
+  const { getProduct } = useProducts();
+
+
+  const handleShowDetailsModal = async (product) => {
+    if (!product) {
+      console.error("No product data provided for details modal");
+      return;
+    }
+    console.log("Showing details for product:", product);
+    await getProduct(product.id)
+      .then(() => {
+        setViewProduct(product);
+        setShowDetailsModal(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching product details:", error);
+        toast.error(`Failed to load product details`);
+      });
+  }
 
   const bikes = useMemo(() => {
     if (!products) return [];
@@ -461,9 +486,16 @@ const BikesCategory = () => {
             ratingsMap={ratingsMap}
             selectedRatingFilter={selectedRatingFilter}
             setSelectedRatingFilter={setSelectedRatingFilter}
+            handleShowDetailsModal={handleShowDetailsModal}
           />
         </div>
       </div>
+      <ProductDetailsModal
+        viewProduct={viewProduct}
+        showDetailsModal={showDetailsModal}
+        setShowDetailsModal={setShowDetailsModal}
+        formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`} // Example price formatting function
+      />
     </>
   );
 };
