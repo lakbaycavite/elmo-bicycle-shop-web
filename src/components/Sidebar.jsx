@@ -7,6 +7,7 @@ function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUserData } = useUsers();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Define menu items with their routes
   const menuItems = [
@@ -39,6 +40,18 @@ function Sidebar() {
   const [userEmail, setUserEmail] = useState(() => {
     return localStorage.getItem('elmo_user_email') || 'lanceballicud';
   });
+
+  // Close drawer when screen size becomes large
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) { // lg breakpoint
+        setDrawerOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Use useLayoutEffect to update menu before browser paint to prevent flickering
   useLayoutEffect(() => {
@@ -96,45 +109,141 @@ function Sidebar() {
     }
   };
 
+  const handleMenuClick = (route) => {
+    navigate(route);
+    setDrawerOpen(false); // Close drawer on mobile after navigation
+  };
+
+  // Mobile Drawer Component
+  const MobileDrawer = () => {
+    if (!drawerOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex lg:hidden">
+        {/* Overlay */}
+        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setDrawerOpen(false)}></div>
+        {/* Drawer panel */}
+        <div className="w-64 h-full bg-gray-800 shadow-lg p-4 flex flex-col animate-slide-in-left relative">
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 text-white hover:text-orange-500 text-2xl font-bold focus:outline-none z-10"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close drawer"
+          >
+            ×
+          </button>
+          
+          {/* Content with top margin to avoid close button */}
+          <div className="mt-8 flex flex-col h-full">
+            <div className="mb-8">
+              <img
+                src="/images/logos/elmo.png"
+                alt="Elmo Bicycle Shop"
+                className="h-10 w-auto mb-2"
+              />
+              {/* User info */}
+              <div className="text-xs text-gray-400 mt-2">
+                <div>{userEmail}</div>
+                <div className="text-orange-400 font-semibold">{userRole}</div>
+              </div>
+            </div>
+            
+            <nav className="space-y-2 flex-1">
+              {visibleMenuItems.map((item) => {
+                const isActive = location.pathname === item.route;
+                return (
+                  <button
+                    key={item.route}
+                    className={`w-full text-left px-3 py-2 rounded hover:bg-gray-700 uppercase font-bold ${isActive ? 'text-orange-400' : 'text-white'}`}
+                    onClick={() => handleMenuClick(item.route)}
+                    style={isActive ? { fontWeight: 'bold' } : {}}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+            
+            <div className="pt-8 border-t border-gray-700">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+        <style>{`
+          @keyframes slide-in-left {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+          }
+          .animate-slide-in-left {
+            animation: slide-in-left 0.25s cubic-bezier(0.4,0,0.2,1);
+          }
+        `}</style>
+      </div>
+    );
+  };
+
   return (
-    <div className="w-64 bg-gray-800 text-white p-4">
-      <div className="mb-8">
-        <img
-          src="/images/logos/elmo.png"
-          alt="Elmo Bicycle Shop"
-          className="h-10 w-auto mb-2"
-        />
-        {/* User info and timestamp */}
-        <div className="text-xs text-gray-400 mt-2">
-          <div>{userEmail}</div>
-          <div className="text-orange-400 font-semibold">{userRole}</div>
+    <>
+      {/* Desktop Sidebar - hidden on mobile */}
+      <div className="hidden lg:block w-64 bg-gray-800 text-white p-4">
+        <div className="mb-8">
+          <img
+            src="/images/logos/elmo.png"
+            alt="Elmo Bicycle Shop"
+            className="h-10 w-auto mb-2"
+          />
+          {/* User info and timestamp */}
+          <div className="text-xs text-gray-400 mt-2">
+            <div>{userEmail}</div>
+            <div className="text-orange-400 font-semibold">{userRole}</div>
+          </div>
+        </div>
+        <nav className="space-y-2">
+          {/* Always show menu items - never conditional render the whole list */}
+          {visibleMenuItems.map((item) => {
+            const isActive = location.pathname === item.route;
+            return (
+              <button
+                key={item.route}
+                className={`w-full text-left px-3 py-2 rounded hover:bg-gray-700 uppercase font-bold ${isActive ? 'text-orange-400' : 'text-white'}`}
+                onClick={() => navigate(item.route)}
+                style={isActive ? { fontWeight: 'bold' } : {}}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="mt-8 pt-8 border-t border-gray-700">
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
+          >
+            Logout
+          </button>
         </div>
       </div>
-      <nav className="space-y-2">
-        {/* Always show menu items - never conditional render the whole list */}
-        {visibleMenuItems.map((item) => {
-          const isActive = location.pathname === item.route;
-          return (
-            <button
-              key={item.route}
-              className={`w-full text-left px-3 py-2 rounded hover:bg-gray-700 uppercase font-bold ${isActive ? 'text-orange-400' : 'text-white'}`}
-              onClick={() => navigate(item.route)}
-              style={isActive ? { fontWeight: 'bold' } : {}}
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="mt-8 pt-8 border-t border-gray-700">
-        <button
-          onClick={handleLogout}
-          className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
+
+      {/* Mobile Hamburger Menu Button */}
+      <div className="lg:hidden fixed top-4 left-4 z-40">
+        <button 
+          className="text-gray-800 hover:text-orange-500 focus:outline-none"
+          onClick={() => setDrawerOpen(true)}
         >
-          Logout
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
       </div>
-    </div>
+
+      {/* Mobile Drawer */}
+      <MobileDrawer />
+    </>
   )
 }
 
