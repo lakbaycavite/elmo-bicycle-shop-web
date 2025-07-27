@@ -28,9 +28,9 @@ export const submitRatingsBatch = async (ratings = []) => {
 };
 
 export const getRatingsByProductId = async (productId) => {
-    const snapshot = await get(ref(database, 'ratings'));
+    const snapshot = await get(ref(database, `ratings/${productId}`));
     if (!snapshot.exists()) return [];
 
     const allRatings = snapshot.val();
-    return Object.values(allRatings).filter(rating => rating.productId === productId);
-};
+    return allRatings
+}

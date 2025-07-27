@@ -17,6 +17,7 @@ import { useProducts } from '../../hooks/useProduct';
 import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 import { useUsers } from '../../hooks/useUser'; // Added for user data
 import { toast } from 'sonner';
+import ProductDetailsModal from '../../components/ProductsDetailsModal';
 
 const Inventory = () => {
     // Added auth and permissions
@@ -937,128 +938,9 @@ const Inventory = () => {
                 )}
 
                 {/* Product Details Modal - NEW */}
-                {showDetailsModal && viewProduct && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                            <div className="p-6">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-bold text-gray-900">Product Details</h2>
-                                    <button
-                                        className="text-gray-500 hover:text-gray-700"
-                                        onClick={() => setShowDetailsModal(false)}
-                                    >
-                                        <X size={24} />
-                                    </button>
-                                </div>
 
-                                <div className="mb-6">
-                                    {/* Product Image and Basic Info */}
-                                    <div className="flex flex-col md:flex-row mb-6 gap-4">
-                                        <div className="w-full md:w-1/3">
-                                            <img
-                                                src={viewProduct.image || 'https://via.placeholder.com/300'}
-                                                alt={viewProduct.name}
-                                                className="w-full h-auto rounded-lg object-cover shadow-md"
-                                            />
-                                        </div>
+                <ProductDetailsModal viewProduct={viewProduct} showDetailsModal={showDetailsModal} setShowDetailsModal={setShowDetailsModal} formatPrice={formatPrice} />
 
-                                        <div className="w-full md:w-2/3">
-                                            <h3 className="text-xl font-bold text-gray-800 mb-2">{viewProduct.name}</h3>
-
-                                            <div className="flex items-center mb-2">
-                                                <span className="px-2 py-1 text-xs rounded-full bg-[#ff6900] text-white font-semibold">
-                                                    {viewProduct.category}
-                                                </span>
-                                                {viewProduct.brand && (
-                                                    <span className="ml-2 text-gray-600">
-                                                        Brand: <span className="font-semibold">{viewProduct.brand}</span>
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="text-2xl font-bold text-[#ff6900] mb-4">
-                                                {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
-                                            </div>
-
-                                            <div className="mb-2">
-                                                <span className="font-semibold">Stock:</span> {viewProduct.stock} units
-                                                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${viewProduct.stock < 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                    }`}>
-                                                    {viewProduct.stock < 10 ? 'Low Stock' : 'In Stock'}
-                                                </span>
-                                            </div>
-
-                                            {viewProduct.type && (
-                                                <div className="mb-2">
-                                                    <span className="font-semibold">Type:</span> {viewProduct.type}
-                                                </div>
-                                            )}
-
-                                            {viewProduct.weight && (
-                                                <div className="mb-2">
-                                                    <span className="font-semibold">Weight:</span> {viewProduct.weight}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Product ID */}
-                                    <div className="mb-4 px-3 py-2 bg-gray-100 rounded-md">
-                                        <span className="font-semibold">Product ID:</span> {viewProduct.id}
-                                    </div>
-
-                                    {/* Specifications */}
-                                    <div className="border-t border-gray-200 pt-4">
-                                        <h4 className="text-lg font-semibold mb-3">Specifications</h4>
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <tbody className="divide-y divide-gray-200">
-                                                {viewProduct.spec1Label && viewProduct.spec1 && (
-                                                    <tr>
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{viewProduct.spec1Label}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec1}</td>
-                                                    </tr>
-                                                )}
-                                                {!viewProduct.spec1Label && viewProduct.spec1 && (
-                                                    <tr>
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Specification 1</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec1}</td>
-                                                    </tr>
-                                                )}
-                                                {viewProduct.spec2Label && viewProduct.spec2 && (
-                                                    <tr>
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{viewProduct.spec2Label}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec2}</td>
-                                                    </tr>
-                                                )}
-                                                {!viewProduct.spec2Label && viewProduct.spec2 && (
-                                                    <tr>
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-700">Specification 2</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec2}</td>
-                                                    </tr>
-                                                )}
-                                                {!viewProduct.spec1 && !viewProduct.spec2 && (
-                                                    <tr>
-                                                        <td colSpan="2" className="px-4 py-3 text-sm text-gray-500 text-center">No specifications available</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end">
-                                    <button
-                                        type="button"
-                                        className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
-                                        onClick={() => setShowDetailsModal(false)}
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
