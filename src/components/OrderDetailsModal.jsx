@@ -3,7 +3,7 @@ import { useCart } from '../hooks/useCart';
 import { useOrder } from '../hooks/useOrder';
 import { toast } from 'sonner';
 
-const OrderDetailsModal = ({ show, onClose }) => {
+const OrderDetailsModal = ({ show, onClose, onComplete }) => {
     const { cart, totalPrice, clearCart } = useCart();
     const { createOrder, formatTimestamp } = useOrder();
     const [paymentMethod, setPaymentMethod] = useState('Walk-in');
@@ -45,6 +45,7 @@ const OrderDetailsModal = ({ show, onClose }) => {
 
             // Close the modal
             onClose();
+            onComplete();
 
         } catch (error) {
             alert(`Error placing order: ${error.message}`);

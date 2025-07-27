@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { CircleUser, X } from 'lucide-react';
+import { AlertCircle, CircleUser, Loader2, Mail, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 import { useUserStatus } from '../../hooks/useUserStatus';
 import { toast } from 'sonner';
+import { doPasswordReset } from '../../firebase/auth';
+
 function AccountManage() {
-  const { users, loading, error, editUser, loadUsers, removeUser } = useUsers();
+  const { users, loading, error, loadUsers, removeUser } = useUsers();
   const { disableUser, reactivateUser } = useUserStatus();
 
   const [roleFilter, setRoleFilter] = useState('all');
@@ -26,14 +28,17 @@ function AccountManage() {
     newPassword: '',
     confirmPassword: ''
   });
-  const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
-  const [editAccount, setEditAccount] = useState(null);
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [accountToDisable, setAccountToDisable] = useState(null);
   const [accountToReactivate, setAccountToReactivate] = useState(null);
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState(null);
+
+  //password reset
+  const [resetPasswordAccount, setResetPasswordAccount] = useState(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
 
   // Update accounts when users data changes
@@ -78,8 +83,8 @@ function AccountManage() {
       setAccountToReactivate(account);
       setIsActivateModalOpen(true);
     } else if (action === 'reset-password') {
-      setEditAccount(account);
-      setIsEditAccountModalOpen(true);
+      setResetPasswordAccount(account);
+      setShowResetModal(true);
     }
   };
 
@@ -128,31 +133,31 @@ function AccountManage() {
     }
   };
 
-  const handleEditAccountInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditAccount(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // const handleEditAccountInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setEditAccount(prev => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  // };
 
-  const handleEditAccountSubmit = async (e) => {
-    e.preventDefault();
-    if (!editAccount) return;
-    try {
-      await editUser(editAccount.id, {
-        firstName: editAccount.firstName,
-        lastName: editAccount.lastName,
-        email: editAccount.email,
-        role: editAccount.role,
-      });
-      toast.success('Account updated successfully!');
-      setIsEditAccountModalOpen(false);
-      setEditAccount(null);
-    } catch (error) {
-      toast.error(`Error updating account: ${error.message}`);
-    }
-  };
+  // const handleEditAccountSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!editAccount) return;
+  //   try {
+  //     await editUser(editAccount.id, {
+  //       firstName: editAccount.firstName,
+  //       lastName: editAccount.lastName,
+  //       email: editAccount.email,
+  //       role: editAccount.role,
+  //     });
+  //     toast.success('Account updated successfully!');
+  //     setIsEditAccountModalOpen(false);
+  //     setEditAccount(null);
+  //   } catch (error) {
+  //     toast.error(`Error updating account: ${error.message}`);
+  //   }
+  // };
 
   const handleDisableAccount = async () => {
     if (!accountToDisable) return;
@@ -254,6 +259,35 @@ function AccountManage() {
     }
 
 
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    if (!resetPasswordAccount) {
+      toast.error("No account selected for password reset.");
+      return;
+    }
+    setResetLoading(true);
+
+    await doPasswordReset(resetPasswordAccount.email)
+      .then(() => {
+        toast.success(`Password reset email sent to ${resetPasswordAccount.email}`);
+      })
+      .catch((error) => {
+        console.error("Error sending password reset email:", error);
+        toast.error(`Error sending password reset email`);
+      })
+      .finally(() => {
+        setResetLoading(false);
+        setShowResetModal(false);
+        setResetPasswordAccount(null);
+      })
+
+  }
+
+  const closeResetModal = () => {
+    setShowResetModal(false);
+    setResetLoading(false);
   };
 
   return (
@@ -526,85 +560,6 @@ function AccountManage() {
             </div>
           )}
 
-          {/* Edit Account Modal */}
-          {isEditAccountModalOpen && editAccount && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-orange-500">Edit Account</h2>
-                  <button
-                    onClick={() => { setIsEditAccountModalOpen(false); setEditAccount(null); }}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-                <form onSubmit={handleEditAccountSubmit}>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">First Name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={editAccount.firstName || ''}
-                      onChange={handleEditAccountInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={editAccount.lastName || ''}
-                      onChange={handleEditAccountInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={editAccount.email || ''}
-                      onChange={handleEditAccountInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Role</label>
-                    <select
-                      name="role"
-                      value={editAccount.role || 'customer'}
-                      onChange={handleEditAccountInputChange}
-                      className="w-full p-2 border rounded"
-                    >
-                      <option value="customer">Customer</option>
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => { setIsEditAccountModalOpen(false); setEditAccount(null); }}
-                      className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
           {/* Disable Confirmation Modal */}
           {isDisableModalOpen && accountToDisable && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -711,6 +666,66 @@ function AccountManage() {
                   >
                     Delete
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showResetModal && (
+            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
+                  {/* Modal Header */}
+                  <div className="modal-header bg-stone-900 text-white border-0">
+                    <h5 className="modal-title font-semibold">Reset Password</h5>
+                    <button
+                      type="button"
+                      className="btn-close btn-close-white"
+                      onClick={closeResetModal}
+                      aria-label="Close"
+                    >
+                    </button>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="modal-body p-4">
+                    <div className="text-center mb-4">
+                      <Mail className="w-12 h-12 mx-auto text-orange-500 mb-3" />
+                      <h4 className="font-bold text-gray-800 mb-2">Confirm Password Reset</h4>
+                      <p className="text-gray-600">
+                        Do you want to send a password reset link to <span className="font-bold">{resetPasswordAccount ? formatUserName(resetPasswordAccount) : 'this account'}</span>?
+                      </p>
+                      <p className="text-sm text-gray-500 mt-3">
+                        <AlertCircle className="w-4 h-4 inline-block mr-1" />
+                        The user will receive an email with instructions to reset their password.
+                      </p>
+                    </div>
+
+                    <div className="d-flex justify-content-center gap-3 mt-4">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary px-4"
+                        onClick={closeResetModal}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetSubmit}
+                        className={`btn ${resetLoading ? 'btn-secondary' : 'btn-success text-white'} px-4 flex items-center justify-center`}
+                        disabled={resetLoading}
+                      >
+                        {resetLoading ? (
+                          <div className='flex items-center'>
+                            <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                            Sending...
+                          </div>
+                        ) : (
+                          'Send Reset Link'
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
