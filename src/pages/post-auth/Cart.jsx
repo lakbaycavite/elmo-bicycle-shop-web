@@ -7,17 +7,22 @@ import elmoLogo from '/images/logos/elmo.png'
 import OrderDetailsModal from "../../components/OrderDetailsModal";
 import ProductRatingModal from "../../components/ProductRatingModal";
 import { useState } from "react";
+import ProductDetailsModal from "../../components/ProductsDetailsModal";
+import { toast } from "sonner";
 
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [showRatingModal, setShowRatingModal] = useState(false);
     const [orderCompleted, setOrderCompleted] = useState(false);
-    const { cart, updateQuantity, removeItem, totalPrice, addToCart, clearCart } = useCart();
-    const { products } = useProducts();
     const [completedCartItems, setCompletedCartItems] = useState([]);
+    const [viewProduct, setViewProduct] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+    const { cart, updateQuantity, removeItem, totalPrice, addToCart, clearCart } = useCart();
+    const { products, getProduct } = useProducts();
 
     const navigate = useNavigate();
+
 
     // Handle checkout completion
     const handleCheckoutComplete = () => {
@@ -26,6 +31,22 @@ const Cart = () => {
         setOrderCompleted(true);
         setShowRatingModal(true);
     };
+
+    const handleShowDetailsModal = async (product) => {
+        if (!product) {
+            console.error("No product data provided for details modal");
+            return;
+        }
+        await getProduct(product.id)
+            .then(() => {
+                setViewProduct(product);
+                setShowDetailsModal(true);
+            })
+            .catch((error) => {
+                console.error("Error fetching product details:", error);
+                toast.error(`Failed to load product details`);
+            });
+    }
 
     // Handle rating submission
     const handleRatingSubmit = async (ratings) => {
@@ -214,6 +235,7 @@ const Cart = () => {
                                 <CartCard
                                     productDetails={product}
                                     title={product.name}
+                                    handleShowDetailsModal={handleShowDetailsModal}
                                     productId={product.id}
                                     description1={product.spec1}
                                     rating={product.rating}
@@ -239,6 +261,13 @@ const Cart = () => {
                 onClose={() => setShowRatingModal(false)}
                 cartItems={orderCompleted ? completedCartItems : []}
                 onSubmitRatings={handleRatingSubmit}
+            />
+
+            <ProductDetailsModal
+                viewProduct={viewProduct}
+                showDetailsModal={showDetailsModal}
+                setShowDetailsModal={setShowDetailsModal}
+                formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`} // Example price formatting function
             />
         </div>
     )

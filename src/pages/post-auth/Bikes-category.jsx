@@ -186,9 +186,6 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
             const bikeRatings = ratingsMap[bike.id] || {};
             const ratingsArray = Object.values(bikeRatings);
 
-            console.log(`Bike ID: ${bike.id}`);
-            console.log(`Ratings for ${bike.name}:`, ratingsArray);
-
             // Calculate average rating
             let averageRating = null;
             let totalRatings = 0;
@@ -248,7 +245,6 @@ const BikesCategory = () => {
       console.error("No product data provided for details modal");
       return;
     }
-    console.log("Showing details for product:", product);
     await getProduct(product.id)
       .then(() => {
         setViewProduct(product);
@@ -269,33 +265,25 @@ const BikesCategory = () => {
 
   // Load ratings data - FIXED to match your Firebase structure
   useEffect(() => {
-    console.log('Setting up ratings listener...');
-
     const ratingsRef = ref(database, 'ratings');
 
     const unsubscribe = onValue(ratingsRef, (snapshot) => {
-      console.log('Ratings snapshot received');
       const data = snapshot.val();
-      console.log('Raw ratings data:', data);
 
       if (data) {
         // Data structure: ratings/{productId}/{ratingId}
         const processedRatings = {};
 
         Object.keys(data).forEach(productId => {
-          console.log(`Processing ratings for product: ${productId}`);
           const productRatings = data[productId];
 
           if (productRatings && typeof productRatings === 'object') {
             processedRatings[productId] = productRatings;
-            console.log(`Found ${Object.keys(productRatings).length} ratings for ${productId}`);
           }
         });
 
-        console.log('Processed ratings map:', processedRatings);
         setRatingsMap(processedRatings);
       } else {
-        console.log('No ratings data found');
         setRatingsMap({});
       }
     }, (error) => {
@@ -303,7 +291,6 @@ const BikesCategory = () => {
     });
 
     return () => {
-      console.log('Cleaning up ratings listener');
       unsubscribe();
     };
   }, []);

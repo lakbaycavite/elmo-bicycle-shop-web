@@ -21,11 +21,9 @@ const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModa
         setLoadingRatings(true);
         try {
             const productRatingsData = await getRatingsByProductId(viewProduct.id);
-            console.log('Raw ratings data:', productRatingsData);
 
             // Convert object to array
             const productRatings = Object.values(productRatingsData || {});
-            console.log('Converted ratings array:', productRatings);
 
             setRatings(productRatings);
 
