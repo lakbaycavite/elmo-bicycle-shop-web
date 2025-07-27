@@ -160,7 +160,6 @@ export const removeFromWishlist = async (itemId) => {
         }
 
         await remove(itemRef);
-        console.log("Item removed from wishlist");
     } catch (error) {
         console.error("Error removing from wishlist:", error);
         throw error;

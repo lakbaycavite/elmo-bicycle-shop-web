@@ -56,7 +56,7 @@ export const useWishlist = (addToCartFn) => {
             setError(null);
             await removeFromWishlist(itemId)
                 .then(() => {
-                    toast.success("Item removed from wishlist");
+                    // toast.success("Item removed from wishlist");
                 })
             setWishlist(current => current.filter(item => item.id !== itemId));
             return true;
