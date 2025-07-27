@@ -105,7 +105,7 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   );
 };
 
-const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap }) => {
+const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter }) => {
   const navigate = useNavigate();
 
   const isInWishlist = (bikeId) => {
@@ -146,12 +146,45 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
           </button>
         </div>
       </div>
+
+      {/* Rating Filter Dropdown */}
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <div className="d-flex align-items-center">
+            <label htmlFor="ratingFilter" className="form-label me-2 mb-0" style={{ color: 'var(--text-primary)' }}>
+              Filter by Rating:
+            </label>
+            <select
+              id="ratingFilter"
+              className="form-select"
+              style={{
+                backgroundColor: 'var(--card-background)',
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-color)',
+                maxWidth: '200px'
+              }}
+              value={selectedRatingFilter}
+              onChange={(e) => setSelectedRatingFilter(e.target.value)}
+            >
+              <option value="all">All Ratings</option>
+              <option value="5">5 Stars & Above</option>
+              <option value="4">4 Stars & Above</option>
+              <option value="3">3 Stars & Above</option>
+              <option value="2">2 Stars & Above</option>
+              <option value="1">1 Star & Above</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {bikes.length > 0 ? (
           bikes.map(bike => {
             // Get ratings for this bike
             const bikeRatings = ratingsMap[bike.id] || {};
             const ratingsArray = Object.values(bikeRatings);
+
+            console.log(`Bike ID: ${bike.id}`);
+            console.log(`Ratings for ${bike.name}:`, ratingsArray);
 
             // Calculate average rating
             let averageRating = null;
@@ -196,6 +229,7 @@ const BikesCategory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [ratingsMap, setRatingsMap] = useState({});
+  const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
 
   const { products } = useProducts();
   const { addToCart } = useCart();
@@ -210,26 +244,33 @@ const BikesCategory = () => {
 
   // Load ratings data - FIXED to match your Firebase structure
   useEffect(() => {
+    console.log('Setting up ratings listener...');
 
     const ratingsRef = ref(database, 'ratings');
 
     const unsubscribe = onValue(ratingsRef, (snapshot) => {
+      console.log('Ratings snapshot received');
       const data = snapshot.val();
+      console.log('Raw ratings data:', data);
 
       if (data) {
         // Data structure: ratings/{productId}/{ratingId}
         const processedRatings = {};
 
         Object.keys(data).forEach(productId => {
+          console.log(`Processing ratings for product: ${productId}`);
           const productRatings = data[productId];
 
           if (productRatings && typeof productRatings === 'object') {
             processedRatings[productId] = productRatings;
+            console.log(`Found ${Object.keys(productRatings).length} ratings for ${productId}`);
           }
         });
 
+        console.log('Processed ratings map:', processedRatings);
         setRatingsMap(processedRatings);
       } else {
+        console.log('No ratings data found');
         setRatingsMap({});
       }
     }, (error) => {
@@ -237,6 +278,7 @@ const BikesCategory = () => {
     });
 
     return () => {
+      console.log('Cleaning up ratings listener');
       unsubscribe();
     };
   }, []);
@@ -270,9 +312,38 @@ const BikesCategory = () => {
       const searchMatch =
         (bike.name && bike.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (bike.brand && bike.brand.toLowerCase().includes(searchTerm.toLowerCase()));
-      return typeMatch && searchMatch;
+
+      // Rating filter logic
+      let ratingMatch = true;
+      if (selectedRatingFilter !== 'all') {
+        const bikeRatings = ratingsMap[bike.id] || {};
+        const ratingsArray = Object.values(bikeRatings);
+
+        if (ratingsArray.length > 0) {
+          const validRatings = ratingsArray.filter(rating =>
+            rating && rating.rating && !isNaN(Number(rating.rating))
+          );
+
+          if (validRatings.length > 0) {
+            const sum = validRatings.reduce((total, rating) => total + Number(rating.rating), 0);
+            const averageRating = sum / validRatings.length;
+
+            // Filter based on rating range
+            const filterValue = parseInt(selectedRatingFilter);
+            ratingMatch = Math.floor(averageRating) >= filterValue;
+          } else {
+            // No valid ratings - only show if "all" is selected
+            ratingMatch = false;
+          }
+        } else {
+          // No ratings at all - only show if "all" is selected
+          ratingMatch = false;
+        }
+      }
+
+      return typeMatch && searchMatch && ratingMatch;
     });
-  }, [bikes, selectedTypes, searchTerm]);
+  }, [bikes, selectedTypes, searchTerm, selectedRatingFilter, ratingsMap]);
 
   const handleAddToCart = async (bike) => {
     try {
@@ -388,6 +459,8 @@ const BikesCategory = () => {
             wishlistItems={wishlist}
             onToggleWishlist={handleToggleWishlist}
             ratingsMap={ratingsMap}
+            selectedRatingFilter={selectedRatingFilter}
+            setSelectedRatingFilter={setSelectedRatingFilter}
           />
         </div>
       </div>
