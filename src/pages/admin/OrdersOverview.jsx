@@ -4,6 +4,7 @@ import { useOrder } from '../../hooks/useOrder';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import elmoLogo from '/images/logos/elmo.png';
+import { toast } from 'sonner';
 
 function OrdersOverview() {
   const { adminOrders, updateOrderStatus } = useOrder();
@@ -26,8 +27,6 @@ function OrdersOverview() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
-
-  console.log('Admin Orders:', adminOrders);
 
   // Filter and search logic
   const filteredOrders = useMemo(() => {
@@ -154,7 +153,10 @@ function OrdersOverview() {
   // Handle confirm approval
   const handleConfirmApprove = async () => {
     try {
-      await updateOrderStatus(selectedOrder.id, 'paid');
+      await updateOrderStatus(selectedOrder.id, 'paid')
+        .then(() => {
+          toast.success('Order approved successfully!');
+        })
       setShowConfirmModal(false);
       setShowDetailsModal(false);
       setShowPDFPreview(true);
@@ -172,7 +174,10 @@ function OrdersOverview() {
       setSelectedOrder(updatedOrder);
 
       // Update order status - you might need to modify your updateOrderStatus to handle reason
-      await updateOrderStatus(selectedOrder.id, 'cancelled', cancelReason);
+      await updateOrderStatus(selectedOrder.id, 'cancelled', cancelReason)
+        .then(() => {
+          toast.success('Order cancelled successfully!');
+        })
       setShowCancelModal(false);
       setCancelReason('');
       setShowDetailsModal(false);
@@ -205,6 +210,7 @@ function OrdersOverview() {
         doc.addImage(imgData, 'PNG', 20, 10, 25, 25);
       } catch (error) {
         console.log('Could not add logo:', error);
+        toast.error('Failed to add logo to PDF. Please check the image URL.');
       }
 
       // Complete the PDF generation
@@ -212,7 +218,7 @@ function OrdersOverview() {
     };
 
     img.onerror = function () {
-      console.log('Logo failed to load, continuing without logo');
+      toast.error('Failed to load logo image. Please check the image URL.');
       completePDFGeneration(doc);
     };
 
@@ -589,7 +595,7 @@ function OrdersOverview() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-4">
+              <div className="flex space-x-4 gap-2 justify-end">
                 {/* Show Cancel and Approve buttons for pending orders */}
                 {selectedOrder.status !== 'paid' && selectedOrder.status !== 'cancelled' && (
                   <>
@@ -628,7 +634,7 @@ function OrdersOverview() {
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-bold mb-4">Confirm Action</h3>
               <p className="mb-6">Are you sure you want to approve this order?</p>
-              <div className="flex space-x-4">
+              <div className="flex space-x-4 justify-end gap-2">
                 <button
                   onClick={() => setShowConfirmModal(false)}
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150"
@@ -665,7 +671,7 @@ function OrdersOverview() {
                 </select>
               </div>
               <p className="mb-6 text-red-600">Are you sure you want to cancel this order?</p>
-              <div className="flex space-x-4">
+              <div className="flex space-x-4 justify-end gap-2">
                 <button
                   onClick={() => {
                     setShowCancelModal(false);
