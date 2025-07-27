@@ -30,6 +30,8 @@ export const useRatings = () => {
         }
     };
 
+
+
     return {
         rateProduct,
         rateMultipleProducts,

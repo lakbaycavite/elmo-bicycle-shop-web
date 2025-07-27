@@ -1,5 +1,5 @@
 // services/ratingService.js
-import { ref, push, serverTimestamp } from "firebase/database";
+import { ref, push, serverTimestamp, get } from "firebase/database";
 import { database } from "../firebase/firebase";
 
 /**
@@ -25,4 +25,12 @@ export const submitRating = async (ratingData) => {
 export const submitRatingsBatch = async (ratings = []) => {
     const promises = ratings.map((rating) => submitRating(rating));
     return await Promise.all(promises);
+};
+
+export const getRatingsByProductId = async (productId) => {
+    const snapshot = await get(ref(database, 'ratings'));
+    if (!snapshot.exists()) return [];
+
+    const allRatings = snapshot.val();
+    return Object.values(allRatings).filter(rating => rating.productId === productId);
 };
