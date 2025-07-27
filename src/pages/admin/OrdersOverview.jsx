@@ -23,6 +23,10 @@ function OrdersOverview() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   console.log('Admin Orders:', adminOrders);
 
   // Filter and search logic
@@ -45,11 +49,87 @@ function OrdersOverview() {
     });
   }, [adminOrders, searchTerm, statusFilter, paymentFilter]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const handleFilterChange = (filterType, value) => {
+    setCurrentPage(1);
+    switch (filterType) {
+      case 'search':
+        setSearchTerm(value);
+        break;
+      case 'status':
+        setStatusFilter(value);
+        break;
+      case 'payment':
+        setPaymentFilter(value);
+        break;
+    }
+  };
+
   // Clear all filters
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setPaymentFilter('all');
+    setCurrentPage(1);
+  };
+
+  // Pagination handlers
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   // Handle view button click
@@ -241,7 +321,7 @@ function OrdersOverview() {
                 type="text"
                 placeholder="Search by name, email, or ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
@@ -253,7 +333,7 @@ function OrdersOverview() {
               </label>
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
@@ -270,7 +350,7 @@ function OrdersOverview() {
               </label>
               <select
                 value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
+                onChange={(e) => handleFilterChange('payment', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="all">All Methods</option>
@@ -284,7 +364,8 @@ function OrdersOverview() {
           <div className="mb-4 flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Showing {filteredOrders.length} of {adminOrders.length} orders
+                Showing {Math.min(startIndex + 1, filteredOrders.length)} - {Math.min(endIndex, filteredOrders.length)} of {filteredOrders.length} orders
+                {filteredOrders.length !== adminOrders.length && ` (filtered from ${adminOrders.length} total)`}
               </span>
               {(searchTerm || statusFilter !== 'all' || paymentFilter !== 'all') && (
                 <button
@@ -310,14 +391,14 @@ function OrdersOverview() {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.length === 0 ? (
+                {currentOrders.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="py-8 px-4 text-center text-gray-500">
                       {adminOrders.length === 0 ? 'No orders found.' : 'No orders match your search criteria.'}
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => (
+                  currentOrders.map((order) => (
                     <tr key={order.id} className="bg-gray-800 text-white border-b border-gray-700">
                       <td className="py-3 px-4">{order.id}</td>
                       <td className="py-3 px-4">{order.userName || order.userEmail}</td>
@@ -345,6 +426,54 @@ function OrdersOverview() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {/* Previous Button */}
+                <button
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex space-x-1">
+                  {getPageNumbers().map((page, index) => (
+                    <button
+                      key={index}
+                      onClick={() => typeof page === 'number' ? goToPage(page) : null}
+                      disabled={page === '...'}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${page === currentPage
+                        ? 'bg-orange-500 text-white'
+                        : page === '...'
+                          ? 'text-gray-400 cursor-default'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Order Details Modal */}
