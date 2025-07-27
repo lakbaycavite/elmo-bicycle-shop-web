@@ -15,6 +15,29 @@ const theme = {
     borderColor: '#444444',       
 };
 
+// Official gear and parts categories from team lead
+const gearPartsCategories = [
+    'Bottom Bracket',
+    'Cassette',
+    'Chaining',
+    'Cranks',
+    'Derailleur Hanger',
+    'Electronic Shifters',
+    'Freewheel',
+    'Front Derailleur',
+    'Gear Cables',
+    'Gear Housing',
+    'Gear Indicator Display',
+    'Gear Levers',
+    'Grip Shifter',
+    'Internal Gear Hub',
+    'Jockey Wheels',
+    'Rear Derailleur',
+    'Shifters',
+    'Thumb Shifter',
+    'Trigger Shifter'
+];
+
 const GearIcon = () => (
     <i className="bi bi-gear"></i>
 );
@@ -173,7 +196,13 @@ const GearsCategory = () => {
                 product.category.toLowerCase().includes('gears') ||
                 product.category.toLowerCase().includes('parts') ||
                 product.category.toLowerCase().includes('gear') ||
-                product.category.toLowerCase().includes('part')
+                product.category.toLowerCase().includes('part') ||
+                // Also check if product type/name matches any of our official categories
+                gearPartsCategories.some(category => 
+                    product.type?.toLowerCase().includes(category.toLowerCase()) ||
+                    product.name?.toLowerCase().includes(category.toLowerCase()) ||
+                    product.category?.toLowerCase().includes(category.toLowerCase())
+                )
             )
         );
     }, [products]);
@@ -182,17 +211,6 @@ const GearsCategory = () => {
     useEffect(() => {
         refreshWishlist();
     }, [refreshWishlist]);
-
-    const gearTypes = useMemo(() => {
-        if (!gears.length) return [];
-        // Extract unique gear types from the products
-        const types = new Set();
-        gears.forEach(gear => {
-            if (gear.type) types.add(gear.type);
-            if (gear.name) types.add(gear.name);
-        });
-        return Array.from(types);
-    }, [gears]);
 
     const toggleCategory = (category) => {
         setSelectedCategories(prev =>
@@ -233,8 +251,11 @@ const GearsCategory = () => {
     const filteredGears = useMemo(() => {
         return gears.filter(gear => {
             const categoryMatch = selectedCategories.length === 0 || 
-                selectedCategories.includes(gear.type) || 
-                selectedCategories.includes(gear.name);
+                selectedCategories.some(selectedCategory =>
+                    gear.type?.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+                    gear.name?.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+                    gear.category?.toLowerCase().includes(selectedCategory.toLowerCase())
+                );
             const searchMatch = 
                 (gear.name && gear.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (gear.description && gear.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -296,11 +317,11 @@ const GearsCategory = () => {
                             <hr style={{ borderColor: 'var(--border-color)' }} />
                             <h3 className="fs-5 mb-3">Filter by Type</h3>
                             <div className="d-flex flex-wrap gap-2">
-                                {gearTypes.map(gearType => (
+                                {gearPartsCategories.map(category => (
                                     <FilterCheckbox 
-                                        key={gearType} 
-                                        category={gearType} 
-                                        isSelected={selectedCategories.includes(gearType)} 
+                                        key={category} 
+                                        category={category} 
+                                        isSelected={selectedCategories.includes(category)} 
                                         onToggle={toggleCategory} 
                                     />
                                 ))}
