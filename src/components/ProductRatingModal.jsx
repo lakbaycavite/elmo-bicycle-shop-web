@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Star, X } from 'lucide-react';
-import { ref, push, serverTimestamp } from 'firebase/database';
-import { database } from '../firebase/firebase';
+// import { ref, push, serverTimestamp } from 'firebase/database';
+// import { database } from '../firebase/firebase';
 import { useAuth } from '../context/authContext/createAuthContext';
+import { useRatings } from '../hooks/useRating';
 
 
 const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
@@ -11,6 +12,7 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const { currentUser } = useAuth();
+    const { rateMultipleProducts } = useRatings();
 
     // Important: Reset and initialize ratings whenever cartItems changes
     useEffect(() => {
@@ -62,21 +64,15 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
                 setError(null);
 
                 // Only submit ratings where user actually rated (star value > 0)
-                const ratingsToSubmit = ratings.filter(r => r && r.rating > 0);
-
-                for (const rating of ratingsToSubmit) {
-                    const ratingData = {
-                        ...rating,
+                const ratingsToSubmit = ratings
+                    .filter(r => r && r.rating > 0)
+                    .map(r => ({
+                        ...r,
                         userId: currentUser?.uid,
                         userEmail: currentUser?.email,
-                        timestamp: Date.now(), // Current timestamp
-                        createdAt: serverTimestamp()
-                    };
+                    }));
 
-                    const ratingsRef = ref(database, 'ratings');
-                    await push(ratingsRef, ratingData);
-                }
-
+                await rateMultipleProducts(ratingsToSubmit);
                 onSubmitRatings(ratings);
                 onClose();
             } catch (err) {
