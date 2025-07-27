@@ -137,6 +137,18 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange }) => {
 return (
   
   <main className="p-4" style={{ color: 'var(--text-primary)' }}>
+    {/* Back button */}
+    <div className="mb-3">
+        <button 
+            className="btn btn-outline-secondary d-flex align-items-center gap-2" 
+            onClick={() => navigate('/customer/home')}
+            style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+        >
+            <i className="bi bi-arrow-left"></i>
+            Back to Home
+        </button>
+    </div>
+    
     <h1 style={{ color: 'var(--primary-accent)' }}>Accessories Listings</h1>
     <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality accessories</p>
     <hr style={{ borderColor: 'var(--border-color)' }}/>
