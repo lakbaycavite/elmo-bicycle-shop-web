@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import AdminLayout from './AdminLayout';
 import { useOrder } from '../../hooks/useOrder';
 import jsPDF from 'jspdf';
@@ -18,10 +18,44 @@ function OrdersOverview() {
   const [cancelReason, setCancelReason] = useState('');
   const [editablePaymentMethod, setEditablePaymentMethod] = useState('');
 
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+
+  console.log('Admin Orders:', adminOrders);
+
+  // Filter and search logic
+  const filteredOrders = useMemo(() => {
+    return adminOrders.filter(order => {
+      // Search filter (customer name, email, or ID)
+      const searchMatch = searchTerm === '' ||
+        (order.userName && order.userName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.userEmail && order.userEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        order.id.toString().includes(searchTerm) ||
+        order.userId.toString().includes(searchTerm);
+
+      // Status filter
+      const statusMatch = statusFilter === 'all' || order.status === statusFilter;
+
+      // Payment method filter
+      const paymentMatch = paymentFilter === 'all' || order.paymentMethod === paymentFilter;
+
+      return searchMatch && statusMatch && paymentMatch;
+    });
+  }, [adminOrders, searchTerm, statusFilter, paymentFilter]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setPaymentFilter('all');
+  };
+
   // Handle view button click
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
-    setEditablePaymentMethod(order.paymentMethod || 'Cash on Delivery');
+    setEditablePaymentMethod(order.paymentMethod);
     setShowDetailsModal(true);
   };
 
@@ -195,6 +229,74 @@ function OrdersOverview() {
         <h1 className="text-3xl font-bold mb-6">ORDERS OVERVIEW</h1>
         <div className="bg-white rounded shadow p-6">
           <h2 className="text-2xl font-bold text-orange-400 mb-6">CUSTOMERS ORDER</h2>
+
+          {/* Search and Filter Section */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 rounded-lg">
+            {/* Search Input */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Search Customer
+              </label>
+              <input
+                type="text"
+                placeholder="Search by name, email, or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            {/* Payment Method Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Method
+              </label>
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="all">All Methods</option>
+                <option value="Walk-in">Walk-in</option>
+                <option value="Gcash">GCash Payment</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Clear Filters and Results Count */}
+          <div className="mb-4 flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Showing {filteredOrders.length} of {adminOrders.length} orders
+              </span>
+              {(searchTerm || statusFilter !== 'all' || paymentFilter !== 'all') && (
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-orange-600 hover:text-orange-800 underline"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
@@ -208,30 +310,38 @@ function OrdersOverview() {
                 </tr>
               </thead>
               <tbody>
-                {adminOrders.map((order) => (
-                  <tr key={order.id} className="bg-gray-800 text-white border-b border-gray-700">
-                    <td className="py-3 px-4">{order.id}</td>
-                    <td className="py-3 px-4">{order.userName || order.userEmail}</td>
-                    <td className="py-3 px-4">{order.paymentMethod}</td>
-                    <td className="py-3 px-4">{`₱${order.totalAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'paid' ? 'bg-green-500 text-white' :
-                        order.status === 'cancelled' ? 'bg-red-500 text-white' :
-                          'bg-yellow-500 text-black'
-                        }`}>
-                        {order.status?.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
-                        onClick={() => handleViewOrder(order)}
-                      >
-                        View
-                      </button>
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="py-8 px-4 text-center text-gray-500">
+                      {adminOrders.length === 0 ? 'No orders found.' : 'No orders match your search criteria.'}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredOrders.map((order) => (
+                    <tr key={order.id} className="bg-gray-800 text-white border-b border-gray-700">
+                      <td className="py-3 px-4">{order.id}</td>
+                      <td className="py-3 px-4">{order.userName || order.userEmail}</td>
+                      <td className="py-3 px-4">{order.paymentMethod}</td>
+                      <td className="py-3 px-4">{`₱${order.totalAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'paid' ? 'bg-green-500 text-white' :
+                          order.status === 'cancelled' ? 'bg-red-500 text-white' :
+                            'bg-yellow-500 text-black'
+                          }`}>
+                          {order.status?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                          onClick={() => handleViewOrder(order)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -316,8 +426,8 @@ function OrdersOverview() {
                   className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-orange-500"
                   disabled={selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'}
                 >
-                  <option value="walkin">Walk-in</option>
-                  <option value="gcash">GCash Payment</option>
+                  <option value="Walk-in">Walk-in</option>
+                  <option value="Gcash">GCash Payment</option>
                 </select>
               </div>
 
