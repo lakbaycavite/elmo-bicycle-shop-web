@@ -24,7 +24,7 @@ function OrdersOverview() {
               <thead>
                 <tr className="bg-black text-orange-400">
                   <th className="py-3 px-4 text-left font-bold">ID</th>
-                  <th className="py-3 px-4 text-left font-bold">Email</th>
+                  <th className="py-3 px-4 text-left font-bold">Customer</th>
                   <th className="py-3 px-4 text-left font-bold">Mode of Payment</th>
                   <th className="py-3 px-4 text-left font-bold">Amount</th>
                   <th className="py-3 px-4 text-left font-bold">Action</th>
@@ -34,7 +34,7 @@ function OrdersOverview() {
                 {adminOrders.map((order) => (
                   <tr key={order.id} className="bg-gray-800 text-white border-b border-gray-700">
                     <td className="py-3 px-4">{order.id}</td>
-                    <td className="py-3 px-4">{order.userEmail}</td>
+                    <td className="py-3 px-4">{order.userName || order.userEmail}</td>
                     <td className="py-3 px-4">{order.paymentMethod}</td>
                     <td className="py-3 px-4">{`₱${order.totalAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</td>
                     <td className="py-3 px-4">
