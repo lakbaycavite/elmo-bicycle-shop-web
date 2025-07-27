@@ -18,7 +18,13 @@ function NavLinks({ className = '', isLoggedIn = false }) {
           navigate('/customer/about');
           break;
         case 'contact':
-          navigate('/customer/contact');
+          navigate('/customer/home');
+          setTimeout(() => {
+            const contactSection = document.getElementById('contact-section');
+            if (contactSection) {
+              contactSection.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
           break;
         default:
           navigate('/customer/home');
@@ -36,7 +42,13 @@ function NavLinks({ className = '', isLoggedIn = false }) {
           navigate('/about');
           break;
         case 'contact':
-          navigate('/contact');
+          navigate('/');
+          setTimeout(() => {
+            const contactSection = document.getElementById('contact-section');
+            if (contactSection) {
+              contactSection.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
           break;
         default:
           navigate('/');
