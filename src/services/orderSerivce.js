@@ -156,8 +156,8 @@ export const getAllOrders = async () => {
 // Admin: Update order status
 export const updateOrderStatus = async (orderId, status) => {
     try {
-        if (status !== "pending" && status !== "completed") {
-            throw new Error("Invalid status. Must be 'pending' or 'completed'");
+        if (status !== "pending" && status !== "cancelled" && status !== "paid") {
+            throw new Error("Invalid status. Must be 'pending', 'cancelled', or 'paid'");
         }
 
         const db = getDatabase();
