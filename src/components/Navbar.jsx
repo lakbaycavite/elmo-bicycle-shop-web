@@ -124,7 +124,7 @@ function Navbar({ isLoggedIn = false }) {
           </div>
         </div>
       </nav>
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onLogin={handleLogin} onSignup={handleSignup} isLoggedIn={isLoggedIn} />
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onLogin={handleLogin} onSignup={handleSignup} onLogout={handleLogout} isLoggedIn={isLoggedIn} />
     </>
   )
 }

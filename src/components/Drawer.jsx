@@ -4,7 +4,7 @@ import NavLinks from './NavLinks';
 import SearchBar from './SearchBar';
 import AuthButtons from './AuthButtons';
 
-function Drawer({ open, onClose, onLogin, onSignup, isLoggedIn = false }) {
+function Drawer({ open, onClose, onLogin, onSignup, onLogout, isLoggedIn = false }) {
   if (!open) return null;
 
   // Handlers for logged-in user actions
@@ -12,7 +12,12 @@ function Drawer({ open, onClose, onLogin, onSignup, isLoggedIn = false }) {
   const handleWishlist = () => { onClose(); /* navigate to wishlist */ };
   const handleProfile = () => { onClose(); /* navigate to profile */ };
   const handleNotifications = () => { onClose(); /* navigate to notifications */ };
-  const handleLogout = () => { onClose(); /* navigate to logout */ };
+  const handleLogout = () => { 
+    onClose(); 
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex">
