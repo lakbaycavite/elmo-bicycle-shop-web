@@ -115,6 +115,16 @@ const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCar
 
   return (
     <main className="p-4" style={{ color: 'var(--text-primary)' }}>
+      <div className="mb-3">
+        <button
+          className="btn btn-outline-secondary d-flex align-items-center gap-2"
+          onClick={() => navigate('/customer/home')}
+          style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+        >
+          <i className="bi bi-arrow-left"></i>
+          Back to Home
+        </button>
+      </div>
       <h1 style={{ color: 'var(--primary-accent)' }}>Accessories Listings</h1>
       <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality accessories</p>
       <hr style={{ borderColor: 'var(--border-color)' }} />
@@ -140,10 +150,13 @@ const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCar
             style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}
             onClick={() => navigate('/customer/wishlist')}
           >
-            <Heart size={16} className="me-1" /> My Wishlist
+            <i class="bi bi-heart-fill"></i>My Wishlist
           </button>
-          <button className="btn btn-secondary" type="button" onClick={() => navigate('/customer/bikes-category')}><i className="bi bi-bicycle"></i>
+          <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/bikes-category')}><i className="bi bi-bicycle"></i>
             Bikes
+          </button>
+          <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/gears-parts-category')}><i class="bi bi-gear"></i>
+            Gears & Parts
           </button>
         </div>
       </div>
@@ -402,7 +415,9 @@ const AccessoriesCategory = () => {
   return (
     <>
       <ThemeStyles />
+
       <div style={{ backgroundColor: 'var(--background-main)' }} className="min-vh-100">
+
         <div
           className={`d-flex flex-column flex-shrink-0 p-3 vh-100 position-fixed ${isSidebarCollapsed ? 'collapsed-sidebar' : ''}`}
           style={{

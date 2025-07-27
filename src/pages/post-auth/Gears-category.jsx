@@ -5,14 +5,14 @@ import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
 
 const theme = {
-    primaryAccent: '#ff8c00',  
-    secondaryButton: '#6c757d', 
-    backgroundMain: '#1a1a1a',  
-    backgroundSidebar: '#000000', 
-    cardBackground: '#242424',  
-    textPrimary: '#ffffff',      
-    textSecondary: '#a0a0a0',    
-    borderColor: '#444444',       
+    primaryAccent: '#ff8c00',
+    secondaryButton: '#6c757d',
+    backgroundMain: '#1a1a1a',
+    backgroundSidebar: '#000000',
+    cardBackground: '#242424',
+    textPrimary: '#ffffff',
+    textSecondary: '#a0a0a0',
+    borderColor: '#444444',
 };
 
 // Official gear and parts categories from team lead
@@ -73,7 +73,7 @@ const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist }) => (
             <div className="card-body p-3">
                 <div className="d-flex justify-content-between align-items-start">
                     <h5 className="card-title mb-1" style={{ color: 'var(--primary-accent)' }}>{gear.brand?.toUpperCase()} {gear.model}</h5>
-                    <span 
+                    <span
                         style={{ color: 'var(--primary-accent)', opacity: isInWishlist ? 1 : 0.5, cursor: 'pointer' }}
                         onClick={() => onToggleWishlist(gear)}
                     >
@@ -82,7 +82,7 @@ const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist }) => (
                 </div>
                 <p className="fw-bold mb-2">{gear.description || gear.name}</p>
                 <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {gear.type || gear.name}</p>
-                
+
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         {gear.category && (
@@ -97,7 +97,7 @@ const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist }) => (
                 </div>
 
                 <div className="d-flex gap-2">
-                    <button 
+                    <button
                         className="btn btn-add-to-cart w-100"
                         onClick={() => onAddToCart(gear)}
                     >
@@ -111,27 +111,27 @@ const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist }) => (
 );
 
 const FilterCheckbox = ({ category, isSelected, onToggle }) => {
-  const id = `btn-check-${category.replace(/\s+/g, '-')}`;
-  return (
-    <div>
-      <input type="checkbox" className="btn-check" id={id} checked={isSelected} onChange={() => onToggle(category)} autoComplete="off" />
-      <label className="btn btn-sm d-flex align-items-center filter-btn" htmlFor={id}>
-        <GearIcon />
-        <span>{category}</span>
-      </label>
-    </div>
-  );
+    const id = `btn-check-${category.replace(/\s+/g, '-')}`;
+    return (
+        <div>
+            <input type="checkbox" className="btn-check" id={id} checked={isSelected} onChange={() => onToggle(category)} autoComplete="off" />
+            <label className="btn btn-sm d-flex align-items-center filter-btn" htmlFor={id}>
+                <GearIcon />
+                <span>{category}</span>
+            </label>
+        </div>
+    );
 };
 
 const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggleWishlist, wishlist }) => {
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
 
     return (
         <main className="p-4" style={{ color: 'var(--text-primary)' }}>
             {/* Back button */}
             <div className="mb-3">
-                <button 
-                    className="btn btn-outline-secondary d-flex align-items-center gap-2" 
+                <button
+                    className="btn btn-outline-secondary d-flex align-items-center gap-2"
                     onClick={() => navigate('/customer/home')}
                     style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
                 >
@@ -139,10 +139,10 @@ const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggle
                     Back to Home
                 </button>
             </div>
-            
+
             <h1 style={{ color: 'var(--primary-accent)' }}>Gears and Parts Listings</h1>
             <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality gears and parts</p>
-            <hr style={{ borderColor: 'var(--border-color)' }}/>
+            <hr style={{ borderColor: 'var(--border-color)' }} />
             <div className="row mb-4 align-items-center">
                 <div className="col-md-8 col-lg-6">
                     <form className="d-flex" role="search" onSubmit={(e) => e.preventDefault()}>
@@ -162,17 +162,27 @@ const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggle
                     </form>
                 </div>
                 <div className="col-md-4 col-lg-6 text-md-end mt-2 mt-md-0">
-                    <button className="btn btn-secondary" type="button" onClick={() => navigate('/customer/accessories-category')}>
-                        <i className="bi bi-tools"></i> Accessories
+                    <button
+                        className="btn me-2"
+                        style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}
+                        onClick={() => navigate('/customer/wishlist')}
+                    >
+                        <i class="bi bi-heart-fill"></i>My Wishlist
+                    </button>
+                    <button className="btn btn-secondary me-2" type="button" onClick={() => navigate('/customer/accessories-category')}><i className="bi bi-tools"></i>
+                        Accessories
+                    </button>
+                    <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/bikes-category')}><i className="bi bi-bicycle"></i>
+                        Bikes
                     </button>
                 </div>
             </div>
             <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 {gears.length > 0 ? (
                     gears.map(gear => (
-                        <GearCard 
-                            key={gear.id} 
-                            gear={gear} 
+                        <GearCard
+                            key={gear.id}
+                            gear={gear}
                             onAddToCart={onAddToCart}
                             onToggleWishlist={onToggleWishlist}
                             isInWishlist={wishlist.some(item => item.productId === gear.id)}
@@ -210,7 +220,7 @@ const GearsCategory = () => {
                 product.category.toLowerCase().includes('gear') ||
                 product.category.toLowerCase().includes('part') ||
                 // Also check if product type/name matches any of our official categories
-                gearPartsCategories.some(category => 
+                gearPartsCategories.some(category =>
                     product.type?.toLowerCase().includes(category.toLowerCase()) ||
                     product.name?.toLowerCase().includes(category.toLowerCase()) ||
                     product.category?.toLowerCase().includes(category.toLowerCase())
@@ -262,13 +272,13 @@ const GearsCategory = () => {
 
     const filteredGears = useMemo(() => {
         return gears.filter(gear => {
-            const categoryMatch = selectedCategories.length === 0 || 
+            const categoryMatch = selectedCategories.length === 0 ||
                 selectedCategories.some(selectedCategory =>
                     gear.type?.toLowerCase().includes(selectedCategory.toLowerCase()) ||
                     gear.name?.toLowerCase().includes(selectedCategory.toLowerCase()) ||
                     gear.category?.toLowerCase().includes(selectedCategory.toLowerCase())
                 );
-            const searchMatch = 
+            const searchMatch =
                 (gear.name && gear.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (gear.description && gear.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (gear.brand && gear.brand.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -330,11 +340,11 @@ const GearsCategory = () => {
                             <h3 className="fs-5 mb-3">Filter by Type</h3>
                             <div className="d-flex flex-wrap gap-2">
                                 {gearPartsCategories.map(category => (
-                                    <FilterCheckbox 
-                                        key={category} 
-                                        category={category} 
-                                        isSelected={selectedCategories.includes(category)} 
-                                        onToggle={toggleCategory} 
+                                    <FilterCheckbox
+                                        key={category}
+                                        category={category}
+                                        isSelected={selectedCategories.includes(category)}
+                                        onToggle={toggleCategory}
                                     />
                                 ))}
                             </div>
@@ -342,9 +352,9 @@ const GearsCategory = () => {
                     )}
                 </div>
                 <div style={{ marginLeft: isSidebarCollapsed ? '100px' : '280px', transition: 'margin-left 0.3s ease' }}>
-                    <GearListings 
-                        gears={filteredGears} 
-                        searchTerm={searchTerm} 
+                    <GearListings
+                        gears={filteredGears}
+                        searchTerm={searchTerm}
                         onSearchChange={handleSearchChange}
                         onAddToCart={handleAddToCart}
                         onToggleWishlist={handleToggleWishlist}

@@ -72,9 +72,9 @@ function App() {
               <AccessoriesCategory />
             </ProtectedRoute>
           } />
-          <Route path="/customer/gears-category" element={
+          <Route path="/customer/gears-parts-category" element={
             <ProtectedRoute>
-              <AccessoriesCategory />
+              <GearsCategory />
             </ProtectedRoute>
           } />
           <Route path="/customer/wishlist" element={

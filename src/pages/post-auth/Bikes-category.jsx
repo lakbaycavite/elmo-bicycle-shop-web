@@ -117,6 +117,16 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
 
   return (
     <main className="p-4" style={{ color: 'var(--text-primary)' }}>
+      <div className="mb-3">
+        <button
+          className="btn btn-outline-secondary d-flex align-items-center gap-2"
+          onClick={() => navigate('/customer/home')}
+          style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+        >
+          <i className="bi bi-arrow-left"></i>
+          Back to Home
+        </button>
+      </div>
       <h1 style={{ color: 'var(--primary-accent)' }}>Bike Listings</h1>
       <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality bikes</p>
       <hr style={{ borderColor: 'var(--border-color)' }} />
@@ -142,10 +152,13 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
             style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}
             onClick={() => navigate('/customer/wishlist')}
           >
-            <Heart size={16} className="me-1" /> My Wishlist
+            <i class="bi bi-heart-fill"></i>My Wishlist
           </button>
-          <button className="btn btn-secondary" type="button" onClick={() => navigate('/customer/accessories-category')}><i className="bi bi-tools"></i>
+          <button className="btn btn-secondary me-2" type="button" onClick={() => navigate('/customer/accessories-category')}><i className="bi bi-tools"></i>
             Accessories
+          </button>
+          <button className="btn btn-secondary me-2" type="button" onClick={() => navigate('/customer/gears-parts-category')}><i class="bi bi-gear"></i>
+            Gears & Parts
           </button>
         </div>
       </div>
