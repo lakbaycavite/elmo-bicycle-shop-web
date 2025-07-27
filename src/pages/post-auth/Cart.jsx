@@ -1,115 +1,79 @@
 import { ArrowLeft, ChevronLeft, ChevronRight, CreditCard, DiamondPlus, Minus, Plus, RefreshCw, Search, ShoppingCart, Trash2 } from "lucide-react"
-import { useState } from "react"
 import CartCard from "../../components/CartCard";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "../../hooks/useCart";
+import { useProducts } from "../../hooks/useProduct";
+import elmoLogo from '/images/logos/elmo.png'
+import OrderDetailsModal from "../../components/OrderDetailsModal";
+import ProductRatingModal from "../../components/ProductRatingModal";
+import { useState } from "react";
+import ProductDetailsModal from "../../components/ProductsDetailsModal";
+import { toast } from "sonner";
 
 const Cart = () => {
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [orderCompleted, setOrderCompleted] = useState(false);
+    const [completedCartItems, setCompletedCartItems] = useState([]);
+    const [viewProduct, setViewProduct] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+    const { cart, updateQuantity, removeItem, totalPrice, addToCart, clearCart } = useCart();
+    const { products, getProduct } = useProducts();
 
     const navigate = useNavigate();
 
-    const initialCartItems = [
-        {
-            id: 1,
-            name: "Fila 19 Mountain Bike",
-            category: "Bikes",
-            price: 19999.00,
-            image: "https://images.unsplash.com/photo-1465101162946-4377e57745c3",
-            quantity: 1
-        },
-        {
-            id: 2,
-            name: "Specialized Rockhopper",
-            category: "Bikes",
-            price: 24599.00,
-            image: "https://images.unsplash.com/photo-1485965120184-e220f721d03e",
-            quantity: 1
-        },
-        {
-            id: 3,
-            name: "Trek FX Sport 4",
-            category: "Bikes",
-            price: 31999.00,
-            image: "https://images.unsplash.com/photo-1571068316344-75bc76f77890",
-            quantity: 2
-        },
-        {
-            id: 4,
-            name: "Cannondale SuperSix",
-            category: "Bikes",
-            price: 42599.00,
-            image: "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8",
-            quantity: 1
-        },
-        {
-            id: 5,
-            name: "Giant Contend AR",
-            category: "Bikes",
-            price: 27899.00,
-            image: "https://images.unsplash.com/photo-1529236183275-4fdcf2bc987e",
-            quantity: 1
-        }
-    ];
 
-
-    const cards = [
-        {
-            title: "Sunset Boulevard",
-            description: "Experience the serene beauty of the sun setting over the city skyline.",
-            image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb"
-        },
-        {
-            title: "Mountain Escape",
-            description: "Breathe in the fresh mountain air and enjoy nature's tranquility.",
-            image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca"
-        },
-        {
-            title: "Urban Jungle",
-            description: "Discover the hidden gems nestled in the heart of the metropolis.",
-            image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308"
-        },
-        {
-            title: "Ocean Breeze",
-            description: "Let the sound of waves and salty air wash your worries away.",
-            image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
-        },
-        {
-            title: "Desert Adventure",
-            description: "Embark on a thrilling journey across endless sands and dunes.",
-            image: "https://images.unsplash.com/photo-1465101178521-c1a9136aabef"
-        },
-        {
-            title: "Forest Retreat",
-            description: "Unplug and unwind in the lush green embrace of the forest.",
-            image: "https://images.unsplash.com/photo-1465101162946-4377e57745c3"
-        }
-    ];
-
-    const [products, setProducts] = useState(cards);
-    const [cartItems, setCartItems] = useState(initialCartItems);
-
-    // Calculate totals
-    const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const shipping = 0; // Free shipping
-    const grandTotal = subtotal + shipping;
-
-    const updateQuantity = (id, newQuantity) => {
-        if (newQuantity < 1) return; // Prevent negative quantities
-
-        setCartItems(cartItems.map(item =>
-            item.id === id ? { ...item, quantity: newQuantity } : item
-        ));
+    // Handle checkout completion
+    const handleCheckoutComplete = () => {
+        setCompletedCartItems([...cart]);
+        setShowOrderModal(false);
+        setOrderCompleted(true);
+        setShowRatingModal(true);
     };
 
-    // Handle item removal
-    const removeItem = (id) => {
-        setCartItems(cartItems.filter(item => item.id !== id));
+    const handleShowDetailsModal = async (product) => {
+        if (!product) {
+            console.error("No product data provided for details modal");
+            return;
+        }
+        await getProduct(product.id)
+            .then(() => {
+                setViewProduct(product);
+                setShowDetailsModal(true);
+            })
+            .catch((error) => {
+                console.error("Error fetching product details:", error);
+                toast.error(`Failed to load product details`);
+            });
+    }
+
+    // Handle rating submission
+    const handleRatingSubmit = async (ratings) => {
+        try {
+            // Here you would send the ratings to your backend
+            console.log("Submitting ratings:", ratings);
+
+            // You might want to call an API here
+            // await submitProductRatings(ratings);
+
+            // After successful submission, clear the cart and redirect
+            clearCart();
+            navigate("/");
+        } catch (error) {
+            console.error("Error submitting ratings:", error);
+        }
+    };
+
+    const handleUpdateQuantity = async (id, newQuantity) => {
+        if (newQuantity < 1) return; // Prevent negative quantities
+        await updateQuantity(id, newQuantity);
     };
 
     // Format price to Philippine Peso
     const formatPrice = (price) => {
-        return `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+        return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
     };
-
 
     return (
         <div className="w-full h-full flex flex-col space-y-4 items-center justify-center p-4 bg-gray-950">
@@ -133,7 +97,7 @@ const Cart = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {cartItems.map((item) => (
+                            {cart.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50">
                                     <td className="py-5">
                                         <button
@@ -146,7 +110,7 @@ const Cart = () => {
                                     <td className="py-5">
                                         <div className="flex items-center space-x-4">
                                             <img
-                                                src={item.image}
+                                                src={item.image ? item.image : elmoLogo}
                                                 className="w-24 h-24 object-cover rounded-lg"
                                                 alt={item.name}
                                             />
@@ -160,7 +124,7 @@ const Cart = () => {
                                         <div className="flex items-center justify-center">
                                             <button
                                                 className="p-1 rounded-l bg-gray-100 border border-gray-300 hover:bg-gray-200"
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                                             >
                                                 <Minus size={16} className="text-gray-600" />
                                             </button>
@@ -170,12 +134,12 @@ const Cart = () => {
                                                 className="w-12 h-8 text-center border-y border-gray-300 outline-none"
                                                 onChange={(e) => {
                                                     const val = parseInt(e.target.value);
-                                                    if (!isNaN(val)) updateQuantity(item.id, val);
+                                                    if (!isNaN(val)) handleUpdateQuantity(item.id, val);
                                                 }}
                                             />
                                             <button
                                                 className="p-1 rounded-r bg-gray-100 border border-gray-300 hover:bg-gray-200"
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                                             >
                                                 <Plus size={16} className="text-gray-600" />
                                             </button>
@@ -197,10 +161,6 @@ const Cart = () => {
                 <div className="w-full border-t border-gray-200 bg-white p-5 rounded-b-xl">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center">
-                            {/* <button className="flex items-center text-gray-600 hover:text-orange-500 mr-4">
-                                <RefreshCw size={16} className="mr-1" />
-                                <span>Update Cart</span>
-                            </button> */}
                             <button className="flex items-center text-gray-600 hover:text-orange-500" onClick={() => navigate("/")}>
                                 <ArrowLeft size={16} className="mr-1" />
                                 <span>Continue Shopping</span>
@@ -211,18 +171,19 @@ const Cart = () => {
                             <div className="w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-gray-600">Subtotal:</span>
-                                    <span className="font-medium">{formatPrice(subtotal)}</span>
+                                    <span className="font-medium">{formatPrice(totalPrice)}</span>
                                 </div>
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-gray-600">Shipping:</span>
-                                    <span className="font-medium">{formatPrice(shipping)}</span>
+                                    <span className="text-gray-600">Discount:</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                     <span className="font-bold text-lg">Grand Total:</span>
-                                    <span className="font-bold text-lg">{formatPrice(grandTotal)}</span>
+                                    <span className="font-bold text-lg">{formatPrice(totalPrice)}</span>
                                 </div>
 
-                                <button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center">
+                                <button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center"
+                                    onClick={() => setShowOrderModal(true)}
+                                >
                                     <CreditCard size={18} className="mr-2" />
                                     Checkout
                                 </button>
@@ -232,7 +193,7 @@ const Cart = () => {
                 </div>
             </div>
 
-            <div className="w-[1200px] h-[500px] bg-[#2E2E2E] rounded-xl flex flex-col">
+            <div className="w-[1200px] h-full bg-[#2E2E2E] rounded-xl flex flex-col">
                 <div className="w-full h-18 rounded-t-xl flex items-center justify-between px-3">
                     <div className="flex flex-row items-center ">
                         <DiamondPlus className="text-white" />
@@ -272,16 +233,43 @@ const Cart = () => {
                         {products.map((product, idx) => (
                             <div key={idx} className="flex-none md:w-80">
                                 <CartCard
-                                    title={product.title}
-                                    description={product.description}
-                                    image={product.image}
+                                    productDetails={product}
+                                    title={product.name}
+                                    handleShowDetailsModal={handleShowDetailsModal}
+                                    productId={product.id}
+                                    description1={product.spec1}
+                                    rating={product.rating}
+                                    image={product.image ? product.image : elmoLogo}
+                                    addToCart={addToCart}
                                 />
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
-        </div >
+
+            {/* Order Details Modal */}
+            <OrderDetailsModal
+                show={showOrderModal}
+                onClose={() => setShowOrderModal(false)}
+                onComplete={handleCheckoutComplete}
+            />
+
+            {/* Product Rating Modal */}
+            <ProductRatingModal
+                show={showRatingModal}
+                onClose={() => setShowRatingModal(false)}
+                cartItems={orderCompleted ? completedCartItems : []}
+                onSubmitRatings={handleRatingSubmit}
+            />
+
+            <ProductDetailsModal
+                viewProduct={viewProduct}
+                showDetailsModal={showDetailsModal}
+                setShowDetailsModal={setShowDetailsModal}
+                formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`} // Example price formatting function
+            />
+        </div>
     )
 }
 

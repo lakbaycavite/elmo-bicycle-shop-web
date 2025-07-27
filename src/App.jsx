@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage'
 import Products from './pages/post-auth/Products'
 import BikesCategory from './pages/post-auth/Bikes-category'
 import AccessoriesCategory from './pages/post-auth/Accessories-category'
+import GearsCategory from './pages/post-auth/Gears-category'
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -28,6 +29,8 @@ import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
 import Inventory from './pages/admin/Inventory';
 import { useAuth } from './context/authContext/createAuthContext';
+import { Toaster } from 'sonner';
+import ProtectedRoute from './middleware/ProtectedRoute';
 
 function App() {
 
@@ -35,7 +38,16 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
+        <Toaster richColors toastOptions={{
+          style: {
+            fontSize: '',
+            padding: '16px',
+            minHeight: '75px',
+            minWidth: '300px'
+          }
+        }} />
         <Routes>
+          {/* Home routes - using unified HomePage component */}
           {/* Home routes - using unified HomePage component */}
           <Route path="/" element={<HomePage />} />
           <Route path="/customer/home" element={<HomePage />} />
@@ -44,25 +56,83 @@ function App() {
           <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
           <Route path="/signup" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Signup />} />
 
-          {/* Post-auth routes */}
-          <Route path="/customer/products" element={<Products />} />
-          <Route path="/customer/bikes-category" element={<BikesCategory />} />
-          <Route path="/customer/accessories-category" element={<AccessoriesCategory />} />
-          <Route path="/customer/wishlist" element={<Wishlist />} />
-          <Route path="/customer/profile" element={<CustomerProfile />} />
+          {/* Post-auth routes with ProtectedRoute */}
+          <Route path="/customer/products" element={
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/bikes-category" element={
+            <ProtectedRoute>
+              <BikesCategory />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/accessories-category" element={
+            <ProtectedRoute>
+              <AccessoriesCategory />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/gears-parts-category" element={
+            <ProtectedRoute>
+              <GearsCategory />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/wishlist" element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/profile" element={
+            <ProtectedRoute>
+              <CustomerProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/cart" element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          } />
 
-          <Route path="/customer/cart" element={<Cart />} />
+          {/* Admin routes with role-based protection */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/account-manage" element={
+            <ProtectedRoute>
+              <AccountManage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/staff-management" element={
+            <ProtectedRoute>
+              <UserManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/inventory" element={
+            <ProtectedRoute>
+              <Inventory />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders-overview" element={
+            <ProtectedRoute>
+              <OrdersOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/user-activity" element={
+            <ProtectedRoute>
+              <UserActivity />
+            </ProtectedRoute>
+          } />
 
-          {/* Admin routes */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/account-manage" element={<AccountManage />} />
-          <Route path="/admin/user-management" element={<UserManagement />} />
-          <Route path="/admin/inventory" element={<Inventory />} />
-          <Route path="/admin/orders-overview" element={<OrdersOverview />} />
-          <Route path="/admin/user-activity" element={<UserActivity />} />
+          {/* Staff routes with role-based protection */}
+          {/* <Route path="/staff/dashboard" element={
+            <ProtectedRoute requiredRole="staff">
+              <StaffDashboard />
+            </ProtectedRoute>
+          } /> */}
 
-          {/* Staff routes */}
-          <Route path="/staff/dashboard" element={<StaffDashboard />} />
+          <Route path="*" element={<Navigate to="/customer/home" />} />
 
 
         </Routes>

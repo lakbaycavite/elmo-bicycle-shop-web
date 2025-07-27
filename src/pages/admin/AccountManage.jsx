@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
-import { CircleUser, X } from 'lucide-react';
+import { AlertCircle, CircleUser, Loader2, Mail, X } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
+import { useUserStatus } from '../../hooks/useUserStatus';
+import { toast } from 'sonner';
+import { doPasswordReset } from '../../firebase/auth';
+
 function AccountManage() {
-  const { users, loading, error, changeRole, removeUser, editUser } = useUsers();
+  const { users, loading, error, loadUsers, removeUser } = useUsers();
+  const { disableUser, reactivateUser } = useUserStatus();
 
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +28,18 @@ function AccountManage() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [accountToDisable, setAccountToDisable] = useState(null);
+  const [accountToReactivate, setAccountToReactivate] = useState(null);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState(null);
+
+  //password reset
+  const [resetPasswordAccount, setResetPasswordAccount] = useState(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
 
   // Update accounts when users data changes
   useEffect(() => {
@@ -51,39 +68,23 @@ function AccountManage() {
   });
 
   const handleActionChange = async (account, action) => {
-    if (action === 'delete') {
-      // Implement delete functionality
-      if (confirm("Are you sure you want to delete this account?")) {
-        try {
-          await removeUser(account.id);
-          alert("Account deleted successfully!");
-        } catch (error) {
-          alert(`Error deleting account: ${error.message}`);
-        }
-      }
-    } else if (action === 'edit') {
-      console.log(`Editing account: ${account.email}`);
-    } else if (action === 'make-admin') {
-      try {
-        await changeRole(account.uid || account.id, 'admin');
-        alert(`${account.email} is now an admin`);
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-      }
-    } else if (action === 'make-staff') {
-      try {
-        await changeRole(account.uid || account.id, 'staff');
-        alert(`${account.email} is now a staff member`);
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-      }
-    } else if (action === 'make-customer') {
-      try {
-        await changeRole(account.uid || account.id, 'customer');
-        alert(`${account.email} is now a customer`);
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-      }
+
+    if (action === 'disable') {
+      setAccountToDisable(account);
+      setIsDisableModalOpen(true);
+    }
+    else if (action === 'action') {
+      handleActionChange(null, ''); // Reset action
+    }
+    else if (action === 'delete') {
+      setAccountToDelete(account);
+      setIsDeleteModalOpen(true);
+    } else if (action === 'reactivate') {
+      setAccountToReactivate(account);
+      setIsActivateModalOpen(true);
+    } else if (action === 'reset-password') {
+      setResetPasswordAccount(account);
+      setShowResetModal(true);
     }
   };
 
@@ -113,9 +114,11 @@ function AccountManage() {
         {
           ...newAccount,
         },
-      );
+      )
+        .then(() => {
+          toast.success('Account created successfully!');
+        })
 
-      alert('Account created successfully!');
       setNewAccount({
         firstName: '',
         lastName: '',
@@ -125,19 +128,81 @@ function AccountManage() {
       });
       setIsAddAccountModalOpen(false);
     } catch (error) {
-      alert(`Error creating account: ${error.message}`);
+      toast.error(`Error creating account: ${error.message}`);
       console.error("Error creating account:", error);
     }
   };
 
+  // const handleEditAccountInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setEditAccount(prev => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  // };
+
+  // const handleEditAccountSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!editAccount) return;
+  //   try {
+  //     await editUser(editAccount.id, {
+  //       firstName: editAccount.firstName,
+  //       lastName: editAccount.lastName,
+  //       email: editAccount.email,
+  //       role: editAccount.role,
+  //     });
+  //     toast.success('Account updated successfully!');
+  //     setIsEditAccountModalOpen(false);
+  //     setEditAccount(null);
+  //   } catch (error) {
+  //     toast.error(`Error updating account: ${error.message}`);
+  //   }
+  // };
+
+  const handleDisableAccount = async () => {
+    if (!accountToDisable) return;
+    try {
+      // await removeUser(accountToDelete.id);
+      await disableUser({ uid: accountToDisable.id, reason: 'Account disabled by admin' });
+      setIsDisableModalOpen(false);
+      setAccountToDisable(null);
+    } catch (error) {
+      // Optionally show error feedback in the modal
+      toast.error(`Error disabling account: ${error.message}`);
+    }
+  };
+
+  const handleReactivateSubmit = async () => {
+    if (accountToReactivate) {
+      await reactivateUser({
+        uid: accountToReactivate.id,
+        reason: 'Administrative reactivation'
+      });
+      loadUsers(); // Reload users to get updated data
+    }
+    setAccountToReactivate(null);
+    setIsActivateModalOpen(false);
+  };
+
+  const handleDeleteSubmit = async () => {
+    if (accountToDelete) {
+      await removeUser(accountToDelete.id);
+      loadUsers();
+    }
+    setAccountToDelete(null);
+    setIsDeleteModalOpen(false);
+
+
+  }
+
   // Helper function to format user name
   const formatUserName = (user) => {
-    if (user.firstName && user.lastName) {
+    if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
-    } else if (user.displayName) {
+    } else if (user?.displayName) {
       return user.displayName;
     } else {
-      return user.email || 'Unknown User';
+      return user?.email || 'Unknown User';
     }
   };
 
@@ -175,12 +240,12 @@ function AccountManage() {
     setIsChangePasswordModalOpen(true);
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New password and confirm password do not match.");
+      toast.error("New password and confirm password do not match.");
       return;
     } else {
       await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
         .then(() => {
-          alert('Password changed successfully!');
+          toast.success('Password changed successfully!');
           setPasswordData({
             currentPassword: '',
             newPassword: '',
@@ -189,11 +254,40 @@ function AccountManage() {
           setIsChangePasswordModalOpen(false);
         })
         .catch(() => {
-          alert(`New password and confirm password do not match or wrong current password`);
+          toast.error(`New password and confirm password do not match or wrong current password`);
         });
     }
 
 
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    if (!resetPasswordAccount) {
+      toast.error("No account selected for password reset.");
+      return;
+    }
+    setResetLoading(true);
+
+    await doPasswordReset(resetPasswordAccount.email)
+      .then(() => {
+        toast.success(`Password reset email sent to ${resetPasswordAccount.email}`);
+      })
+      .catch((error) => {
+        console.error("Error sending password reset email:", error);
+        toast.error(`Error sending password reset email`);
+      })
+      .finally(() => {
+        setResetLoading(false);
+        setShowResetModal(false);
+        setResetPasswordAccount(null);
+      })
+
+  }
+
+  const closeResetModal = () => {
+    setShowResetModal(false);
+    setResetLoading(false);
   };
 
   return (
@@ -270,16 +364,18 @@ function AccountManage() {
                         <td className="py-3 px-4">{formatDate(account.dateCreated || account.createdAt)}</td>
                         <td className="py-3 px-4">
                           <select
-                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 text-center rounded shadow transition-colors duration-150 w-36"
                             onChange={(e) => handleActionChange(account, e.target.value)}
-                            defaultValue=""
+                            defaultValue="action"
                           >
-                            <option value="" disabled className='font-bold'>Action</option>
-                            <option value="edit" className='font-bold'>Edit</option>
+                            <option value="action" selected disabled className='font-bold'>Action</option>
+                            <option value="reset-password" className='font-bold'>Reset Password</option>
+                            {account.accountStatus === 'disabled' ? (
+                              <option value="reactivate" className='font-bold'>Reactivate</option>
+                            ) : (
+                              <option value="disable" className='font-bold'>Disable</option>
+                            )}
                             <option value="delete" className='font-bold'>Delete</option>
-                            <option value="make-admin" className='font-bold'>Make Admin</option>
-                            <option value="make-staff" className='font-bold'>Make Staff</option>
-                            <option value="make-customer" className='font-bold'>Make Customer</option>
                           </select>
                         </td>
                       </tr>
@@ -460,6 +556,177 @@ function AccountManage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Disable Confirmation Modal */}
+          {isDisableModalOpen && accountToDisable && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Disable</h2>
+                  <button
+                    onClick={() => { setIsDisableModalOpen(false); setAccountToDisable(null); }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDisable)}</span> (<span className="text-gray-600">{accountToDisable.email}</span>)?</p>
+                </div>
+                <div className="flex justify-end space-x-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setIsDisableModalOpen(false); setAccountToDisable(null); }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDisableAccount}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Disable
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isActivateModalOpen && accountToReactivate && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Reactivate</h2>
+                  <button
+                    onClick={() => { setIsActivateModalOpen(false); setAccountToReactivate(null); }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to reactivate the account for <span className="font-bold">{formatUserName(accountToReactivate)}</span> (<span className="text-gray-600">{accountToReactivate.email}</span>)?</p>
+                </div>
+                <div className="flex justify-end space-x-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setIsActivateModalOpen(false); setAccountToReactivate(null); }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReactivateSubmit}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Reactivate
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {isDeleteModalOpen && accountToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-red-500">Confirm Delete</h2>
+                  <button
+                    onClick={() => {
+                      setIsDeleteModalOpen(false); setAccountToDelete(null); // Reset action
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800">Are you sure you want to delete the account for <span className="font-bold">{formatUserName(accountToDelete)}</span> (<span className="text-gray-600">{accountToDelete.email}</span>)?</p>
+                </div>
+                <div className="flex justify-end space-x-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDeleteModalOpen(false); setAccountToDelete(null); // Reset action
+                    }}
+                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteSubmit}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showResetModal && (
+            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
+                  {/* Modal Header */}
+                  <div className="modal-header bg-stone-900 text-white border-0">
+                    <h5 className="modal-title font-semibold">Reset Password</h5>
+                    <button
+                      type="button"
+                      className="btn-close btn-close-white"
+                      onClick={closeResetModal}
+                      aria-label="Close"
+                    >
+                    </button>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="modal-body p-4">
+                    <div className="text-center mb-4">
+                      <Mail className="w-12 h-12 mx-auto text-orange-500 mb-3" />
+                      <h4 className="font-bold text-gray-800 mb-2">Confirm Password Reset</h4>
+                      <p className="text-gray-600">
+                        Do you want to send a password reset link to <span className="font-bold">{resetPasswordAccount ? formatUserName(resetPasswordAccount) : 'this account'}</span>?
+                      </p>
+                      <p className="text-sm text-gray-500 mt-3">
+                        <AlertCircle className="w-4 h-4 inline-block mr-1" />
+                        The user will receive an email with instructions to reset their password.
+                      </p>
+                    </div>
+
+                    <div className="d-flex justify-content-center gap-3 mt-4">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary px-4"
+                        onClick={closeResetModal}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetSubmit}
+                        className={`btn ${resetLoading ? 'btn-secondary' : 'btn-success text-white'} px-4 flex items-center justify-center`}
+                        disabled={resetLoading}
+                      >
+                        {resetLoading ? (
+                          <div className='flex items-center'>
+                            <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                            Sending...
+                          </div>
+                        ) : (
+                          'Send Reset Link'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -28,7 +28,7 @@ function OrdersOverview() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order, idx) => (
+                {orders.map((order) => (
                   <tr key={order.id} className="bg-gray-800 text-white border-b border-gray-700">
                     <td className="py-3 px-4">{order.id}</td>
                     <td className="py-3 px-4">{order.name}</td>

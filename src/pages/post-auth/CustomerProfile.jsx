@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     User,
     Mail,
@@ -10,60 +10,122 @@ import {
     Clock,
     Lock,
     LogOut,
-    ArrowLeft
+    ArrowLeft,
+    X,
+    Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUsers } from '../../hooks/useUser';
+import { useOrder } from '../../hooks/useOrder';
+import { doPasswordChange, doSignOut } from '../../firebase/auth';
+import { toast } from 'sonner';
 
 const CustomerProfile = () => {
-    // Dummy user data
-    const user = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 (555) 123-4567",
-        address: "123 Main Street, Apt 4B, New York, NY 10001",
-        profileImage: "https://randomuser.me/api/portraits/men/44.jpg"
-    };
+    const { currentUserData } = useUsers();
+    const navigate = useNavigate();
+    const { userOrders, loadUserOrders } = useOrder();
 
-    // Dummy transaction data
-    const allTransactions = [
-        { id: 1, date: "2025-07-18", description: "Online Purchase - Electronics", amount: "$149.99", status: "Completed" },
-        { id: 2, date: "2025-07-15", description: "Monthly Subscription", amount: "$12.99", status: "Completed" },
-        { id: 3, date: "2025-07-10", description: "Grocery Store", amount: "$87.65", status: "Completed" },
-        { id: 4, date: "2025-07-05", description: "Restaurant Payment", amount: "$42.75", status: "Completed" },
-        { id: 5, date: "2025-06-30", description: "Utility Bill", amount: "$120.50", status: "Completed" },
-        { id: 6, date: "2025-06-25", description: "Gas Station", amount: "$45.00", status: "Completed" },
-        { id: 7, date: "2025-06-20", description: "Online Shopping", amount: "$78.32", status: "Completed" },
-        { id: 8, date: "2025-06-15", description: "Coffee Shop", amount: "$8.75", status: "Completed" },
-        { id: 9, date: "2025-06-10", description: "Mobile Phone Bill", amount: "$60.00", status: "Completed" },
-        { id: 10, date: "2025-06-05", description: "Streaming Service", amount: "$14.99", status: "Completed" },
-        { id: 11, date: "2025-05-30", description: "Department Store", amount: "$125.45", status: "Completed" },
-        { id: 12, date: "2025-05-25", description: "Internet Service", amount: "$65.00", status: "Completed" },
-        { id: 13, date: "2025-05-20", description: "Pharmacy Purchase", amount: "$32.99", status: "Completed" },
-        { id: 14, date: "2025-05-15", description: "Book Store", amount: "$24.99", status: "Completed" },
-        { id: 15, date: "2025-05-10", description: "Gym Membership", amount: "$50.00", status: "Completed" },
-        { id: 16, date: "2025-05-05", description: "Clothing Store", amount: "$95.80", status: "Completed" },
-        { id: 17, date: "2025-04-30", description: "Home Improvement", amount: "$210.45", status: "Completed" },
-        { id: 18, date: "2025-04-25", description: "Pet Supplies", amount: "$67.50", status: "Completed" },
-        { id: 19, date: "2025-04-20", description: "Electronics Store", amount: "$299.99", status: "Completed" },
-        { id: 20, date: "2025-04-15", description: "Furniture Purchase", amount: "$450.00", status: "Completed" },
-    ];
+    useEffect(() => {
+        loadUserOrders();
+    }, [loadUserOrders]);
 
-    // Pagination state
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    const [loading, setLoading] = useState(false);
+
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    // Get current transactions
     const indexOfLastTransaction = currentPage * itemsPerPage;
     const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage;
-    const currentTransactions = allTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+    const currentTransactions = userOrders.slice(indexOfFirstTransaction, indexOfLastTransaction);
 
-    // Calculate total pages
-    const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
+    const totalPages = Math.ceil(userOrders.length / itemsPerPage);
 
-    // Change page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    const navigate = useNavigate();
+    const fullName = currentUserData ?
+        `${currentUserData.firstName || ''} ${currentUserData.lastName || ''}`.trim() :
+        "User";
+
+    const email = currentUserData?.email || "Not available";
+    const phone = currentUserData?.phone || "Not available";
+
+    const handleLogout = async () => {
+        await doSignOut()
+            .then(() => {
+                toast.success("Logout successful");
+            })
+            .catch((error) => {
+                toast.error("Logout failed");
+                console.error("Logout failed", error);
+            });
+        navigate('/');
+    };
+
+    const handlePasswordInputChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setIsChangePasswordModalOpen(true);
+        setLoading(true);
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error("New password and confirm password do not match.");
+            setLoading(false);
+            return;
+        } else {
+            await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+                .then(() => {
+                    toast.success("Password changed successfully");
+                    setPasswordData({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                    });
+                    setIsChangePasswordModalOpen(false);
+                })
+                .catch(() => {
+                    toast.error("New password and confirm password do not match or wrong current password");
+                })
+                .finally(() => {
+                    setLoading(false);
+                    setIsChangePasswordModalOpen(false);
+                })
+        }
+
+
+    };
+
+    if (!currentUserData) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed flex items-center justify-center">
+                <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 max-w-md">
+                    <h2 className="text-xl font-bold mb-4 text-[#ff6900]">Loading Profile...</h2>
+                    <p>Please wait while we retrieve your information.</p>
+                    <button
+                        className="mt-4 bg-[#ff6900] hover:bg-[#e55e00] text-white font-bold py-2 px-4 rounded-full flex items-center"
+                        onClick={() => navigate('/customer/home')}
+                    >
+                        <ArrowLeft size={18} className="mr-1" />
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed" style={{ background: "linear-gradient(135deg, black 80%, #ff6900 100%)" }}>
@@ -76,18 +138,13 @@ const CustomerProfile = () => {
                     Back
                 </button>
 
-                {/* User and Datetime Info */}
-                <div className="text-white text-sm mb-6 mt-16">
-
-                </div>
-
                 {/* Top section with profile image and account details */}
-                <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
+                <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800 mt-16">
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                         {/* Profile Image */}
                         <div className="flex flex-col items-center">
                             <img
-                                src={user.profileImage}
+                                src={"https://randomuser.me/api/portraits/men/44.jpg"}
                                 alt="Profile"
                                 className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
                             />
@@ -102,7 +159,7 @@ const CustomerProfile = () => {
                                     <User className="text-[#ff6900]" size={20} />
                                     <div>
                                         <span className="text-gray-400 font-medium">Name:</span>
-                                        <span className="ml-2 text-white">{user.name}</span>
+                                        <span className="ml-2 text-white">{fullName}</span>
                                     </div>
                                 </div>
 
@@ -110,7 +167,7 @@ const CustomerProfile = () => {
                                     <Mail className="text-[#ff6900]" size={20} />
                                     <div>
                                         <span className="text-gray-400 font-medium">Email:</span>
-                                        <span className="ml-2 text-white">{user.email}</span>
+                                        <span className="ml-2 text-white">{email}</span>
                                     </div>
                                 </div>
 
@@ -118,77 +175,88 @@ const CustomerProfile = () => {
                                     <Phone className="text-[#ff6900]" size={20} />
                                     <div>
                                         <span className="text-gray-400 font-medium">Phone:</span>
-                                        <span className="ml-2 text-white">{user.phone}</span>
+                                        <span className="ml-2 text-white">{phone}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <MapPin className="text-[#ff6900]" size={20} />
-                                    <div>
-                                        <span className="text-gray-400 font-medium">Address:</span>
-                                        <span className="ml-2 text-white">{user.address}</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Transaction History */}
                 <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
                     <h2 className="text-2xl font-bold mb-4 text-[#ff6900] border-b border-gray-700 pb-2 flex items-center">
                         <FileText className="text-[#ff6900] mr-2" size={24} />
                         Transaction History
                     </h2>
 
-                    <div className="overflow-x-auto">
-                        <table className="table-auto w-full">
-                            <thead className="bg-gray-800">
-                                <tr>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">#</th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <Calendar size={16} className="mr-1" />
-                                            Date
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <FileText size={16} className="mr-1" />
-                                            Description
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <DollarSign size={16} className="mr-1" />
-                                            Amount
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                        <div className="flex items-center">
-                                            <Clock size={16} className="mr-1" />
-                                            Status
-                                        </div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentTransactions.map((transaction) => (
-                                    <tr key={transaction.id} className="border-b border-gray-800 hover:bg-gray-800">
-                                        <td className="py-3 px-4">{transaction.id}</td>
-                                        <td className="py-3 px-4">{transaction.date}</td>
-                                        <td className="py-3 px-4">{transaction.description}</td>
-                                        <td className="py-3 px-4 font-medium">{transaction.amount}</td>
-                                        <td className="py-3 px-4">
-                                            <span className="px-2 py-1 bg-green-900 text-green-300 rounded-full text-xs">
-                                                {transaction.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    {/* Format date helper function */}
+                    {(() => {
+                        const formatDate = (dateString) => {
+                            if (!dateString) return "N/A";
+                            const date = new Date(dateString);
+                            if (isNaN(date.getTime())) return dateString;
+                            return date.toLocaleString('en-US', {
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                        };
+
+                        return (
+                            <div className="overflow-x-auto">
+                                <table className="table-auto w-full">
+                                    <thead className="bg-gray-800">
+                                        <tr>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">#</th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <Calendar size={16} className="mr-1" />
+                                                    Date
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <FileText size={16} className="mr-1" />
+                                                    Payment Method
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <DollarSign size={16} className="mr-1" />
+                                                    Amount
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
+                                                <div className="flex items-center">
+                                                    <Clock size={16} className="mr-1" />
+                                                    Status
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentTransactions.map((transaction) => (
+                                            <tr key={transaction.id} className="border-b border-gray-800 hover:bg-gray-800">
+                                                <td className="py-3 px-4">{transaction.id}</td>
+                                                <td className="py-3 px-4">{formatDate(transaction.createdAt)}</td>
+                                                <td className="py-3 px-4">{transaction.paymentMethod}</td>
+                                                <td className="py-3 px-4 font-medium">{transaction.totalAmount}</td>
+                                                <td className="py-3 px-4">
+                                                    <span className="px-2 py-1 bg-green-900 text-green-300 rounded-full text-xs">
+                                                        {transaction.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    })()}
 
                     {/* Pagination */}
                     <nav className="mt-6 flex justify-center">
@@ -236,17 +304,94 @@ const CustomerProfile = () => {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col md:flex-row gap-4 justify-center pb-10">
-                    <button className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md border border-[#ff6900]">
+                    <button className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md border border-[#ff6900]"
+                        onClick={
+                            () => setIsChangePasswordModalOpen(true)
+                        }>
                         <Lock size={18} className="text-[#ff6900]" />
                         <span>Change Password</span>
                     </button>
 
-                    <button className="flex items-center justify-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white font-semibold py-3 px-6 rounded-md">
+                    <button className="flex items-center justify-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white font-semibold py-3 px-6 rounded-md" onClick={handleLogout}>
                         <LogOut size={18} />
                         <span>Logout</span>
                     </button>
                 </div>
             </div>
+            {isChangePasswordModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-orange-500">Change Password</h2>
+                            <button
+                                onClick={() => setIsChangePasswordModalOpen(false)}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleChangePassword}>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 mb-2">Current Password</label>
+                                <input
+                                    type="password"
+                                    name="currentPassword"
+                                    value={passwordData.currentPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                />
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-gray-700 mb-2">New Password</label>
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    value={passwordData.newPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                />
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-gray-700 mb-2">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={passwordData.confirmPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 border rounded"
+                                    required
+                                />
+                            </div>
+
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsChangePasswordModalOpen(false)}
+                                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className='animate-spin' />
+                                        </>
+                                    ) : "Save Password"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,18 +1,25 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { doSignInWithEmailAndPassword } from '../../firebase/auth';
+import { Eye, EyeOff, Mail, X, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { doSignInWithEmailAndPassword, doPasswordReset } from '../../firebase/auth';
+import { getUserById } from '../../services/userService';
+import { toast } from 'sonner';
 
 function Login() {
-
-
   const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [isSigningIn, setIsSigningIn] = useState(false);
+
+  // Password reset modal states
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmailError, setResetEmailError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   const validate = () => {
     const newErrors = { email: '', password: '' };
@@ -36,39 +43,118 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted"); // ✅ Check 1
+    console.log("Form submitted");
     if (validate()) {
-      console.log("Validation passed"); // ✅ Check 2
+      console.log("Validation passed");
       setLoading(true);
 
-      // setTimeout(() => {
-      //   console.log("Navigating to login"); // ✅ Check 3
-      //   navigate('/login');
-      // }, 1500);
       if (!isSigningIn) {
         setIsSigningIn(true);
         await doSignInWithEmailAndPassword(email, password)
-          .then(() => {
-            console.log("Login successful"); // ✅ Check 4
+          .then(async (userCredential) => {
+
+            // Get user from userCredential
+            const user = userCredential.user;
+
+            try {
+              const userRecord = await getUserById(user.uid);
+              const role = userRecord.role || 'customer';
+
+              // Redirect based on role
+              if (role === 'admin' || role === 'staff') {
+                navigate('/admin/inventory');
+              } else {
+                navigate('/customer/home');
+              }
+            } catch (error) {
+              if (error.message === 'ACCOUNT_DISABLED') {
+                toast.error('Your account has been disabled. Please contact support.');
+              } else {
+                toast.error(error.code === 'auth/invalid-credential'
+                  ? 'Invalid email or password'
+                  : `Login error: ${error.message}`);
+              }
+              navigate('/login');
+            }
+
             setIsSigningIn(false);
             setLoading(false);
-
           })
           .catch((error) => {
-            console.error("Login failed", error);
+            if (error.message === 'ACCOUNT_DISABLED') {
+              toast.error('Your account has been disabled. Please contact support.');
+            } else {
+              toast.error(error.code === 'auth/invalid-credential'
+                ? 'Invalid email or password'
+                : `Login error: ${error.message}`);
+            }
           })
           .finally(() => {
             setLoading(false);
             setIsSigningIn(false);
-            // navigate('/customer/home'); // Navigate after successful login
           });
       }
     } else {
-      console.log("Validation failed", errors); // 🛑 Catch silent fail
+      console.log("Validation failed", errors);
     }
   };
 
+  const handlePasswordReset = () => {
+    setShowResetModal(true);
+    // Pre-fill the reset email if the user has already entered an email in the login form
+    if (email) {
+      setResetEmail(email);
+    }
+  };
 
+  const validateResetEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!resetEmail) {
+      setResetEmailError('Email is required');
+      return false;
+    } else if (!emailRegex.test(resetEmail)) {
+      setResetEmailError('Enter a valid email');
+      return false;
+    }
+    setResetEmailError('');
+    return true;
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateResetEmail()) {
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      await doPasswordReset(resetEmail);
+      toast.success("Password reset email sent successfully!");
+      closeResetModal();
+    } catch (error) {
+      let errorMessage = 'Failed to send reset email. Please try again later';
+
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account exists with this email address';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email format';
+      }
+
+      toast.error(errorMessage);
+      console.error('Password reset error:', error);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const closeResetModal = () => {
+    setShowResetModal(false);
+    setResetEmail('');
+    setResetEmailError('');
+    setResetLoading(false);
+  };
 
   return (
     <>
@@ -159,8 +245,15 @@ function Login() {
                 )}
               </button>
 
-
-              <p className="text-sm text-center mt-2 text-white/80">
+              <p className="text-sm text-center text-white/80">
+                <span
+                  className="text-orange-300 hover:underline cursor-pointer"
+                  onClick={handlePasswordReset}
+                >
+                  Forgot Password
+                </span>
+              </p>
+              <p className="text-sm text-center text-white/80">
                 Don't have an account?{' '}
                 <span
                   className="text-orange-300 hover:underline cursor-pointer"
@@ -173,9 +266,92 @@ function Login() {
           </div>
         </div>
       </div>
+
+      {/* Password Reset Modal - Bootstrap with Tailwind styling */}
+      {showResetModal && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
+              {/* Modal Header */}
+              <div className="modal-header bg-stone-900 text-white border-0">
+                <h5 className="modal-title font-semibold">Reset Password</h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={closeResetModal}
+                  aria-label="Close"
+                >
+                  {/* <X className="w-5 h-5" /> */}
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="modal-body p-4">
+                <p className="text-gray-600 mb-4">
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+
+
+                <form onSubmit={handleResetSubmit}>
+                  <div className="mb-3">
+                    <label htmlFor="resetEmail" className="form-label fw-medium">Email Address</label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light">
+                        <Mail className="w-5 h-5 text-gray-500" />
+                      </span>
+                      <input
+                        type="email"
+                        className={`form-control ${resetEmailError ? 'is-invalid' : ''}`}
+                        id="resetEmail"
+                        placeholder="Enter your email"
+                        value={resetEmail}
+                        onChange={(e) => {
+                          setResetEmail(e.target.value);
+                          if (resetEmailError) validateResetEmail();
+                        }}
+                      />
+                      {resetEmailError && (
+                        <div className="invalid-feedback">{resetEmailError}</div>
+                      )}
+                    </div>
+
+                  </div>
+
+                  <p className='text-sm text-gray-500 mb-4 border-t border-gray-100 pt-2'>
+                    <span className="font-medium">Note:</span> Please check your spam folder if you don't see the email in your inbox.
+                  </p>
+
+                  <div className="d-flex justify-content-end gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={closeResetModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className={`btn ${resetLoading ? 'btn-secondary' : 'btn-success text-white'} flex items-center`}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <div className='flex items-center'>
+                          <Loader className="w-4 h-4 me-2 animate-spin" />
+                          Sending...
+                        </div>
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
-
 }
 
 export default Login;

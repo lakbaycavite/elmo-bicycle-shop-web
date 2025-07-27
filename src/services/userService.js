@@ -4,6 +4,34 @@ import { database } from '../firebase/firebase';
 
 const usersRef = ref(database, "users");
 
+
+
+export const getCurrentUserData = async () => {
+    try {
+        const currentUser = auth.currentUser;
+
+        if (!currentUser) {
+            console.log("No user is currently logged in");
+            return null;
+        }
+
+        const userId = currentUser.uid;
+
+        const userRef = ref(database, `users/${userId}`);
+        const snapshot = await get(userRef);
+
+        if (snapshot.exists()) {
+            return { id: userId, ...snapshot.val() };
+        } else {
+            console.log("User record not found in database");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching current user data:", error);
+        return null;
+    }
+};
+
 // Create a new user
 export const createUser = async (userData) => {
     try {
@@ -40,6 +68,7 @@ export const getUserById = async (userId) => {
         throw error;
     }
 };
+
 
 // Get all users
 export const getAllUsers = async () => {
