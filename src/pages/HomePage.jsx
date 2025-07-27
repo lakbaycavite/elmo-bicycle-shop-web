@@ -1,10 +1,48 @@
 import Navbar from '../components/Navbar'
 import BikesCategory from './post-auth/Bikes-category';
 import { useAuth } from '../context/authContext/createAuthContext';
+import { useEffect, useState } from 'react';
+import { database } from '../firebase/firebase';
+import { ref, onValue } from 'firebase/database';
+import { useNavigate } from 'react-router-dom';
 
 function HomePage() {
 
   const { userLoggedIn } = useAuth();
+  const [latestBikes, setLatestBikes] = useState([]);
+  const [gears, setGears] = useState([]);
+  const [accessories, setAccessories] = useState([]);
+  const navigate = useNavigate();
+
+  // Fetch latest bikes from Firebase
+
+  useEffect(() => {
+    const productsRef = ref(database, 'products');
+    onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const allProducts = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
+        
+        const bikeProducts = allProducts.filter(product => product.category === 'Bikes');
+        setLatestBikes(bikeProducts.slice(0, 8));
+
+        const gearProducts = allProducts.filter(product => product.category === 'Gears');
+        setGears(gearProducts.slice(0, 8));
+
+        const accessoryProducts = allProducts.filter(product => product.category === 'Accessories');
+        setAccessories(accessoryProducts.slice(0, 8));
+
+      } else {
+        setLatestBikes([]);
+        setGears([]);
+        setAccessories([]);
+      }
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#181818] text-white">
       {/* Navbar */}
@@ -73,7 +111,7 @@ function HomePage() {
           {/* Most Popular Bike This Month */}
           <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
             <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bike This Month</h3>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2">Show More</button>
+            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category')}>Show More</button>
             <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
           </div>
           {/* Most Popular Bike This Week */}
@@ -134,110 +172,24 @@ function HomePage() {
           Ultra-premium components, engineered by ProBike. The ultimate upgrade. Wherever you ride, we’ve got a bike for the joyrider in you.
         </p>
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
-          {/* Card 1 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="TWITTER R10" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">TWITTER R10</h3>
-              <div className="text-gray-400 text-xs mb-1">Twitter Road Bike</div>
-              <div className="text-orange-400 text-sm mb-2">₱93,800</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+          {latestBikes.length > 0 ? (
+            latestBikes.map((bike) => (
+              <div key={bike.id} className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+                <img src={bike.imageUrl || "/images/bike.png"} alt={bike.name} className="w-32 h-28 object-contain mb-4" />
+                <div className="w-full text-center">
+                  <h3 className="text-white font-semibold text-base mb-1">{bike.name}</h3>
+                  <div className="text-gray-400 text-xs mb-1">{bike.brand}</div>
+                  <div className="text-orange-400 text-sm mb-2">₱{bike.price}</div>
+                  <div className="flex justify-center gap-2 mt-2">
+                    <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Card 2 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="test" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">test</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 3 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="Mata ni prince" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">Mata ni prince</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 4 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="latest" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">latest</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 5 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="bike1" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">bike1</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 6 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="bayk 31" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">bayk 31</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 7 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="bike1" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">bike1</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 8 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="bayk 31" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">bayk 31</h3>
-              <div className="text-gray-400 text-xs mb-1">Bikes</div>
-              <div className="text-orange-400 text-sm mb-2">₱1</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
+            ))
+          ) : (
+            <p className="text-center text-white col-span-full">Loading latest bikes...</p>
+          )}
         </div>
       </section>
 
@@ -247,106 +199,28 @@ function HomePage() {
           <span className="text-orange-500 font-bold tracking-widest text-xs md:text-sm uppercase">Shop</span>
         </div>
         <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-2">Gear, Parts & Accessories</h2>
-        <p className="text-center text-gray-800 mb-10 max-w-2xl mx-auto">
+        <p className="text-center text-black mb-10 max-w-2xl mx-auto">
           Load up and head out. Explore the route less travelled or accelerate your daily routine with one of these rugged, versatile e-bikes.
         </p>
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
-          {/* Card 1 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="test1" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">test1</h3>
-              <div className="text-gray-400 text-xs mb-1">Gears</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+          {[...gears, ...accessories].length > 0 ? (
+            [...gears, ...accessories].slice(0, 8).map((item) => (
+              <div key={item.id} className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
+                <img src={item.imageUrl || "/images/bikehelmet1.png"} alt={item.name} className="w-32 h-28 object-contain mb-4" />
+                <div className="w-full text-center">
+                  <h3 className="text-white font-semibold text-base mb-1">{item.name}</h3>
+                  <div className="text-gray-400 text-xs mb-1">{item.category}</div>
+                  <div className="text-orange-400 text-sm mb-2">₱{item.price}</div>
+                  <div className="flex justify-center gap-2 mt-2">
+                    <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Card 2 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="sikand" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">sikand</h3>
-              <div className="text-gray-400 text-xs mb-1">Gears</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 3 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="qwwqwe" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">qwwqwe</h3>
-              <div className="text-gray-400 text-xs mb-1">Accessories</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 4 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="please" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">please</h3>
-              <div className="text-gray-400 text-xs mb-1">Accessories</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 5 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="sikand" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">sikand</h3>
-              <div className="text-gray-400 text-xs mb-1">Gears</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 6 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="qwwqwe" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">qwwqwe</h3>
-              <div className="text-gray-400 text-xs mb-1">Accessories</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 7 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="parts12" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">parts12</h3>
-              <div className="text-gray-400 text-xs mb-1">Parts</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
-          {/* Card 8 */}
-          <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/bike.png" alt="parts" className="w-32 h-28 object-contain mb-4" />
-            <div className="w-full text-center">
-              <h3 className="text-white font-semibold text-base mb-1">parts</h3>
-              <div className="text-gray-400 text-xs mb-1">Parts</div>
-              <div className="flex justify-center gap-2 mt-2">
-                <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-              </div>
-            </div>
-          </div>
+            ))
+          ) : (
+            <p className="text-center text-white col-span-full">Loading products...</p>
+          )}
         </div>
       </section>
       {/* More sections to be implemented next... */}
@@ -401,4 +275,4 @@ function HomePage() {
   )
 }
 
-export default HomePage 
+export default HomePage
