@@ -387,225 +387,288 @@ const Inventory = () => {
     //     );
     // }
 
-    return (
-        <div className="min-h-screen bg-white flex">
-            {/* Sidebar */}
-            <Sidebar />
+return (
+  <div className="min-h-screen bg-white flex flex-col md:flex-row">
+    {/* Sidebar */}
+    <Sidebar />
+    <div className="flex-1 p-4 md:p-6">
+    {/* Main Content */}
+    <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-auto">
+      {/* Header */}
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Inventory</h1>
+      </div>
 
-            {/* Main Content */}
-            <div className="flex-1 p-8 overflow-x-auto">
-                {/* User and DateTime Info */}
-                <div className="text-sm text-gray-500 mb-4">
-                    {/* Added timestamp information here */}
-                </div>
+      {/* Controls Container */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 md:mb-6">
+        {/* Left: Add Product Button */}
+        {permissions.canAdd && (
+          <button
+            className="flex items-center bg-[#ff6900] hover:bg-[#e55e00] text-white py-2 px-3 sm:px-4 rounded-md text-sm sm:text-base"
+            onClick={handleAddButtonClick}
+          >
+            <Plus size={18} className="mr-1 sm:mr-2" />
+            Add Product
+          </button>
+        )}
 
-                {/* Header */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-6">Inventory</h1>
+        {/* Right: Search and Sort */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {/* Search */}
+          <div className="relative w-full sm:w-48 md:w-56">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={18} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900] w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-                {/* Controls Container */}
-                <div className="flex justify-between items-center mb-6">
-                    {/* Left: Add Product Button - Only show if user has permission */}
-                    {permissions.canAdd ? (
+          {/* Sort Dropdown */}
+          <select
+            className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+            value={sortMethod}
+            onChange={(e) => setSortMethod(e.target.value)}
+          >
+            <option value="nameAsc">Name: A-Z</option>
+            <option value="nameDesc">Name: Z-A</option>
+            <option value="stockAsc">Stock: Low to High</option>
+            <option value="stockDesc">Stock: High to Low</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Products Table - Dark Theme */}
+      <div className="bg-gray-900 shadow-md rounded-lg overflow-hidden border border-gray-800">
+        {/* Desktop Table */}
+        <table className="hidden sm:table min-w-full divide-y divide-gray-800">
+          <thead className="bg-gray-800">
+            <tr>
+              <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
+                Product
+              </th>
+              <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
+                <select 
+                  className="px-2 md:px-4 py-1 md:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900] text-xs md:text-sm"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </th>
+              <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
+                Stock
+              </th>
+              <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-gray-900 divide-y divide-gray-800">
+            {currentProducts.map((product) => (
+              <tr key={product.id} className="hover:bg-gray-800 text-white">
+                <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 md:h-16 md:w-16 flex-shrink-0 mr-3 md:mr-4">
+                      <img 
+                        className="h-12 w-12 md:h-16 md:w-16 rounded-md object-cover" 
+                        src={product.image || '/placeholder-product.png'} 
+                        alt={product.name} 
+                      />
+                    </div>
+                    <div>
+                      <div className="text-sm md:text-base font-medium text-white">{product.name}</div>
+                      <div className="text-xs md:text-sm text-gray-400">{formatPrice(product.price)}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                <span className="px-3 py-1.5 inline-flex items-center justify-center text-xs font-medium rounded-full bg-[#ff6900] text-white tracking-wide min-w-[80px] w-fit">
+                    {product.category}
+                </span>
+                </td>
+                <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm md:text-base text-white">{product.stock} units</div>
+                  <div className={`text-xs ${product.stock < 10 ? 'text-red-400' : 'text-green-400'}`}>
+                    {product.stock < 10 ? 'Low stock' : 'In stock'}
+                  </div>
+                </td>
+                <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-1 md:space-x-2">
+                    {permissions.canView && (
+                      <button
+                        className="text-blue-400 hover:text-blue-300 bg-gray-800 p-1 md:p-2 rounded-md"
+                        onClick={() => handleViewDetails(product)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
+                    {permissions.canEdit && (
+                      <button
+                        className="text-[#ff6900] hover:text-[#e55e00] bg-gray-800 p-1 md:p-2 rounded-md"
+                        onClick={() => handleEditClick(product)}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    )}
+                    {permissions.canDelete && (
+                      <button 
+                        className="text-red-500 hover:text-red-400 bg-gray-800 p-1 md:p-2 rounded-md"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Mobile Cards */}
+        <div className="sm:hidden space-y-3 p-3">
+          {currentProducts.length > 0 ? (
+            currentProducts.map((product) => (
+              <div key={product.id} className="bg-gray-800 text-white p-3 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <div className="h-16 w-16 flex-shrink-0">
+                    <img 
+                      className="h-16 w-16 rounded-md object-cover" 
+                      src={product.image || '/placeholder-product.png'} 
+                      alt={product.name} 
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="font-medium">{product.name}</h3>
+                        <p className="text-sm text-gray-400">{formatPrice(product.price)}</p>
+                      </div>
+                      <span className="px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-[#ff6900] text-blue-200">
+                        {product.category}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm">
+                        <span className="font-semibold">Stock:</span> {product.stock} units
+                        <span className={`ml-2 text-xs ${product.stock < 10 ? 'text-red-400' : 'text-green-400'}`}>
+                          ({product.stock < 10 ? 'Low stock' : 'In stock'})
+                        </span>
+                      </p>
+                    </div>
+                    <div className="mt-3 flex space-x-2">
+                      {permissions.canView && (
                         <button
-                            className="flex items-center bg-[#ff6900] hover:bg-[#e55e00] text-white py-2 px-4 rounded-md"
-                            onClick={handleAddButtonClick}
+                          className="text-blue-400 hover:text-blue-300 bg-gray-700 p-2 rounded-md"
+                          onClick={() => handleViewDetails(product)}
                         >
-                            <Plus size={18} className="mr-2" />
-                            Add Product
+                          <Eye size={16} />
                         </button>
-                    ) : (
-                        <div></div> // Empty div to maintain layout
-                    )}
-
-                    {/* Right: Search and Sort */}
-                    <div className="flex space-x-3">
-                        {/* Search */}
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search size={18} className="text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search products..."
-                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900]"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Sort Dropdown */}
-                        <select
-                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900]"
-                            value={sortMethod}
-                            onChange={(e) => setSortMethod(e.target.value)}
+                      )}
+                      {permissions.canEdit && (
+                        <button
+                          className="text-[#ff6900] hover:text-[#e55e00] bg-gray-700 p-2 rounded-md"
+                          onClick={() => handleEditClick(product)}
                         >
-                            <option value="nameAsc">Name: A-Z</option>
-                            <option value="nameDesc">Name: Z-A</option>
-                            <option value="stockAsc">Stock: Low to High</option>
-                            <option value="stockDesc">Stock: High to Low</option>
-                        </select>
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                      {permissions.canDelete && (
+                        <button 
+                          className="text-red-500 hover:text-red-400 bg-gray-700 p-2 rounded-md"
+                          onClick={() => handleDelete(product.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
+                  </div>
                 </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-6 text-gray-400">
+              <p>No products found matching your search criteria</p>
+            </div>
+          )}
+        </div>
 
-                {/* Products Table - Dark Theme */}
-                <div className="bg-gray-900 shadow-md rounded-lg overflow-hidden border border-gray-800">
-                    <table className="min-w-full divide-y divide-gray-800">
-                        <thead className="bg-gray-800">
-                            <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
-                                    Product
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
-                                    <select className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6900] focus:border-[#ff6900]"
-                                        value={categoryFilter}
-                                        onChange={(e) => setCategoryFilter(e.target.value)}
-                                    >
-                                        <option value="all">All Categories</option>
-                                        {categories.map((category) => (
-                                            <option key={category} value={category}>{category}</option>
-                                        ))}
-                                    </select>
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
-                                    Stock
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#ff6900] uppercase tracking-wider">
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-gray-900 divide-y divide-gray-800">
-                            {currentProducts.map((product) => (
-                                <tr key={product.id} className="hover:bg-gray-800 text-white">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="h-16 w-16 flex-shrink-0 mr-4">
-                                                <img className="h-16 w-16 rounded-md object-cover" src={product.image ? product.image : null}
-                                                    alt={product.name} />
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-medium text-white">{product.name}</div>
-                                                <div className="text-sm text-gray-400">{formatPrice(product.price)}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-[#ff6900] text-blue-200">
-                                            {product.category}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-white">{product.stock} units</div>
-                                        <div className={`text-xs ${product.stock < 10 ? 'text-red-400' : 'text-green-400'}`}>
-                                            {product.stock < 10 ? 'Low stock' : 'In stock'}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div className="flex space-x-2">
-                                            {/* View button - Only show if user has view permission */}
-                                            {permissions.canView && (
-                                                <button
-                                                    className="text-blue-400 hover:text-blue-300 bg-gray-800 p-2 rounded-md"
-                                                    onClick={() => handleViewDetails(product)}
-                                                >
-                                                    <Eye size={18} />
-                                                </button>
-                                            )}
+        {/* Empty State */}
+        {currentProducts.length === 0 && !loading && (
+          <div className="text-center py-10 text-gray-400">
+            <p>No products found matching your search criteria</p>
+          </div>
+        )}
+      </div>
 
-                                            {/* Edit button - Only show if user has edit permission */}
-                                            {permissions.canEdit && (
-                                                <button
-                                                    className="text-[#ff6900] hover:text-[#e55e00] bg-gray-800 p-2 rounded-md"
-                                                    onClick={() => handleEditClick(product)}
-                                                >
-                                                    <Edit2 size={18} />
-                                                </button>
-                                            )}
+      {/* Pagination */}
+      {sortedProducts.length > 0 && (
+        <div className="flex justify-center mt-4 md:mt-6">
+          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <button
+              onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+              disabled={currentPage === 1}
+              className={`relative inline-flex items-center px-2 py-2 rounded-l-md border ${currentPage === 1
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700'
+                } text-sm`}
+            >
+              <span className="sr-only">Previous</span>
+              &laquo;
+            </button>
 
-                                            {/* Delete button - Only show if user has delete permission */}
-                                            {permissions.canDelete && (
-                                                <button className="text-red-500 hover:text-red-400 bg-gray-800 p-2 rounded-md"
-                                                    onClick={() => handleDelete(product.id)}
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+              <button
+                key={number}
+                onClick={() => paginate(number)}
+                aria-current={currentPage === number ? 'page' : undefined}
+                className={`relative inline-flex items-center px-3 sm:px-4 py-2 border ${currentPage === number
+                  ? 'z-10 bg-[#ff6900] border-[#ff6900] text-white'
+                  : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
+                  } text-sm`}
+              >
+                {number}
+              </button>
+            ))}
 
-                    {/* Empty State */}
-                    {currentProducts.length === 0 && (
-                        <div className="text-center py-10 text-gray-400">
-                            <p>No products found matching your search criteria</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Pagination */}
-                {sortedProducts.length > 0 && (
-                    <div className="flex justify-center mt-6">
-                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            <button
-                                onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
-                                disabled={currentPage === 1}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border ${currentPage === 1
-                                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                    : 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                    }`}
-                            >
-                                <span className="sr-only">Previous</span>
-                                &laquo;
-                            </button>
-
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                                <button
-                                    key={number}
-                                    onClick={() => paginate(number)}
-                                    aria-current={currentPage === number ? 'page' : undefined}
-                                    className={`relative inline-flex items-center px-4 py-2 border ${currentPage === number
-                                        ? 'z-10 bg-[#ff6900] border-[#ff6900] text-white'
-                                        : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
-                                        }`}
-                                >
-                                    {number}
-                                </button>
-                            ))}
-
-                            <button
-                                onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
-                                disabled={currentPage === totalPages}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border ${currentPage === totalPages
-                                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                    : 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                    }`}
-                            >
-                                <span className="sr-only">Next</span>
-                                &raquo;
-                            </button>
-                        </nav>
-                    </div>
-                )}
-
+            <button
+              onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
+              disabled={currentPage === totalPages}
+              className={`relative inline-flex items-center px-2 py-2 rounded-r-md border ${currentPage === totalPages
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700'
+                } text-sm`}
+            >
+              <span className="sr-only">Next</span>
+              &raquo;
+            </button>
+          </nav>
+        </div>
+      )}
                 {/* Add Product Modal */}
                 {showAddModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                            <div className="p-6">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-bold text-gray-900">Add Product</h2>
-                                    <button
-                                        className="text-gray-500 hover:text-gray-700"
-                                        onClick={() => setShowAddModal(false)}
-                                    >
-                                        <X size={24} />
-                                    </button>
-                                </div>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
+                    <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="p-4 sm:p-6">
+                        <div className="flex justify-between items-center mb-4 sm:mb-6">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Add Product</h2>
+                            <button
+                            className="text-gray-500 hover:text-gray-700"
+                            onClick={() => setShowAddModal(false)}
+                            >
+                            <X size={20} />
+                            </button>
+                        </div>
 
-                                <form className="space-y-6">
+                                 <form className="space-y-4 sm:space-y-6">
                                     {/* Product Name */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -613,13 +676,13 @@ const Inventory = () => {
                                         </label>
                                         <input
                                             type="text"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                                            defaultValue={editProduct.name}
                                             name='name'
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                                            placeholder="Enter product name"
-                                            value={formData.name}
-                                            onChange={handleChange}
+                                            value={editFormData.name}
+                                            onChange={handleEditChange}
                                         />
-                                    </div>
+                                        </div>
 
                                     {/* Category */}
                                     <div>
@@ -628,7 +691,7 @@ const Inventory = () => {
                                         </label>
                                         <select
                                             name="category"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
                                             value={formData.category}
                                             onChange={handleChange}
                                         >
@@ -650,7 +713,7 @@ const Inventory = () => {
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
                                                 placeholder="0.00"
                                                 value={formData.price}
                                                 onChange={handleChange}
@@ -664,7 +727,7 @@ const Inventory = () => {
                                                 name='stock'
                                                 type="number"
                                                 min="0"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
                                                 placeholder="0"
                                                 value={formData.stock}
                                                 onChange={handleChange}
@@ -735,7 +798,7 @@ const Inventory = () => {
                                     </button>
                                 </div>
 
-                                <form className="space-y-4">
+                                 <form className="space-y-4 sm:space-y-6">
                                     {/* Product Name */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -743,13 +806,13 @@ const Inventory = () => {
                                         </label>
                                         <input
                                             type="text"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                                            defaultValue={editProduct.name}
                                             name='name'
-                                            value={editFormData.name}
-                                            onChange={handleEditChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                                            placeholder="Enter product name"
+                                            value={formData.name}
+                                            onChange={handleChange}
                                         />
-                                    </div>
+                                        </div>
 
                                     {/* Category */}
                                     <div>
@@ -912,35 +975,41 @@ const Inventory = () => {
                                     <div className="flex justify-end space-x-3 pt-4">
                                         <button
                                             type="button"
-                                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                            className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 text-sm sm:text-base"
                                             onClick={() => setShowEditModal(false)}
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
-                                            className="flex flex-row px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
+                                            className="flex flex-row px-3 sm:px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md text-sm sm:text-base"
                                             onClick={handleEditSubmit}
                                             disabled={uploading || loading}
                                         >
                                             {uploading || loading ? (
-                                                <>
-                                                    <Loader2 className='animate-spin text-white' />
-                                                    <span className="ml-2">Updating...</span>
-                                                </>
+                                            <>
+                                                <Loader2 className='animate-spin text-white h-4 w-4 sm:h-5 sm:w-5' />
+                                                <span className="ml-2">Updating...</span>
+                                            </>
                                             ) : 'Update Product'}
                                         </button>
+                                        </div>
+                                    </form>
                                     </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                                </div>
+                                </div>
+                            )}
 
                 {/* Product Details Modal - NEW */}
 
-                <ProductDetailsModal viewProduct={viewProduct} showDetailsModal={showDetailsModal} setShowDetailsModal={setShowDetailsModal} formatPrice={formatPrice} />
+                 <ProductDetailsModal 
+                viewProduct={viewProduct} 
+                showDetailsModal={showDetailsModal} 
+                setShowDetailsModal={setShowDetailsModal} 
+                formatPrice={formatPrice} 
+            />
 
+            </div>
             </div>
         </div>
     );
