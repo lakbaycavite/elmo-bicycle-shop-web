@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
@@ -246,11 +246,19 @@ const BikesCategory = () => {
   const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
+  const location = useLocation();
 
   const { products } = useProducts();
   const { addToCart } = useCart();
   const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
   const { getProduct } = useProducts();
+
+
+  useEffect(() => {
+    if (location.state && location.state.ratingFilter) {
+      setSelectedRatingFilter(location.state.ratingFilter);
+    }
+  }, [location.state]);
 
 
   const handleShowDetailsModal = async (product) => {

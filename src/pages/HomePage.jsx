@@ -15,7 +15,7 @@ function HomePage() {
   const [accessories, setAccessories] = useState([]);
   const navigate = useNavigate();
 
-  // Fetch latest bikes from Firebase
+
 
   useEffect(() => {
     const productsRef = ref(database, 'products');
@@ -58,8 +58,8 @@ function HomePage() {
             From sleek road bikes built for speed to rugged mountain bikes designed for off-road adventures, our slider celebrates the diversity of cycling disciplines.
           </p>
           <div className="flex gap-4 mb-4">
-            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded transition">Shop Now</button>
-            <button className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200">Explore Products</button>
+            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded transition" type='button' onClick={() => navigate('/customer/products')}>Shop Now</button>
+            <button className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200" type='button' onClick={() => navigate('/customer/bikes-category')}>Explore Products</button>
           </div>
         </div>
         {/* Right: Hero Image (no overlays, no border, full scale) */}
@@ -112,7 +112,7 @@ function HomePage() {
           {/* Most Popular Bike This Month */}
           <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
             <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bike This Month</h3>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category')}>Show More</button>
+            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category', { state: { ratingFilter: '5' } })}>Show More</button>
             <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
           </div>
           {/* Most Popular Bike This Week */}
@@ -141,7 +141,7 @@ function HomePage() {
               <h3 className="text-black font-semibold text-base mb-2 uppercase">Bicycles</h3>
               <p className="text-gray-700 text-sm mb-4">Close-out pricing on dozens of products</p>
 
-              <Link to='/customer/bikes-category' className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded"> Discover More</Link>
+              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded" type='button' onClick={() => navigate('/customer/bikes-category')}> Discover More</button>
 
             </div>
           </div>
@@ -151,13 +151,13 @@ function HomePage() {
             <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-md">
               <h3 className="text-black font-semibold text-base mb-2 uppercase">Accessories</h3>
               <p className="text-gray-700 text-sm mb-4 text-center">Close-out pricing on dozens of products</p>
-              <Link to="/customer/accessories-category" className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Shop Now</Link>
+              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded" type='button' onClick={() => navigate('/customer/accessories-category')}>Shop Now</button>
             </div>
             {/* Gears & Parts Card */}
             <div className="bg-white rounded-lg p-6 flex flex-col items-center shadow-md">
               <h3 className="text-black font-semibold text-base mb-2 uppercase">Gears & Parts</h3>
               <p className="text-gray-700 text-sm mb-4 text-center">Close-out pricing on dozens of products</p>
-              <Link to="/customer/gears-parts-category" className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Shop Now</Link>
+              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded" type='button' onClick={() => navigate('/customer/gears-parts-category')}>Shop Now</button>
             </div>
           </div>
         </div>
@@ -227,7 +227,7 @@ function HomePage() {
       {/* More sections to be implemented next... */}
 
       {/* Footer Section */}
-      <footer className="bg-[#181818] text-white pt-12 pb-4 mt-8">
+      <footer id="contact-section" className="bg-[#181818] text-white pt-12 pb-4 mt-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-8 px-4">
           {/* Left: Contact Info */}
           <div className="flex-1 mb-8 md:mb-0">
