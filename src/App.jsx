@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage'
 import Products from './pages/post-auth/Products'
 import BikesCategory from './pages/post-auth/Bikes-category'
 import AccessoriesCategory from './pages/post-auth/Accessories-category'
+import GearsCategory from './pages/post-auth/Gears-category'
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -57,6 +58,7 @@ function App() {
           <Route path="/customer/products" element={<Products />} />
           <Route path="/customer/bikes-category" element={<BikesCategory />} />
           <Route path="/customer/accessories-category" element={<AccessoriesCategory />} />
+          <Route path="/customer/gears-category" element={<GearsCategory />} />
           <Route path="/customer/wishlist" element={<Wishlist />} />
           <Route path="/customer/profile" element={<CustomerProfile />} />
 
