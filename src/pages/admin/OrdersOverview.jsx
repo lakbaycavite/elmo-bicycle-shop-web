@@ -2,7 +2,8 @@ import { useState } from 'react';
 import AdminLayout from './AdminLayout';
 import { useOrder } from '../../hooks/useOrder';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+import elmoLogo from '/images/logos/elmo.png';
 
 function OrdersOverview() {
   const { adminOrders, updateOrderStatus } = useOrder();
@@ -52,54 +53,96 @@ function OrdersOverview() {
   // Handle confirm cancellation
   const handleConfirmCancel = async () => {
     try {
-      await updateOrderStatus(selectedOrder.id, 'cancelled');
+      // Store the cancel reason in the selectedOrder for immediate UI update
+      const updatedOrder = { ...selectedOrder, cancelReason };
+      setSelectedOrder(updatedOrder);
+
+      // Update order status - you might need to modify your updateOrderStatus to handle reason
+      await updateOrderStatus(selectedOrder.id, 'cancelled', cancelReason);
       setShowCancelModal(false);
       setCancelReason('');
+      setShowDetailsModal(false);
     } catch (error) {
       console.error('Error cancelling order:', error);
       alert('Error cancelling order. Please try again.');
     }
   };
 
+  // Convert image to base64 for PDF
+  const getBase64Image = (img) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL('image/png');
+  };
+
   // Generate and download PDF receipt
   const generatePDFReceipt = () => {
     const doc = new jsPDF();
 
-    // Add logo (you'll need to replace this with your actual logo)
+    // Add logo
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      try {
+        const imgData = getBase64Image(img);
+        doc.addImage(imgData, 'PNG', 20, 10, 25, 25);
+      } catch (error) {
+        console.log('Could not add logo:', error);
+      }
+
+      // Complete the PDF generation
+      completePDFGeneration(doc);
+    };
+
+    img.onerror = function () {
+      console.log('Logo failed to load, continuing without logo');
+      completePDFGeneration(doc);
+    };
+
+    img.src = elmoLogo;
+
+    // Return the doc object for immediate use if needed
+    return doc;
+  };
+
+  // Complete PDF generation (separated for async logo handling)
+  const completePDFGeneration = (doc) => {
+    // Add shop name
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('ELMO BIKE SHOP', 105, 20, { align: 'center' });
+    doc.text('ELMO BIKE SHOP', 55, 25);
 
-    // Add a line under the logo
+    // Add a line under the header
     doc.setLineWidth(0.5);
-    doc.line(20, 25, 190, 25);
+    doc.line(20, 40, 190, 40);
 
     // Receipt details
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Customer: ${selectedOrder.userName || selectedOrder.userEmail}`, 20, 40);
-    doc.text(`User ID: ${selectedOrder.userId}`, 20, 50);
-    doc.text(`Date of Purchase: ${new Date(selectedOrder.createdAt).toLocaleDateString()}`, 20, 60);
-    doc.text(`Order ID: ${selectedOrder.id}`, 20, 70);
+    doc.text(`Customer: ${selectedOrder.userName || selectedOrder.userEmail}`, 20, 55);
+    doc.text(`User ID: ${selectedOrder.userId}`, 20, 65);
+    doc.text(`Date of Purchase: ${new Date(selectedOrder.createdAt).toLocaleDateString()}`, 20, 75);
+    doc.text(`Order ID: ${selectedOrder.id}`, 20, 85);
 
-    // Table headers
-    const tableColumns = ['Quantity', 'Items', 'Amount'];
     const tableRows = [];
 
     // Add items to table
     selectedOrder.items.forEach(item => {
       tableRows.push([
         item.quantity.toString(),
-        item.name,
-        `₱${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+        item.name + ' (id: ' + item.id + ')',
+        `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
       ]);
     });
 
     // Generate table
-    doc.autoTable({
-      head: [tableColumns],
+    autoTable(doc, {
+      head: [['Quantity', 'Items', 'Amount']],
       body: tableRows,
-      startY: 80,
+      startY: 95,
       theme: 'grid',
       styles: {
         fontSize: 10,
@@ -115,20 +158,25 @@ function OrdersOverview() {
     // Add total
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ₱${selectedOrder.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 150, finalY);
+    doc.text(`Total: PHP ${selectedOrder.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 150, finalY);
 
     // Add footer
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text('Thank you for your purchase!', 105, finalY + 20, { align: 'center' });
 
-    return doc;
+    // Auto-download the PDF
+    doc.save(`receipt-${selectedOrder.id}.pdf`);
   };
 
-  // Download PDF
+  // Download PDF (for the preview modal)
   const downloadPDF = () => {
-    const doc = generatePDFReceipt();
-    doc.save(`receipt-${selectedOrder.id}.pdf`);
+    generatePDFReceipt();
+  };
+
+  // Reprint receipt for paid orders
+  const handleReprintReceipt = () => {
+    generatePDFReceipt();
   };
 
   // Calculate subtotal (without discount)
@@ -136,9 +184,9 @@ function OrdersOverview() {
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  // Placeholder discount (10% for demo)
+  // Placeholder discount (0% for demo)
   const calculateDiscount = (subtotal) => {
-    return subtotal * 0.1;
+    return subtotal * 0;
   };
 
   return (
@@ -220,6 +268,15 @@ function OrdersOverview() {
                       {selectedOrder.status?.toUpperCase()}
                     </span>
                   </p>
+                  {/* Show cancellation reason if order is cancelled */}
+                  {selectedOrder.status === 'cancelled' && (selectedOrder.cancelReason || selectedOrder.reason) && (
+                    <p className="mt-2">
+                      <strong>Cancellation Reason:</strong>
+                      <span className="text-red-600 ml-1">
+                        {selectedOrder.cancelReason || selectedOrder.reason}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -279,7 +336,7 @@ function OrdersOverview() {
                         <span>₱{subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between text-green-600">
-                        <span>Discount (10%):</span>
+                        <span>Discount:</span>
                         <span>-₱{discount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <hr className="my-2" />
@@ -293,22 +350,35 @@ function OrdersOverview() {
               </div>
 
               {/* Action Buttons */}
-              {selectedOrder.status !== 'paid' && selectedOrder.status !== 'cancelled' && (
-                <div className="flex space-x-4">
+              <div className="flex space-x-4">
+                {/* Show Cancel and Approve buttons for pending orders */}
+                {selectedOrder.status !== 'paid' && selectedOrder.status !== 'cancelled' && (
+                  <>
+                    <button
+                      onClick={handleCancel}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
+                    >
+                      Cancel Order
+                    </button>
+                    <button
+                      onClick={handleApprove}
+                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
+                    >
+                      Approve Order
+                    </button>
+                  </>
+                )}
+
+                {/* Show Reprint Receipt button for paid orders */}
+                {selectedOrder.status === 'paid' && (
                   <button
-                    onClick={handleCancel}
-                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
+                    onClick={handleReprintReceipt}
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
                   >
-                    Cancel Order
+                    Reprint Receipt
                   </button>
-                  <button
-                    onClick={handleApprove}
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
-                  >
-                    Approve Order
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -328,7 +398,7 @@ function OrdersOverview() {
                 </button>
                 <button
                   onClick={handleConfirmApprove}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150"
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
                 >
                   Yes
                 </button>
@@ -394,11 +464,16 @@ function OrdersOverview() {
 
               {/* Receipt Preview */}
               <div className="border border-gray-300 p-6 bg-white">
-                {/* Logo */}
-                <div className="text-center mb-4">
+                {/* Logo and Header */}
+                <div className="flex items-center mb-4">
+                  <img
+                    src={elmoLogo}
+                    alt="Elmo Bicycle Shop"
+                    className="h-12 w-12 mr-4"
+                  />
                   <h1 className="text-2xl font-bold">ELMO BIKE SHOP</h1>
-                  <hr className="my-2" />
                 </div>
+                <hr className="mb-4" />
 
                 {/* Receipt Details */}
                 <div className="mb-4">

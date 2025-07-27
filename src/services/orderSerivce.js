@@ -154,7 +154,7 @@ export const getAllOrders = async () => {
 };
 
 // Admin: Update order status
-export const updateOrderStatus = async (orderId, status) => {
+export const updateOrderStatus = async (orderId, status, cancelReason) => {
     try {
         if (status !== "pending" && status !== "cancelled" && status !== "paid") {
             throw new Error("Invalid status. Must be 'pending', 'cancelled', or 'paid'");
@@ -165,6 +165,7 @@ export const updateOrderStatus = async (orderId, status) => {
 
         await update(orderRef, {
             status,
+            cancelReason: cancelReason || "",
             updatedAt: getCurrentFormattedTime()
         });
 

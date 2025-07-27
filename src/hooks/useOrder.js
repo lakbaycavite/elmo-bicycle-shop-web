@@ -132,7 +132,7 @@ export function useOrder() {
     }, [loadUserOrders]);
 
     // Update order status (admin only)
-    const updateOrderStatus = useCallback(async (orderId, status) => {
+    const updateOrderStatus = useCallback(async (orderId, status, cancelReason) => {
         if (!auth.currentUser) {
             throw new Error("You must be logged in to update an order");
         }
@@ -145,7 +145,7 @@ export function useOrder() {
             setLoading(true);
             setError(null);
 
-            const result = await updateOrderStatusService(orderId, status);
+            const result = await updateOrderStatusService(orderId, status, cancelReason);
 
             // Update the order in our state
             if (currentOrder && currentOrder.id === orderId) {
