@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import { useOrder } from '../hooks/useOrder';
 import { toast } from 'sonner';
+import { useUsers } from '../hooks/useUser';
 
 const OrderDetailsModal = ({ show, onClose, onComplete }) => {
+    const { getUserProfile } = useUsers();
     const { cart, totalPrice, clearCart } = useCart();
-    const { createOrder, formatTimestamp } = useOrder();
+    const { createOrder, formatTimestamp, loading } = useOrder();
     const [paymentMethod, setPaymentMethod] = useState('Walk-in');
     const [discount, setDiscount] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -17,21 +19,25 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
         return totalPrice - discountAmount;
     };
 
+
     const handleCheckout = async () => {
         try {
             setIsProcessing(true);
+
+            const currentUser = await getUserProfile();
 
             // Create additional order details
             const orderDetails = {
                 paymentMethod,
                 discount,
+                fullName: currentUser?.firstName + ' ' + currentUser?.lastName,
                 subtotal: totalPrice,
                 total: calculateTotal(),
                 orderDate: formatTimestamp()
             };
 
             // Create the order
-            await createOrder({}, notes, orderDetails)
+            await createOrder(notes, orderDetails)
                 .then(() => {
                     toast.success('Order placed successfully!');
                 })
@@ -219,7 +225,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                             </div>
 
                             {/* GCash Instructions */}
-                            {paymentMethod === 'Gcash' && (
+                            {/* {paymentMethod === 'Gcash' && (
                                 <div style={{
                                     backgroundColor: '#cfe2ff',
                                     border: '1px solid #9ec5fe',
@@ -232,7 +238,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                     <p style={{ margin: 0 }}>Please send your payment to GCash number: <strong>09123456789</strong></p>
                                     <p style={{ margin: 0 }}>Include your name and order ID in the message section.</p>
                                 </div>
-                            )}
+                            )} */}
 
                             {/* Order Total */}
                             <div style={{
@@ -331,7 +337,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                     </button>
                     <button
                         onClick={handleCheckout}
-                        disabled={cart.length === 0 || isProcessing}
+                        disabled={cart.length === 0 || isProcessing || loading}
                         style={{
                             padding: '8px 16px',
                             backgroundColor: '#ff6900',
@@ -342,7 +348,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                             opacity: cart.length === 0 || isProcessing ? 0.7 : 1
                         }}
                     >
-                        {isProcessing ? 'Processing...' : 'Checkout'}
+                        {isProcessing || loading ? 'Processing...' : 'Checkout'}
                     </button>
                 </div>
             </div>

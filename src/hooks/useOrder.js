@@ -108,7 +108,7 @@ export function useOrder() {
     }, []);
 
     // Create a new order
-    const createOrder = useCallback(async (contactInfo, notes = "") => {
+    const createOrder = useCallback(async (notes = "", contactInfo) => {
         if (!auth.currentUser) {
             throw new Error("You must be logged in to place an order");
         }
@@ -116,7 +116,7 @@ export function useOrder() {
         try {
             setLoading(true);
             setError(null);
-            const result = await createOrderService(contactInfo, notes);
+            const result = await createOrderService(notes, contactInfo);
 
             // Refresh user orders after creating a new one
             await loadUserOrders();

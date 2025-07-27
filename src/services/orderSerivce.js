@@ -36,7 +36,7 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
         const newOrder = {
             userId: user.uid,  // Used for user-specific access
             userEmail: user.email,
-            userName: user.displayName || "User",
+            userName: orderDetails.fullName || "User",
             items: cartItems,
             status: "pending",
             totalAmount,
