@@ -10,6 +10,7 @@ function Sidebar() {
 
   // Define menu items with their routes
   const menuItems = [
+    { label: 'DASHBOARD', route: '/admin/dashboard' },
     { label: 'INVENTORY', route: '/admin/inventory' },
     { label: 'USER ACTIVITY', route: '/admin/user-activity' },
     { label: 'ORDERS OVERVIEW', route: '/admin/orders-overview' },

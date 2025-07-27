@@ -62,7 +62,7 @@ function Login() {
 
               // Redirect based on role
               if (role === 'admin' || role === 'staff') {
-                navigate('/admin/inventory');
+                navigate('/admin/dashboard');
               } else {
                 navigate('/customer/home');
               }
