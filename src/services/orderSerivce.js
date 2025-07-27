@@ -36,7 +36,7 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
         const newOrder = {
             userId: user.uid,  // Used for user-specific access
             userEmail: user.email,
-            userName: user.displayName || "User",
+            userName: orderDetails.fullName || "User",
             items: cartItems,
             status: "pending",
             totalAmount,
@@ -154,10 +154,10 @@ export const getAllOrders = async () => {
 };
 
 // Admin: Update order status
-export const updateOrderStatus = async (orderId, status) => {
+export const updateOrderStatus = async (orderId, status, cancelReason) => {
     try {
-        if (status !== "pending" && status !== "completed") {
-            throw new Error("Invalid status. Must be 'pending' or 'completed'");
+        if (status !== "pending" && status !== "cancelled" && status !== "paid") {
+            throw new Error("Invalid status. Must be 'pending', 'cancelled', or 'paid'");
         }
 
         const db = getDatabase();
@@ -165,6 +165,7 @@ export const updateOrderStatus = async (orderId, status) => {
 
         await update(orderRef, {
             status,
+            cancelReason: cancelReason || "",
             updatedAt: getCurrentFormattedTime()
         });
 
