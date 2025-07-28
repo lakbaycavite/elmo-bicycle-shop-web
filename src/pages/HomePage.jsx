@@ -218,6 +218,8 @@ function HomePage() {
                       {cartLoading ? 'Adding...' : 'Add to Cart'}
                     </button>
                     <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+                    <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200" type='button' onClick={() => navigate('/customer/bikes-category/', { state: { handleShowDetailsModal: bike.id } })}>Details</button>
                   </div>
                 </div>
               </div>
@@ -255,64 +257,67 @@ function HomePage() {
                       {cartLoading ? 'Adding...' : 'Add to Cart'}
                     </button>
                     <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
-                  </div>
-                </div>
-              </div>
+                    <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200" type='button' onClick={() => navigate(item.category === 'Gears' ? '/customer/gears-parts-category/' : '/customer/accessories-category/', { state: { handleShowDetailsModal: item.id } })}>Details</button>
+                  </div >
+                </div >
+              </div >
             ))
           ) : (
-            <p className="text-center text-white col-span-full">Loading products...</p>
-          )}
-        </div>
-      </section>
-      {/* More sections to be implemented next... */}
+    <p className="text-center text-white col-span-full">Loading products...</p>
+  )
+}
+        </div >
+      </section >
+  {/* More sections to be implemented next... */ }
 
-      {/* Footer Section */}
-      <footer id="contact-section" className="bg-[#181818] text-white pt-12 pb-4 mt-8">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-8 px-4">
-          {/* Left: Contact Info */}
-          <div className="flex-1 mb-8 md:mb-0">
-            <div className="font-bold text-lg mb-2">
-              <span className="text-orange-500">E</span><span className="text-white">BS</span>
-            </div>
-            <div className="text-gray-300 text-sm mb-1">Brokenshire, Panacan.</div>
-            <div className="text-gray-300 text-sm mb-1">+63 9201234563</div>
-            <div className="text-gray-300 text-sm mb-1">elmobikeshop24@gmail.com</div>
-          </div>
-          {/* Center: Shop Links */}
-          <div className="flex-1 mb-8 md:mb-0">
-            <div className="font-semibold mb-2 text-white text-left">Shop</div>
-            <div className="text-white text-sm space-y-1 text-left flex flex-col">
-              <div>
-                <Link to="#" className="text-white no-underline hover:text-orange-500 transition">About Us</Link>
-              </div>
-              <div>
-                <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</Link>
-              </div>
-              <div>
-                <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Services</Link>
-              </div>
-            </div>
-          </div>
-          {/* Right: About & Socials */}
-          <div className="flex-1">
-            <div className="font-semibold mb-2 text-white">About The Shop</div>
-            <div className="flex gap-4 mt-4">
-              {/* Facebook SVG */}
-              <Link to="#" aria-label="Facebook" className="text-white hover:text-orange-500 transition">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H5v4h5v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
-              </Link>
-              {/* Instagram SVG */}
-              <Link to="#" aria-label="Instagram" className="text-white hover:text-orange-500 transition">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.5" y2="6.5" /></svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs text-gray-400">
-          2024 Copyright Act: <Link to="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</Link>
-        </div>
-      </footer>
+{/* Footer Section */ }
+<footer id="contact-section" className="bg-[#181818] text-white pt-12 pb-4 mt-8">
+  <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-8 px-4">
+    {/* Left: Contact Info */}
+    <div className="flex-1 mb-8 md:mb-0">
+      <div className="font-bold text-lg mb-2">
+        <span className="text-orange-500">E</span><span className="text-white">BS</span>
+      </div>
+      <div className="text-gray-300 text-sm mb-1">Brokenshire, Panacan.</div>
+      <div className="text-gray-300 text-sm mb-1">+63 9201234563</div>
+      <div className="text-gray-300 text-sm mb-1">elmobikeshop24@gmail.com</div>
     </div>
+    {/* Center: Shop Links */}
+    <div className="flex-1 mb-8 md:mb-0">
+      <div className="font-semibold mb-2 text-white text-left">Shop</div>
+      <div className="text-white text-sm space-y-1 text-left flex flex-col">
+        <div>
+          <Link to="#" className="text-white no-underline hover:text-orange-500 transition">About Us</Link>
+        </div>
+        <div>
+          <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</Link>
+        </div>
+        <div>
+          <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Services</Link>
+        </div>
+      </div>
+    </div>
+    {/* Right: About & Socials */}
+    <div className="flex-1">
+      <div className="font-semibold mb-2 text-white">About The Shop</div>
+      <div className="flex gap-4 mt-4">
+        {/* Facebook SVG */}
+        <Link to="#" aria-label="Facebook" className="text-white hover:text-orange-500 transition">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H5v4h5v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
+        </Link>
+        {/* Instagram SVG */}
+        <Link to="#" aria-label="Instagram" className="text-white hover:text-orange-500 transition">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.5" y2="6.5" /></svg>
+        </Link>
+      </div>
+    </div>
+  </div>
+  <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs text-gray-400">
+    2024 Copyright Act: <Link to="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</Link>
+  </div>
+</footer>
+    </div >
   )
 }
 

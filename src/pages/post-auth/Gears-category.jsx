@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
@@ -284,6 +284,7 @@ const GearsCategory = () => {
 
     // Add wishlist hook
     const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
+
 
     const handleShowDetailsModal = async (product) => {
         if (!product) {
