@@ -199,46 +199,83 @@ const SpinTheWheel = ({ isAdmin = false }) => {
             <div className="relative flex justify-center items-center mb-8">
                 <div className="relative">
                     {/* Wheel */}
-                    <div
-                        className={`w-80 h-80 rounded-full border-8 border-gray-800 relative overflow-hidden transition-transform duration-3000 ease-out ${isSpinning ? 'animate-pulse' : ''
-                            }`}
+                    <svg
+                        width="320"
+                        height="320"
+                        className={`transition-transform duration-3000 ease-out ${isSpinning ? 'animate-pulse' : ''}`}
                         style={{
                             transform: `rotate(${rotation}deg)`,
                             transitionDuration: isSpinning ? '3s' : '0.3s'
                         }}
                     >
+                        {/* Outer ring */}
+                        <circle
+                            cx="160"
+                            cy="160"
+                            r="156"
+                            fill="none"
+                            stroke="#1f2937"
+                            strokeWidth="8"
+                        />
+
+                        {/* Segments */}
                         {spinWheelConfig.segments.map((segment, index) => {
-                            const startAngle = index * segmentAngle;
-                            const endAngle = (index + 1) * segmentAngle;
+                            const startAngle = (index * segmentAngle - 90) * Math.PI / 180;
+                            const endAngle = ((index + 1) * segmentAngle - 90) * Math.PI / 180;
+                            const midAngle = (startAngle + endAngle) / 2;
+
+                            // Calculate path for segment
+                            const x1 = 160 + 150 * Math.cos(startAngle);
+                            const y1 = 160 + 150 * Math.sin(startAngle);
+                            const x2 = 160 + 150 * Math.cos(endAngle);
+                            const y2 = 160 + 150 * Math.sin(endAngle);
+
+                            const largeArcFlag = segmentAngle > 180 ? 1 : 0;
+
+                            const pathData = [
+                                `M 160 160`,
+                                `L ${x1} ${y1}`,
+                                `A 150 150 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                                `Z`
+                            ].join(' ');
+
+                            // Calculate text position
+                            const textRadius = 100;
+                            const textX = 160 + textRadius * Math.cos(midAngle);
+                            const textY = 160 + textRadius * Math.sin(midAngle);
+                            const textRotation = (midAngle * 180 / Math.PI) + 90;
 
                             return (
-                                <div
-                                    key={segment.id}
-                                    className="absolute w-full h-full flex items-center justify-center text-white font-bold text-sm"
-                                    style={{
-                                        background: `conic-gradient(from ${startAngle}deg, ${segment.color} 0deg, ${segment.color} ${segmentAngle}deg, transparent ${segmentAngle}deg)`,
-                                        clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos((startAngle - 90) * Math.PI / 180)
-                                            }% ${50 + 50 * Math.sin((startAngle - 90) * Math.PI / 180)
-                                            }%, ${50 + 50 * Math.cos((endAngle - 90) * Math.PI / 180)
-                                            }% ${50 + 50 * Math.sin((endAngle - 90) * Math.PI / 180)
-                                            }%)`
-                                    }}
-                                >
-                                    <div
-                                        className="absolute text-center"
+                                <g key={segment.id}>
+                                    {/* Segment path */}
+                                    <path
+                                        d={pathData}
+                                        fill={segment.color}
+                                        stroke="#fff"
+                                        strokeWidth="2"
+                                    />
+
+                                    {/* Text label */}
+                                    <text
+                                        x={textX}
+                                        y={textY}
+                                        fill="white"
+                                        fontSize="14"
+                                        fontWeight="bold"
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        transform={`rotate(${textRotation} ${textX} ${textY})`}
                                         style={{
-                                            transform: `rotate(${startAngle + segmentAngle / 2 - 90}deg)`,
-                                            transformOrigin: '50% 120px'
+                                            textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
+                                            filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.7))'
                                         }}
                                     >
-                                        <div style={{ transform: 'rotate(90deg)' }}>
-                                            {segment.label}
-                                        </div>
-                                    </div>
-                                </div>
+                                        {segment.label}
+                                    </text>
+                                </g>
                             );
                         })}
-                    </div>
+                    </svg>
 
                     {/* Pointer */}
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2">

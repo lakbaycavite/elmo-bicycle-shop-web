@@ -61,13 +61,13 @@ export const getSpinWheelConfig = async () => {
         return {
             segments: [
                 { id: 1, label: "5% OFF", discount: 5, color: "#FF6B6B" },
-                { id: 2, label: "Better Luck Next Time", discount: 0, color: "#4ECDC4" },
+                { id: 2, label: "Try Again", discount: 0, color: "#4ECDC4" },
                 { id: 3, label: "10% OFF", discount: 10, color: "#45B7D1" },
-                { id: 4, label: "Better Luck Next Time", discount: 0, color: "#96CEB4" },
-                { id: 5, label: "15% OFF", discount: 15, color: "#FFEAA7" },
-                { id: 6, label: "Better Luck Next Time", discount: 0, color: "#DDA0DD" },
-                { id: 7, label: "20% OFF", discount: 20, color: "#98D8C8" },
-                { id: 8, label: "Better Luck Next Time", discount: 0, color: "#F7DC6F" }
+                { id: 4, label: "Try Again", discount: 0, color: "#96CEB4" },
+                { id: 5, label: "5% OFF", discount: 5, color: "#FFEAA7" },
+                { id: 6, label: "Try Again", discount: 0, color: "#DDA0DD" },
+                { id: 7, label: "10% OFF", discount: 10, color: "#98D8C8" },
+                { id: 8, label: "Try Again", discount: 0, color: "#F7DC6F" }
             ],
             minOrderAmount: 1000
         };
