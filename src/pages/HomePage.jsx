@@ -6,6 +6,8 @@ import { database } from '../firebase/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useCart } from '../hooks/useCart'; // Import your useCart hook
+import { toast } from 'sonner'; // For showing notifications
 
 function HomePage() {
 
@@ -15,7 +17,8 @@ function HomePage() {
   const [accessories, setAccessories] = useState([]);
   const navigate = useNavigate();
 
-
+  // Import cart functionality
+  const { addToCart, loading: cartLoading } = useCart();
 
   useEffect(() => {
     const productsRef = ref(database, 'products');
@@ -26,7 +29,7 @@ function HomePage() {
           id: key,
           ...data[key]
         }));
-        
+
         const bikeProducts = allProducts.filter(product => product.category === 'Bikes');
         setLatestBikes(bikeProducts.slice(0, 8));
 
@@ -43,6 +46,31 @@ function HomePage() {
       }
     });
   }, []);
+
+  // Handle add to cart functionality
+  const handleAddToCart = async (product) => {
+    // Check if user is logged in
+    if (!userLoggedIn) {
+      toast.error('Please log in to add items to cart');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const productDetails = {
+        name: product.name,
+        price: product.price,
+        imageUrl: product.image,
+        brand: product.brand || '',
+        category: product.category
+      };
+
+      await addToCart(product.id, 1, productDetails);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add item to cart');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#181818] text-white">
@@ -100,7 +128,7 @@ function HomePage() {
           <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
             <img src="/images/icons/lottery.png" alt="Maintenance" className="w-14 h-14 mb-4" />
             <h3 className="text-white font-semibold text-base mb-2 text-center">Maintenance</h3>
-            <p className="text-gray-300 text-sm text-center">Got a defective product? No worries — we’ll handle it for you.</p>
+            <p className="text-gray-300 text-sm text-center">Got a defective product? No worries — we'll handle it for you.</p>
           </div>
         </div>
       </section>
@@ -170,7 +198,7 @@ function HomePage() {
         </div>
         <h2 className="text-center text-white text-xl md:text-2xl font-bold mb-2">Our Latest Bicycle</h2>
         <p className="text-center text-gray-300 mb-10 max-w-2xl mx-auto">
-          Ultra-premium components, engineered by ProBike. The ultimate upgrade. Wherever you ride, we’ve got a bike for the joyrider in you.
+          Ultra-premium components, engineered by ProBike. The ultimate upgrade. Wherever you ride, we've got a bike for the joyrider in you.
         </p>
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
           {latestBikes.length > 0 ? (
@@ -182,7 +210,13 @@ function HomePage() {
                   <div className="text-gray-400 text-xs mb-1">{bike.brand}</div>
                   <div className="text-orange-400 text-sm mb-2">₱{bike.price}</div>
                   <div className="flex justify-center gap-2 mt-2">
-                    <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                    <button
+                      className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleAddToCart(bike)}
+                      disabled={cartLoading}
+                    >
+                      {cartLoading ? 'Adding...' : 'Add to Cart'}
+                    </button>
                     <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
                   </div>
                 </div>
@@ -213,7 +247,13 @@ function HomePage() {
                   <div className="text-gray-400 text-xs mb-1">{item.category}</div>
                   <div className="text-orange-400 text-sm mb-2">₱{item.price}</div>
                   <div className="flex justify-center gap-2 mt-2">
-                    <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
+                    <button
+                      className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleAddToCart(item)}
+                      disabled={cartLoading}
+                    >
+                      {cartLoading ? 'Adding...' : 'Add to Cart'}
+                    </button>
                     <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
                   </div>
                 </div>
