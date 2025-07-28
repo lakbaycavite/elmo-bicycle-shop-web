@@ -153,7 +153,10 @@ function OrdersOverview() {
   // Handle confirm approval
   const handleConfirmApprove = async () => {
     try {
-      await updateOrderStatus(selectedOrder.id, 'paid')
+
+      const updatedOrder = { ...selectedOrder, status: 'paid' };
+
+      await updateOrderStatus(selectedOrder.id, updatedOrder)
         .then(() => {
           toast.success('Order approved successfully!');
         })
@@ -170,11 +173,11 @@ function OrdersOverview() {
   const handleConfirmCancel = async () => {
     try {
       // Store the cancel reason in the selectedOrder for immediate UI update
-      const updatedOrder = { ...selectedOrder, cancelReason };
+      const updatedOrder = { ...selectedOrder, cancelReason: cancelReason, status: 'cancelled' };
       setSelectedOrder(updatedOrder);
 
       // Update order status - you might need to modify your updateOrderStatus to handle reason
-      await updateOrderStatus(selectedOrder.id, 'cancelled', cancelReason)
+      await updateOrderStatus(selectedOrder.id, updatedOrder)
         .then(() => {
           toast.success('Order cancelled successfully!');
         })
