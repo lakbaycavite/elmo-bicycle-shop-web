@@ -159,7 +159,7 @@ function OrdersOverview() {
   const handleConfirmApprove = async () => {
     try {
 
-      const updatedOrder = { ...selectedOrder, status: 'paid' };
+      const updatedOrder = { ...selectedOrder, status: 'paid', paymentMethod: editablePaymentMethod };
 
       await updateOrderStatus(selectedOrder.id, updatedOrder)
         .then(() => {
@@ -252,7 +252,7 @@ function OrdersOverview() {
     // Add shop name
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('ELMO BIKE SHOP', 20, 25); // Start closer to left edge
+    doc.text('ELMO BIKE SHOP', 50, 25); // Start closer to left edge
 
     // Add a line under the header
     doc.setLineWidth(0.5);
@@ -654,8 +654,8 @@ function OrdersOverview() {
               <div className="mb-6">
                 <label className="block text-sm font-bold mb-2">Vouchers Used:</label>
                 <select
-                  value={editablePaymentMethod}
-                  onChange={(e) => setEditablePaymentMethod(e.target.value)}
+                  // value={editablePaymentMethod}
+                  // onChange={(e) => setEditablePaymentMethod(e.target.value)}
                   className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-orange-500"
                 >
                   {selectedOrder.products.map((item) => (

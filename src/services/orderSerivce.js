@@ -174,11 +174,13 @@ export const updateOrderStatus = async (orderId, updates) => {
         // Merge existing data with new updates
         const newStatus = updates.status || order.status; // Use new status if provided, else keep old
         const newCancelReason = updates.cancelReason !== undefined ? updates.cancelReason : order.cancelReason || "";
+        const newPaymentMethod = updates.paymentMethod || order.paymentMethod || "Walk-in";
 
         await update(orderRef, {
             ...updates, // Apply all updates passed in
             status: newStatus,
             cancelReason: newCancelReason,
+            paymentMethod: newPaymentMethod,
             updatedAt: getCurrentFormattedTime()
         });
 
