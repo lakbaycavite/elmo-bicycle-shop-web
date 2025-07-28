@@ -3,22 +3,49 @@ import { useCart } from '../hooks/useCart';
 import { useOrder } from '../hooks/useOrder';
 import { toast } from 'sonner';
 import { useUsers } from '../hooks/useUser';
+import VoucherSelector from './VoucherSelector';
 
 const OrderDetailsModal = ({ show, onClose, onComplete }) => {
     const { getUserProfile } = useUsers();
     const { cart, totalPrice, clearCart } = useCart();
     const { createOrder, formatTimestamp, loading } = useOrder();
     const [paymentMethod, setPaymentMethod] = useState('Walk-in');
-    const [discount, setDiscount] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [notes, setNotes] = useState('');
 
-    // Calculate total after discount
-    const calculateTotal = () => {
-        const discountAmount = (discount / 100) * totalPrice;
-        return totalPrice - discountAmount;
+    // New state to manage item-specific vouchers
+    const [itemVouchers, setItemVouchers] = useState({}); // Stores { productId: { voucherId, discountPercentage, discountAmount } }
+
+    // Calculate total discount from all applied vouchers
+    const calculateTotalDiscount = () => {
+        return Object.values(itemVouchers).reduce((sum, voucher) => {
+            // Ensure we are only applying the discount once per item
+            return sum + voucher.discountAmount;
+        }, 0);
     };
 
+    // Calculate total after all discounts
+    const calculateTotal = () => {
+        return totalPrice - calculateTotalDiscount();
+    };
+
+    // Handler to apply a voucher to a specific product
+    const handleVoucherSelect = (productId, voucherData) => {
+        if (voucherData) {
+            // Add or update the voucher for the specific product
+            setItemVouchers(prevVouchers => ({
+                ...prevVouchers,
+                [productId]: voucherData
+            }));
+        } else {
+            // Remove the voucher for the specific product
+            setItemVouchers(prevVouchers => {
+                const newVouchers = { ...prevVouchers };
+                delete newVouchers[productId];
+                return newVouchers;
+            });
+        }
+    };
 
     const handleCheckout = async () => {
         try {
@@ -26,14 +53,28 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
 
             const currentUser = await getUserProfile();
 
+            // Create a modified cart with voucher details
+            const cartWithVouchers = cart.map(item => {
+                const appliedVoucher = itemVouchers[item.productId];
+                return {
+                    ...item,
+                    discountPercentage: appliedVoucher?.discountPercentage || 0,
+                    discountAmount: appliedVoucher?.discountAmount || 0,
+                    voucherCode: appliedVoucher?.voucherCode || null,
+                    // The price of the item after discount
+                    finalPrice: item.price - (appliedVoucher?.discountAmount / item.quantity || 0)
+                };
+            });
+
             // Create additional order details
             const orderDetails = {
                 paymentMethod,
-                discount,
                 fullName: currentUser?.firstName + ' ' + currentUser?.lastName,
                 subtotal: totalPrice,
+                totalDiscount: calculateTotalDiscount(),
                 total: calculateTotal(),
-                orderDate: formatTimestamp()
+                orderDate: formatTimestamp(),
+                cart: cartWithVouchers // Use the modified cart
             };
 
             // Create the order
@@ -76,8 +117,8 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
             zIndex: 9999
         }}>
             <div className="modal-content" style={{
-                backgroundColor: '#fff', /* Light background for high contrast */
-                color: '#000',           /* Dark text for high contrast */
+                backgroundColor: '#fff',
+                color: '#000',
                 borderRadius: '8px',
                 width: '90%',
                 maxWidth: '800px',
@@ -92,7 +133,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    backgroundColor: '#ff6900', /* Your primary-accent color */
+                    backgroundColor: '#ff6900',
                     color: 'white',
                     borderRadius: '8px 8px 0 0'
                 }}>
@@ -127,50 +168,61 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                         padding: '12px',
                                         borderBottom: '1px solid #eee',
                                         display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
+                                        flexDirection: 'column',
+                                        gap: '8px'
                                     }}>
-                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <img
-                                                src={item.image || "/images/bike.png"}
-                                                alt={item.name}
-                                                style={{
-                                                    width: '50px',
-                                                    height: '50px',
-                                                    objectFit: 'cover',
-                                                    marginRight: '12px',
-                                                    border: '1px solid #ddd'
-                                                }}
-                                            />
-                                            <div>
-                                                <div style={{ fontWeight: 'bold', color: '#333' }}>{item.name}</div>
-                                                <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                                                    {item.brand} {item.type && `- ${item.type}`}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <img
+                                                    src={item.image || "/images/bike.png"}
+                                                    alt={item.name}
+                                                    style={{
+                                                        width: '50px',
+                                                        height: '50px',
+                                                        objectFit: 'cover',
+                                                        marginRight: '12px',
+                                                        border: '1px solid #ddd'
+                                                    }}
+                                                />
+                                                <div>
+                                                    <div style={{ fontWeight: 'bold', color: '#333' }}>{item.name}</div>
+                                                    <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                                                        {item.brand} {item.type && `- ${item.type}`}
+                                                    </div>
+                                                    <span style={{
+                                                        backgroundColor: '#6c757d',
+                                                        color: 'white',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.75rem'
+                                                    }}>
+                                                        Qty: {item.quantity}
+                                                    </span>
                                                 </div>
-                                                <span style={{
-                                                    backgroundColor: '#6c757d',
-                                                    color: 'white',
-                                                    padding: '2px 8px',
-                                                    borderRadius: '4px',
-                                                    fontSize: '0.75rem'
-                                                }}>
-                                                    Qty: {item.quantity}
-                                                </span>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 'bold', color: '#ff8c00' }}>
+                                                    ₱{new Intl.NumberFormat().format(item.price * item.quantity)}
+                                                </div>
+                                                <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                                                    ₱{new Intl.NumberFormat().format(item.price)} each
+                                                </div>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontWeight: 'bold', color: '#ff8c00' }}>
-                                                ₱{new Intl.NumberFormat().format(item.price * item.quantity)}
-                                            </div>
-                                            <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                                                ₱{new Intl.NumberFormat().format(item.price)} each
-                                            </div>
+                                        {/* Voucher selector for each item */}
+                                        <div style={{ paddingLeft: '62px' }}>
+                                            <VoucherSelector
+                                                orderTotal={item.price * 1} // Only allow discounting a single item with a single quantity
+                                                onVoucherSelect={(voucherData) => handleVoucherSelect(item.productId, voucherData)}
+                                                selectedVoucherId={itemVouchers[item.productId]?.voucherId}
+                                                className="mb-2"
+                                            />
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Payment Method */}
+                            {/* Payment Method and Notes */}
                             <div style={{
                                 backgroundColor: '#f8f9fa',
                                 border: '1px solid #ddd',
@@ -224,22 +276,6 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                 </div>
                             </div>
 
-                            {/* GCash Instructions */}
-                            {/* {paymentMethod === 'Gcash' && (
-                                <div style={{
-                                    backgroundColor: '#cfe2ff',
-                                    border: '1px solid #9ec5fe',
-                                    color: '#084298',
-                                    borderRadius: '8px',
-                                    padding: '16px',
-                                    marginBottom: '20px'
-                                }}>
-                                    <h6 style={{ marginBottom: '8px', color: '#084298' }}>GCash Payment Instructions:</h6>
-                                    <p style={{ margin: 0 }}>Please send your payment to GCash number: <strong>09123456789</strong></p>
-                                    <p style={{ margin: 0 }}>Include your name and order ID in the message section.</p>
-                                </div>
-                            )} */}
-
                             {/* Order Total */}
                             <div style={{
                                 backgroundColor: '#f8f9fa',
@@ -263,29 +299,8 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                     alignItems: 'center',
                                     marginBottom: '8px'
                                 }}>
-                                    <div>
-                                        <span style={{ color: '#333' }}>Discount:</span>
-                                        <select
-                                            style={{
-                                                width: '80px',
-                                                marginLeft: '8px',
-                                                padding: '4px 8px',
-                                                backgroundColor: 'white',
-                                                color: '#333',
-                                                border: '1px solid #ced4da',
-                                                borderRadius: '4px'
-                                            }}
-                                            value={discount}
-                                            onChange={(e) => setDiscount(Number(e.target.value))}
-                                        >
-                                            <option value="0">0%</option>
-                                            {/* <option value="5">5%</option>
-                                            <option value="10">10%</option>
-                                            <option value="15">15%</option>
-                                            <option value="20">20%</option> */}
-                                        </select>
-                                    </div>
-                                    <span style={{ color: '#333' }}>-₱{new Intl.NumberFormat().format((discount / 100) * totalPrice)}</span>
+                                    <span style={{ color: '#333' }}>Total Discount:</span>
+                                    <span style={{ color: '#333' }}>-₱{new Intl.NumberFormat().format(calculateTotalDiscount())}</span>
                                 </div>
 
                                 <hr style={{ borderColor: '#dee2e6' }} />

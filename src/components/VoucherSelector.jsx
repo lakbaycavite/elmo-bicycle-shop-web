@@ -81,12 +81,12 @@ const VoucherSelector = ({
                 <div>
                     <button
                         onClick={() => setShowVouchers(!showVouchers)}
-                        className="w-full flex items-center justify-between p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors"
+                        className="w-full flex items-center justify-between p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors"
                         disabled={availableVouchers.length === 0}
                     >
                         <div className="flex items-center gap-3">
-                            <div className="bg-purple-100 p-2 rounded-full">
-                                <Ticket className="text-purple-600" size={20} />
+                            <div className="bg-orange-100 p-2 rounded-full">
+                                <Ticket className="text-orange-600" size={20} />
                             </div>
                             <div className="text-left">
                                 <div className="font-medium text-gray-800">
@@ -104,7 +104,7 @@ const VoucherSelector = ({
                             </div>
                         </div>
                         {availableVouchers.length > 0 && (
-                            <div className="text-purple-600">
+                            <div className="text-orange-600">
                                 {showVouchers ? '▼' : '▶'}
                             </div>
                         )}
@@ -129,7 +129,7 @@ const VoucherSelector = ({
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-2 rounded-lg">
+                                                    <div className="bg-gradient-to-br from-orange-500 to-pink-500 text-white p-2 rounded-lg">
                                                         <Ticket size={16} />
                                                     </div>
                                                     <div>

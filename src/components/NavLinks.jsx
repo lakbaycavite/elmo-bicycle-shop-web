@@ -26,6 +26,9 @@ function NavLinks({ className = '', isLoggedIn = false }) {
             }
           }, 100);
           break;
+        case 'spin-wheel':
+          navigate('/customer/spin-wheel');
+          break;
         default:
           navigate('/customer/home');
       }
@@ -58,29 +61,35 @@ function NavLinks({ className = '', isLoggedIn = false }) {
 
   return (
     <div className={`flex flex-col md:flex-row gap-6 ${className}`}>
-      <button 
-        className="text-white hover:text-orange-500 font-normal" 
+      <button
+        className="text-white hover:text-orange-500 font-normal"
         onClick={() => handleNavigation('home')}
       >
         Home
       </button>
-      <button 
-        className="text-white hover:text-orange-500 font-normal" 
+      <button
+        className="text-white hover:text-orange-500 font-normal"
         onClick={() => handleNavigation('shop')}
       >
         Shop
       </button>
-      <button 
-        className="text-white hover:text-orange-500 font-normal" 
+      <button
+        className="text-white hover:text-orange-500 font-normal"
         onClick={() => handleNavigation('about')}
       >
         About
       </button>
-      <button 
-        className="text-white hover:text-orange-500 font-normal" 
+      <button
+        className="text-white hover:text-orange-500 font-normal"
         onClick={() => handleNavigation('contact')}
       >
         Contact
+      </button>
+      <button
+        className="text-white hover:text-orange-500 font-normal"
+        onClick={() => handleNavigation('spin-wheel')}
+      >
+        Spin
       </button>
     </div>
   );
