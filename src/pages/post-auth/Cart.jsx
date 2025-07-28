@@ -9,7 +9,7 @@ import ProductRatingModal from "../../components/ProductRatingModal";
 import { useState } from "react";
 import ProductDetailsModal from "../../components/ProductsDetailsModal";
 import { toast } from "sonner";
-import { useDiscount } from "../../hooks/useDiscount";
+// import { useDiscount } from "../../hooks/useDiscount";
 
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
@@ -213,7 +213,7 @@ const Cart = () => {
                     </div>
 
                 </div>
-                <div className="w-full h-18 px-3 flex flex-row items-center justify-between">
+                {/* <div className="w-full h-18 px-3 flex flex-row items-center justify-between">
                     <button
                         className="w-10 h-10 bg-orange-500 text-white flex justify-center items-center transition-all duration-150 active:scale-90 active:opacity-80 hover:bg-orange-400"
                         style={{ borderRadius: '100%' }}
@@ -226,7 +226,7 @@ const Cart = () => {
                     >
                         <ChevronRight />
                     </button>
-                </div>
+                </div> */}
                 <div className="w-full h-full p-3">
                     <div
                         className="flex overflow-x-auto space-x-6"
