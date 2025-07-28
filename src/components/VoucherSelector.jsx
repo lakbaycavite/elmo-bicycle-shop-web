@@ -3,22 +3,32 @@ import { Ticket, X, Check, AlertCircle } from 'lucide-react';
 import { useDiscount } from '../hooks/useDiscount';
 
 const VoucherSelector = ({
-    orderTotal,
+    orderTotal, // This should be the total for the specific item, not the whole order
     onVoucherSelect,
     selectedVoucherId = null,
+    disabledVoucherIds = [], // NEW PROP: Array of voucher IDs currently used by other items
     className = ""
 }) => {
     const { availableVouchers, calculateDiscountAmount, loading } = useDiscount();
     const [showVouchers, setShowVouchers] = useState(false);
     const [selectedVoucher, setSelectedVoucher] = useState(null);
 
+    // Filter available vouchers based on those already selected by other items
+    const filteredAvailableVouchers = availableVouchers.filter(voucher =>
+        !disabledVoucherIds.includes(voucher.id)
+    );
+
     // Find selected voucher when component mounts or vouchers change
     useEffect(() => {
-        if (selectedVoucherId && availableVouchers.length > 0) {
+        if (selectedVoucherId) {
+            // Find the selected voucher from the *original* availableVouchers list
+            // to ensure it's still displayed even if it's in disabledVoucherIds
             const voucher = availableVouchers.find(v => v.id === selectedVoucherId);
             setSelectedVoucher(voucher);
+        } else {
+            setSelectedVoucher(null);
         }
-    }, [selectedVoucherId, availableVouchers]);
+    }, [selectedVoucherId, availableVouchers]); // Depend on availableVouchers for proper re-evaluation
 
     const handleVoucherSelect = (voucher) => {
         const discountAmount = calculateDiscountAmount(orderTotal, voucher.discountPercentage);
@@ -36,7 +46,7 @@ const VoucherSelector = ({
 
     const handleRemoveVoucher = () => {
         setSelectedVoucher(null);
-        onVoucherSelect(null);
+        onVoucherSelect(null); // Pass null to indicate removal
     };
 
     if (loading) {
@@ -82,7 +92,7 @@ const VoucherSelector = ({
                     <button
                         onClick={() => setShowVouchers(!showVouchers)}
                         className="w-full flex items-center justify-between p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-colors"
-                        disabled={availableVouchers.length === 0}
+                        disabled={filteredAvailableVouchers.length === 0} // Disable if no vouchers are available for this product
                     >
                         <div className="flex items-center gap-3">
                             <div className="bg-orange-100 p-2 rounded-full">
@@ -90,20 +100,20 @@ const VoucherSelector = ({
                             </div>
                             <div className="text-left">
                                 <div className="font-medium text-gray-800">
-                                    {availableVouchers.length > 0
+                                    {filteredAvailableVouchers.length > 0
                                         ? 'Apply Discount Voucher'
                                         : 'No Vouchers Available'
                                     }
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                    {availableVouchers.length > 0
-                                        ? `${availableVouchers.length} voucher${availableVouchers.length !== 1 ? 's' : ''} available`
+                                    {filteredAvailableVouchers.length > 0
+                                        ? `${filteredAvailableVouchers.length} voucher${filteredAvailableVouchers.length !== 1 ? 's' : ''} available`
                                         : 'Spin the wheel to win vouchers'
                                     }
                                 </div>
                             </div>
                         </div>
-                        {availableVouchers.length > 0 && (
+                        {filteredAvailableVouchers.length > 0 && (
                             <div className="text-orange-600">
                                 {showVouchers ? '▼' : '▶'}
                             </div>
@@ -111,13 +121,13 @@ const VoucherSelector = ({
                     </button>
 
                     {/* Voucher List */}
-                    {showVouchers && availableVouchers.length > 0 && (
+                    {showVouchers && filteredAvailableVouchers.length > 0 && (
                         <div className="mt-3 border border-gray-200 rounded-lg bg-white shadow-lg">
                             <div className="p-3 border-b bg-gray-50">
                                 <h3 className="font-medium text-gray-800">Select a Voucher</h3>
                             </div>
                             <div className="max-h-60 overflow-y-auto">
-                                {availableVouchers.map((voucher) => {
+                                {filteredAvailableVouchers.map((voucher) => {
                                     const discountAmount = calculateDiscountAmount(orderTotal, voucher.discountPercentage);
                                     const finalTotal = orderTotal - discountAmount;
 
@@ -160,12 +170,12 @@ const VoucherSelector = ({
                                                 const today = new Date();
                                                 const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
 
-                                                if (daysUntilExpiry <= 7) {
+                                                if (daysUntilExpiry <= 7 && daysUntilExpiry >= 0) { // Only show for non-expired vouchers expiring soon
                                                     return (
                                                         <div className="mt-2 flex items-center gap-1 text-orange-600 text-xs">
                                                             <AlertCircle size={12} />
                                                             <span>
-                                                                {daysUntilExpiry <= 1
+                                                                {daysUntilExpiry <= 0 // It's 0 if it expires today
                                                                     ? 'Expires today!'
                                                                     : `Expires in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}`
                                                                 }
@@ -184,11 +194,11 @@ const VoucherSelector = ({
                 </div>
             )}
 
-            {/* No Vouchers Message */}
-            {availableVouchers.length === 0 && !selectedVoucher && (
+            {/* No Vouchers Message for ALL (including filtered) */}
+            {filteredAvailableVouchers.length === 0 && !selectedVoucher && (
                 <div className="text-center text-gray-500 py-4">
                     <Ticket size={32} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No discount vouchers available</p>
+                    <p className="text-sm">No discount vouchers available for this item</p>
                     <p className="text-xs">Spin the wheel to win vouchers!</p>
                 </div>
             )}

@@ -8,6 +8,8 @@ import {
     spinWheel,
     getUserVouchers,
     useVoucher as getUseVoucher,
+    deleteVoucher,
+    unuseVoucher,
 } from '../services/discountService';
 
 export function useDiscount() {
@@ -165,6 +167,45 @@ export function useDiscount() {
         }
     }, [loadUserSpinAttempts]);
 
+    const deleteUsedVoucher = useCallback(async (voucherIds) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const result = await deleteVoucher(voucherIds);
+
+            // Reload vouchers to reflect the deletion
+            await loadUserVouchers();
+
+            return result;
+        } catch (err) {
+            console.error('Error deleting voucher(s):', err);
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [loadUserVouchers]);
+
+    const returnVoucherOnCancel = useCallback(async (voucherIds) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const result = await unuseVoucher(voucherIds);
+
+            // Reload vouchers to reflect the reverted status
+            await loadUserVouchers();
+
+            return result;
+        } catch (err) {
+            console.error('Error returning voucher(s) on cancellation:', err);
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [loadUserVouchers]);
+
+
     return {
         // State
         spinWheelConfig,
@@ -185,6 +226,8 @@ export function useDiscount() {
         getAvailableVouchers,
         clearSpinResult,
         processOrderCompletion,
+        deleteUsedVoucher,
+        returnVoucherOnCancel,
 
         // Computed values
         availableVouchers: getAvailableVouchers(),

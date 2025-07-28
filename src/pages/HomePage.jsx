@@ -57,15 +57,15 @@ function HomePage() {
     }
 
     try {
-      const productDetails = {
-        name: product.name,
-        price: product.price,
-        imageUrl: product.image,
-        brand: product.brand || '',
-        category: product.category
-      };
+      // const productDetails = {
+      //   name: product.name,
+      //   price: product.price,
+      //   imageUrl: product.image,
+      //   brand: product.brand || '',
+      //   category: product.category
+      // };
 
-      await addToCart(product.id, 1, productDetails);
+      await addToCart(product.id, 1, { ...product });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');

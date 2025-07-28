@@ -5,9 +5,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import elmoLogo from '/images/logos/elmo.png';
 import { toast } from 'sonner';
+import { useDiscount } from '../../hooks/useDiscount';
 
 function OrdersOverview() {
   const { adminOrders, updateOrderStatus } = useOrder();
+  const { returnVoucherOnCancel, deleteUsedVoucher } = useDiscount();
 
   // Modal states
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -133,6 +135,7 @@ function OrdersOverview() {
 
   // Handle view button click
   const handleViewOrder = (order) => {
+
     setSelectedOrder(order);
     setEditablePaymentMethod(order.paymentMethod);
     setShowDetailsModal(true);
@@ -150,6 +153,8 @@ function OrdersOverview() {
     setShowCancelModal(true);
   };
 
+
+
   // Handle confirm approval
   const handleConfirmApprove = async () => {
     try {
@@ -160,6 +165,9 @@ function OrdersOverview() {
         .then(() => {
           toast.success('Order approved successfully!');
         })
+      const usedVouchers = selectedOrder.products.filter(item => item.voucherId);
+
+      await deleteUsedVoucher(usedVouchers.map(voucher => voucher.voucherId)); // Delete vouchers if used
       setShowConfirmModal(false);
       setShowDetailsModal(false);
       setShowPDFPreview(true);
@@ -181,6 +189,9 @@ function OrdersOverview() {
         .then(() => {
           toast.success('Order cancelled successfully!');
         })
+
+      await returnVoucherOnCancel(selectedOrder.products.map(item => item.voucherCode));
+
       setShowCancelModal(false);
       setCancelReason('');
       setShowDetailsModal(false);

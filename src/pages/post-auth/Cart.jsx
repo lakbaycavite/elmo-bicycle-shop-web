@@ -9,6 +9,7 @@ import ProductRatingModal from "../../components/ProductRatingModal";
 import { useState } from "react";
 import ProductDetailsModal from "../../components/ProductsDetailsModal";
 import { toast } from "sonner";
+import { useDiscount } from "../../hooks/useDiscount";
 
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
