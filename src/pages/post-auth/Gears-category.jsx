@@ -277,6 +277,7 @@ const GearsCategory = () => {
     const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [viewProduct, setViewProduct] = useState(null);
+    const location = useLocation();
 
     // Get products from your hook
     const { products, getProduct } = useProducts();
@@ -320,6 +321,17 @@ const GearsCategory = () => {
             )
         );
     }, [products]);
+
+
+    useEffect(() => {
+        if (location.state && location.state.handleShowDetailsModal && products) {
+            // Find the product with matching ID
+            const product = products.find(p => p.id === location.state.handleShowDetailsModal);
+            if (product) {
+                handleShowDetailsModal(product);
+            }
+        }
+    }, [location.state, products]);
 
     // Load ratings data - FIXED to match your Firebase structure
     useEffect(() => {
