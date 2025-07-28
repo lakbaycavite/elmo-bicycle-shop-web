@@ -38,7 +38,7 @@ function Sidebar() {
   });
 
   const [userEmail, setUserEmail] = useState(() => {
-    return localStorage.getItem('elmo_user_email') || 'lanceballicud';
+    return localStorage.getItem('elmo_user_email') || currentUserData?.email || 'Loading...';
   });
 
   // Close drawer when screen size becomes large
@@ -132,7 +132,7 @@ function Sidebar() {
           >
             ×
           </button>
-          
+
           {/* Content with top margin to avoid close button */}
           <div className="mt-8 flex flex-col h-full">
             <div className="mb-8">
@@ -147,7 +147,7 @@ function Sidebar() {
                 <div className="text-orange-400 font-semibold">{userRole}</div>
               </div>
             </div>
-            
+
             <nav className="space-y-2 flex-1">
               {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.route;
@@ -163,7 +163,7 @@ function Sidebar() {
                 );
               })}
             </nav>
-            
+
             <div className="pt-8 border-t border-gray-700">
               <button
                 onClick={handleLogout}
@@ -231,7 +231,7 @@ function Sidebar() {
 
       {/* Mobile Hamburger Menu Button */}
       <div className="lg:hidden fixed top-4 left-4 z-40">
-        <button 
+        <button
           className="text-gray-800 hover:text-orange-500 focus:outline-none"
           onClick={() => setDrawerOpen(true)}
         >

@@ -290,7 +290,7 @@ const Inventory = () => {
     try {
       await createProduct(productData);
       setShowAddModal(false);
-      toast.success('Product added successfully');
+      toast.success(`Product added ${productData.name} successfully`);
 
       setFormData({
         name: '',
@@ -354,14 +354,13 @@ const Inventory = () => {
       const productData = {
         ...editFormData,
         image: imageUrl || editFormData.image,
-        updatedAt: '2025-07-26 10:55:20',
-        updatedBy: 'lanceballicud'
+        updatedAt: Date.now(),
+        updatedBy: currentUserData?.email || 'Admin'
       };
 
       await updateProduct(editProduct.id, productData);
       setShowEditModal(false);
-      toast.success('Product updated successfully');
-      console.log('Product updated successfully!:', editFormData);
+      toast.success(`Product updated ${productData.name} successfully`);
     } catch (error) {
       console.error('Error updating product:', error);
       alert('Failed to update product. Please try again.');

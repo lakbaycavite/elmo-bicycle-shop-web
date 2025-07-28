@@ -22,7 +22,7 @@ export const productService = {
         product.id = newProductRef.key;
         await set(newProductRef, product)
             .then(() => {
-                toast.success(`Product ${product.name} created successfully!`);
+                // toast.success(`Product ${product.name} created successfully!`);
             })
             .catch((error) => {
                 console.error("Error creating product:", error);

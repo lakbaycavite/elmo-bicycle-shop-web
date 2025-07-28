@@ -42,7 +42,7 @@ export const createUser = async (userData) => {
             ...userData,
             createdAt: timestamp,
             updatedAt: timestamp,
-            createdBy: auth.currentUser?.uid || "unknown"
+            createdBy: auth.currentUser?.uid || "Admin"
         });
 
         return { id: newUserRef.key, ...userData };
@@ -171,7 +171,7 @@ export const changeUserRoleById = async (userId, newRole) => {
         await update(userRef, {
             role: newRole,
             updatedAt: formattedDate,
-            updatedBy: "lanceballicud"
+            updatedBy: getCurrentUserData()?.email || 'Admin'
         });
 
         return {
