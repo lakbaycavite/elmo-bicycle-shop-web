@@ -253,14 +253,6 @@ const BikesCategory = () => {
   const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
   const { getProduct } = useProducts();
 
-
-  useEffect(() => {
-    if (location.state && location.state.ratingFilter) {
-      setSelectedRatingFilter(location.state.ratingFilter);
-    }
-  }, [location.state]);
-
-
   const handleShowDetailsModal = async (product) => {
     if (!product) {
       console.error("No product data provided for details modal");
@@ -275,7 +267,24 @@ const BikesCategory = () => {
         console.error("Error fetching product details:", error);
         toast.error(`Failed to load product details`);
       });
-  }
+  };
+
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.ratingFilter) {
+        setSelectedRatingFilter(location.state.ratingFilter);
+      }
+      
+      // Check if handleShowDetailsModal ID is passed in state
+      if (location.state.handleShowDetailsModal && products) {
+        // Find the product with matching ID
+        const product = products.find(p => p.id === location.state.handleShowDetailsModal);
+        if (product) {
+          handleShowDetailsModal(product);
+        }
+      }
+    }
+  }, [location.state, products]);
 
   const bikes = useMemo(() => {
     if (!products) return [];

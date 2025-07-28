@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useProducts } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
+import { toast } from 'sonner';
+import ProductDetailsModal from '../../components/ProductsDetailsModal';
 
 const theme = {
     primaryAccent: '#ff8c00',
@@ -66,7 +68,7 @@ const ThemeStyles = () => (
     `}</style>
 );
 
-const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist }) => (
+const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist, handleShowDetailsModal }) => (
     <div className="col">
         <div className="card h-100 shadow-sm" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
             <img src={gear.image || "/images/bikehelmet1.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={gear.name} />
@@ -103,7 +105,7 @@ const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist }) => (
                     >
                         Add to Cart
                     </button>
-                    <button className="btn btn-details w-100">Details</button>
+                    <button className="btn btn-details w-100" onClick={() => handleShowDetailsModal(gear)}>Details</button>
                 </div>
             </div>
         </div>
@@ -123,7 +125,7 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
     );
 };
 
-const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggleWishlist, wishlist }) => {
+const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggleWishlist, wishlist, handleShowDetailsModal }) => {
     const navigate = useNavigate();
 
     return (
@@ -186,6 +188,7 @@ const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggle
                             onAddToCart={onAddToCart}
                             onToggleWishlist={onToggleWishlist}
                             isInWishlist={wishlist.some(item => item.productId === gear.id)}
+                            handleShowDetailsModal={handleShowDetailsModal}
                         />
                     ))
                 ) : (
@@ -202,13 +205,44 @@ const GearsCategory = () => {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [viewProduct, setViewProduct] = useState(null);
+    const location = useLocation();
 
     // Get products from your hook
     const { products } = useProducts();
     const { addToCart } = useCart();
+    const { getProduct } = useProducts();
 
     // Add wishlist hook
     const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
+    
+    // Handler for showing product details
+    const handleShowDetailsModal = async (product) => {
+        if (!product) {
+            console.error("No product data provided for details modal");
+            return;
+        }
+        await getProduct(product.id)
+            .then(() => {
+                setViewProduct(product);
+                setShowDetailsModal(true);
+            })
+            .catch((error) => {
+                console.error("Error fetching product details:", error);
+            });
+    };
+    
+    // Check for product ID in location state
+    useEffect(() => {
+        if (location.state && location.state.handleShowDetailsModal && products) {
+            // Find the product with matching ID
+            const product = products.find(p => p.id === location.state.handleShowDetailsModal);
+            if (product) {
+                handleShowDetailsModal(product);
+            }
+        }
+    }, [location.state, products]);
 
     // Filter products to only show gears and parts
     const gears = useMemo(() => {
@@ -359,9 +393,16 @@ const GearsCategory = () => {
                         onAddToCart={handleAddToCart}
                         onToggleWishlist={handleToggleWishlist}
                         wishlist={wishlist}
+                        handleShowDetailsModal={handleShowDetailsModal}
                     />
                 </div>
             </div>
+            <ProductDetailsModal
+                viewProduct={viewProduct}
+                showDetailsModal={showDetailsModal}
+                setShowDetailsModal={setShowDetailsModal}
+                formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`}
+            />
         </>
     );
 };

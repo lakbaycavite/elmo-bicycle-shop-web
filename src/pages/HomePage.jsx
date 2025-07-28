@@ -183,7 +183,7 @@ function HomePage() {
                   <div className="text-orange-400 text-sm mb-2">₱{bike.price}</div>
                   <div className="flex justify-center gap-2 mt-2">
                     <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200" type='button' onClick={() => navigate('/customer/bikes-category/', { state: { handleShowDetailsModal: bike.id } })}>Details</button>
                   </div>
                 </div>
               </div>
@@ -214,7 +214,7 @@ function HomePage() {
                   <div className="text-orange-400 text-sm mb-2">₱{item.price}</div>
                   <div className="flex justify-center gap-2 mt-2">
                     <button className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded">Add to Cart</button>
-                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200">Details</button>
+                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200" type='button' onClick={() => navigate(item.category === 'Gears' ? '/customer/gears-parts-category/' : '/customer/accessories-category/', { state: { handleShowDetailsModal: item.id } })}>Details</button>
                   </div>
                 </div>
               </div>
