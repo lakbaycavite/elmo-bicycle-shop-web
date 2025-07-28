@@ -31,6 +31,7 @@ import Inventory from './pages/admin/Inventory';
 import { useAuth } from './context/authContext/createAuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './middleware/ProtectedRoute';
+import SpinTheWheel from './pages/post-auth/SpinTheWheel';
 
 function App() {
 
@@ -90,6 +91,11 @@ function App() {
           <Route path="/customer/cart" element={
             <ProtectedRoute>
               <Cart />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/spin-wheel" element={
+            <ProtectedRoute>
+              <SpinTheWheel />
             </ProtectedRoute>
           } />
 

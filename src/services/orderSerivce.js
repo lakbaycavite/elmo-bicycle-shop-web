@@ -1,6 +1,7 @@
 import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "firebase/database";
 import { auth } from "../firebase/firebase";
 import { clearCart, getCartItems } from "./cartService";
+import { addSpinAttempts } from "./discountService";
 
 // Format current date/time
 const getCurrentFormattedTime = () => {
@@ -42,6 +43,8 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
             totalAmount,
             subtotal: orderDetails.subtotal || totalAmount,
             discount: orderDetails.discount || 0,
+            discountPercentage: orderDetails.discountPercentage || 0,
+            voucherUsed: orderDetails.voucherUsed || null,
             paymentMethod: orderDetails.paymentMethod || "Walk-in",
             createdAt: orderDetails.orderDate || getCurrentFormattedTime(),
             notes,
@@ -163,18 +166,54 @@ export const updateOrderStatus = async (orderId, status, cancelReason) => {
         const db = getDatabase();
         const orderRef = ref(db, `orders/${orderId}`);
 
+        // Get the order first to check current status and get order details
+        const orderSnapshot = await get(orderRef);
+        if (!orderSnapshot.exists()) {
+            throw new Error("Order not found");
+        }
+
+        const order = orderSnapshot.val();
+        const previousStatus = order.status;
+
         await update(orderRef, {
             status,
             cancelReason: cancelReason || "",
             updatedAt: getCurrentFormattedTime()
         });
 
+        // If order status changed from pending to paid, add spin attempts
+        if (previousStatus === "pending" && status === "paid") {
+            try {
+                await addSpinAttempts(order.userId, order.totalAmount);
+                console.log(`Added spin attempts for user ${order.userId} with order amount ${order.totalAmount}`);
+            } catch (spinError) {
+                console.error("Error adding spin attempts:", spinError);
+                // Don't throw error here as the order update was successful
+            }
+        }
+
         return {
             success: true,
-            message: `Order status updated to ${status}`
+            message: `Order status updated to ${status}`,
+            spinAttemptsAdded: previousStatus === "pending" && status === "paid"
         };
     } catch (error) {
         console.error("Error updating order status:", error);
         throw error;
     }
+};
+
+// Apply discount voucher to order calculation
+export const calculateOrderWithDiscount = (orderDetails, voucherDiscount = 0) => {
+    const subtotal = orderDetails.subtotal || 0;
+    const discountAmount = (subtotal * voucherDiscount) / 100;
+    const total = subtotal - discountAmount;
+
+    return {
+        ...orderDetails,
+        subtotal: subtotal,
+        discount: discountAmount,
+        discountPercentage: voucherDiscount,
+        total: total
+    };
 };
