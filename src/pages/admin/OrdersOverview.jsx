@@ -254,6 +254,10 @@ function OrdersOverview() {
 
     const itemTableRows = [];
 
+    const subtotal = selectedOrder.products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = selectedOrder.products.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    const total = subtotal - discount;
+
     // Add items to main table
     selectedOrder.products.forEach(item => {
       itemTableRows.push([
@@ -262,7 +266,7 @@ function OrdersOverview() {
         `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
         `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
         item.discountAmount ? `PHP ${item.discountAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : 'PHP 0.00',
-        `PHP ${item.finalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+        item.finalPrice ? `PHP ${(item.finalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
       ]);
     });
 
@@ -281,16 +285,6 @@ function OrdersOverview() {
         textColor: 255,
         fontStyle: 'bold'
       },
-      // The table will automatically use the available width.
-      // You can uncomment and adjust columnStyles if specific widths are needed
-      // columnStyles: {
-      //   0: { cellWidth: 20 }, // Quantity
-      //   1: { cellWidth: 'auto' }, // Item
-      //   2: { cellWidth: 30 }, // Price
-      //   3: { cellWidth: 30 }, // Sub Total
-      //   4: { cellWidth: 30 }, // Discount
-      //   5: { cellWidth: 30 }, // Total
-      // }
     });
 
     // --- Voucher Used Table ---
@@ -337,9 +331,7 @@ function OrdersOverview() {
       },
     });
 
-    const subtotal = selectedOrder.products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discount = selectedOrder.products.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
-    const total = subtotal - discount;
+
 
     // Add total
     const finalY = doc.lastAutoTable.finalY + 10; // Position after the last table (voucher table)
@@ -368,7 +360,6 @@ function OrdersOverview() {
 
   // Calculate subtotal (without discount)
   const calculateSubtotal = (items) => {
-
     if (items.finalPrice === 0) return items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
