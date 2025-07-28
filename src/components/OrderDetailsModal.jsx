@@ -53,6 +53,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
 
             const currentUser = await getUserProfile();
 
+            console.log("ItemVouchers:", itemVouchers);
             // Create a modified cart with voucher details
             const cartWithVouchers = cart.map(item => {
                 const appliedVoucher = itemVouchers[item.productId];

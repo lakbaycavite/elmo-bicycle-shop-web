@@ -44,7 +44,7 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
             subtotal: orderDetails.subtotal || totalAmount,
             discount: orderDetails.discount || 0,
             discountPercentage: orderDetails.discountPercentage || 0,
-            voucherUsed: orderDetails.voucherUsed || null,
+            products: orderDetails.cart || null,
             paymentMethod: orderDetails.paymentMethod || "Walk-in",
             createdAt: orderDetails.orderDate || getCurrentFormattedTime(),
             notes,
@@ -156,13 +156,9 @@ export const getAllOrders = async () => {
     }
 };
 
-// Admin: Update order status
-export const updateOrderStatus = async (orderId, status, cancelReason) => {
+// Admin: Update order status (modified to accept an updates object)
+export const updateOrderStatus = async (orderId, updates) => {
     try {
-        if (status !== "pending" && status !== "cancelled" && status !== "paid") {
-            throw new Error("Invalid status. Must be 'pending', 'cancelled', or 'paid'");
-        }
-
         const db = getDatabase();
         const orderRef = ref(db, `orders/${orderId}`);
 
@@ -175,17 +171,24 @@ export const updateOrderStatus = async (orderId, status, cancelReason) => {
         const order = orderSnapshot.val();
         const previousStatus = order.status;
 
+        // Merge existing data with new updates
+        const newStatus = updates.status || order.status; // Use new status if provided, else keep old
+        const newCancelReason = updates.cancelReason !== undefined ? updates.cancelReason : order.cancelReason || "";
+
         await update(orderRef, {
-            status,
-            cancelReason: cancelReason || "",
+            ...updates, // Apply all updates passed in
+            status: newStatus,
+            cancelReason: newCancelReason,
             updatedAt: getCurrentFormattedTime()
         });
 
         // If order status changed from pending to paid, add spin attempts
-        if (previousStatus === "pending" && status === "paid") {
+        if (previousStatus === "pending" && newStatus === "paid") {
             try {
-                await addSpinAttempts(order.userId, order.totalAmount);
-                console.log(`Added spin attempts for user ${order.userId} with order amount ${order.totalAmount}`);
+                // Use the potentially updated totalAmount from 'updates' or the original order's totalAmount
+                const amountForSpinAttempts = updates.totalAmount !== undefined ? updates.totalAmount : order.totalAmount;
+                await addSpinAttempts(order.userId, amountForSpinAttempts);
+                console.log(`Added spin attempts for user ${order.userId} with order amount ${amountForSpinAttempts}`);
             } catch (spinError) {
                 console.error("Error adding spin attempts:", spinError);
                 // Don't throw error here as the order update was successful
@@ -194,8 +197,8 @@ export const updateOrderStatus = async (orderId, status, cancelReason) => {
 
         return {
             success: true,
-            message: `Order status updated to ${status}`,
-            spinAttemptsAdded: previousStatus === "pending" && status === "paid"
+            message: `Order status updated to ${newStatus}`,
+            spinAttemptsAdded: previousStatus === "pending" && newStatus === "paid"
         };
     } catch (error) {
         console.error("Error updating order status:", error);

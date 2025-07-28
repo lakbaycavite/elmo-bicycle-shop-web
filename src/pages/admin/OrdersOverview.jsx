@@ -230,14 +230,19 @@ function OrdersOverview() {
 
   // Complete PDF generation (separated for async logo handling)
   const completePDFGeneration = (doc) => {
+    // Get page dimensions for dynamic positioning in landscape
+    // These values will reflect the landscape A4 size (approx 297mm x 210mm)
+    const pageWidth = doc.internal.pageSize.getWidth();
+    // const pageHeight = doc.internal.pageSize.getHeight(); // Not strictly needed for this layout
+
     // Add shop name
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('ELMO BIKE SHOP', 55, 25);
+    doc.text('ELMO BIKE SHOP', 20, 25); // Start closer to left edge
 
     // Add a line under the header
     doc.setLineWidth(0.5);
-    doc.line(20, 40, 190, 40);
+    doc.line(20, 40, pageWidth - 20, 40); // Line stretches across the page, with 20mm margin
 
     // Receipt details
     doc.setFontSize(12);
@@ -247,21 +252,24 @@ function OrdersOverview() {
     doc.text(`Date of Purchase: ${new Date(selectedOrder.createdAt).toLocaleDateString()}`, 20, 75);
     doc.text(`Order ID: ${selectedOrder.id}`, 20, 85);
 
-    const tableRows = [];
+    const itemTableRows = [];
 
-    // Add items to table
-    selectedOrder.items.forEach(item => {
-      tableRows.push([
+    // Add items to main table
+    selectedOrder.products.forEach(item => {
+      itemTableRows.push([
         item.quantity.toString(),
         item.name + ' (id: ' + item.id + ')',
-        `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+        `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        item.discountAmount ? `PHP ${item.discountAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : 'PHP 0.00',
+        `PHP ${item.finalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
       ]);
     });
 
-    // Generate table
+    // Generate main items table
     autoTable(doc, {
-      head: [['Quantity', 'Items', 'Amount']],
-      body: tableRows,
+      head: [['Quantity', 'Item', 'Price', 'Sub Total', 'Discount', 'Total']],
+      body: itemTableRows,
       startY: 95,
       theme: 'grid',
       styles: {
@@ -272,18 +280,77 @@ function OrdersOverview() {
         fillColor: [255, 140, 0], // Orange color
         textColor: 255,
         fontStyle: 'bold'
+      },
+      // The table will automatically use the available width.
+      // You can uncomment and adjust columnStyles if specific widths are needed
+      // columnStyles: {
+      //   0: { cellWidth: 20 }, // Quantity
+      //   1: { cellWidth: 'auto' }, // Item
+      //   2: { cellWidth: 30 }, // Price
+      //   3: { cellWidth: 30 }, // Sub Total
+      //   4: { cellWidth: 30 }, // Discount
+      //   5: { cellWidth: 30 }, // Total
+      // }
+    });
+
+    // --- Voucher Used Table ---
+    const voucherTableRows = [];
+
+    selectedOrder.products.forEach(item => {
+      if (item.voucherCode) {
+        voucherTableRows.push([
+          'Voucher Used',
+          item.voucherCode,
+          `${item.discountPercentage}%`,
+          item.name
+        ]);
+      } else {
+        voucherTableRows.push([
+          'No Voucher Used',
+          '-',
+          '-',
+          item.name
+        ]);
       }
     });
 
-    // Add total
-    const finalY = doc.lastAutoTable.finalY + 10;
+    // Add a heading for the voucher table
+    let currentY = doc.lastAutoTable.finalY + 15; // Position after the first table
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Total: PHP ${selectedOrder.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 150, finalY);
+    doc.text('Voucher Details', 20, currentY);
+
+    // Generate voucher table
+    autoTable(doc, {
+      head: [['Status', 'Code', 'Discount %', 'Applied To Item']],
+      body: voucherTableRows,
+      startY: currentY + 10, // Start below the "Voucher Details" heading
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [255, 140, 0], // Orange color
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+    });
+
+    const subtotal = selectedOrder.products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = selectedOrder.products.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+    const total = subtotal - discount;
+
+    // Add total
+    const finalY = doc.lastAutoTable.finalY + 10; // Position after the last table (voucher table)
+    doc.setFont('helvetica', 'bold');
+    // Position "Total" using pageWidth to align it to the right
+    doc.text(`Total: PHP ${total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, pageWidth - 60, finalY);
 
     // Add footer
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Thank you for your purchase!', 105, finalY + 20, { align: 'center' });
+    doc.text('Thank you for your purchase!', pageWidth / 2, finalY + 20, { align: 'center' });
 
     // Auto-download the PDF
     doc.save(`receipt-${selectedOrder.id}.pdf`);
@@ -301,12 +368,14 @@ function OrdersOverview() {
 
   // Calculate subtotal (without discount)
   const calculateSubtotal = (items) => {
+
+    if (items.finalPrice === 0) return items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
   // Placeholder discount (0% for demo)
   const calculateDiscount = (subtotal) => {
-    return subtotal * 0;
+    return subtotal.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
   };
 
   return (
@@ -535,16 +604,26 @@ function OrdersOverview() {
                         <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
                         <th className="border border-gray-300 px-4 py-2 text-left">Quantity</th>
                         <th className="border border-gray-300 px-4 py-2 text-left">Price</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">Sub Total</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">Discount</th>
                         <th className="border border-gray-300 px-4 py-2 text-left">Total</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOrder.items.map((item, index) => (
+                      {selectedOrder.products.map((item, index) => (
                         <tr key={index}>
                           <td className="border border-gray-300 px-4 py-2">{item.name}</td>
                           <td className="border border-gray-300 px-4 py-2">{item.quantity}</td>
                           <td className="border border-gray-300 px-4 py-2">₱{item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                          <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                          <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity)?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+
+                          <td className="border border-gray-300 px-4 py-2">₱{item.discountAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+
+                          {item.finalPrice === 0 ? (
+                            <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                          ) : (
+                            <td className="border border-gray-300 px-4 py-2">₱{(item.finalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -564,14 +643,32 @@ function OrdersOverview() {
                   <option value="Walk-in">Walk-in</option>
                   <option value="Gcash">GCash Payment</option>
                 </select>
+
               </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-bold mb-2">Vouchers Used:</label>
+                <select
+                  value={editablePaymentMethod}
+                  onChange={(e) => setEditablePaymentMethod(e.target.value)}
+                  className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-orange-500"
+                >
+                  {selectedOrder.products.map((item) => (
+                    <option key={item.id} value={item.voucherCode}>
+                      {item.voucherCode ? `Voucher Code: ${item.voucherCode} - ${item.discountPercentage}% for ${item.name}` : `No Voucher Used for ${item.name}`}
+                    </option>
+                  ))}
+                </select>
+
+              </div>
+
 
               {/* Order Summary */}
               <div className="mb-6 bg-gray-50 p-4 rounded">
                 <h3 className="text-lg font-bold mb-3">Order Summary</h3>
                 {(() => {
-                  const subtotal = calculateSubtotal(selectedOrder.items);
-                  const discount = calculateDiscount(subtotal);
+                  const subtotal = calculateSubtotal(selectedOrder.products);
+                  const discount = calculateDiscount(selectedOrder.products);
                   const total = subtotal - discount;
 
                   return (
@@ -695,26 +792,26 @@ function OrdersOverview() {
 
         {/* PDF Preview Modal */}
         {showPDFPreview && selectedOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="mx-4 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800">Receipt Preview</h2>
                 <button
                   onClick={() => setShowPDFPreview(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  className="text-2xl font-bold text-gray-500 hover:text-gray-700"
                 >
                   ×
                 </button>
               </div>
 
               {/* Receipt Preview */}
-              <div className="border border-gray-300 p-6 bg-white">
+              <div className="border border-gray-300 bg-white p-6">
                 {/* Logo and Header */}
-                <div className="flex items-center mb-4">
+                <div className="mb-4 flex items-center">
                   <img
                     src={elmoLogo}
                     alt="Elmo Bicycle Shop"
-                    className="h-12 w-12 mr-4"
+                    className="mr-4 h-12 w-12"
                   />
                   <h1 className="text-2xl font-bold">ELMO BIKE SHOP</h1>
                 </div>
@@ -722,38 +819,90 @@ function OrdersOverview() {
 
                 {/* Receipt Details */}
                 <div className="mb-4">
-                  <p><strong>Customer:</strong> {selectedOrder.userName || selectedOrder.userEmail}</p>
-                  <p><strong>User ID:</strong> {selectedOrder.userId}</p>
-                  <p><strong>Date of Purchase:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
-                  <p><strong>Order ID:</strong> {selectedOrder.id}</p>
+                  <p>
+                    <strong>Customer:</strong> {selectedOrder.userName || selectedOrder.userEmail}
+                  </p>
+                  <p>
+                    <strong>User ID:</strong> {selectedOrder.userId}
+                  </p>
+                  <p>
+                    <strong>Date of Purchase:</strong>{" "}
+                    {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                  </p>
+                  <p>
+                    <strong>Order ID:</strong> {selectedOrder.id}
+                  </p>
                 </div>
 
                 {/* Items Table */}
-                <table className="w-full border-collapse border border-gray-300 mb-4">
-                  <thead>
-                    <tr className="bg-orange-500 text-white">
-                      <th className="border border-gray-300 px-2 py-1 text-left">Quantity</th>
-                      <th className="border border-gray-300 px-2 py-1 text-left">Items</th>
-                      <th className="border border-gray-300 px-2 py-1 text-left">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedOrder.items.map((item, index) => (
-                      <tr key={index}>
-                        <td className="border border-gray-300 px-2 py-1">{item.quantity}</td>
-                        <td className="border border-gray-300 px-2 py-1">{item.name}</td>
-                        <td className="border border-gray-300 px-2 py-1">₱{item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                <div className="overflow-x-auto">
+                  <table className="w-full table-auto border-collapse border border-gray-300 mb-4">
+                    <thead>
+                      <tr className="bg-orange-500 text-white">
+                        <th className="border border-gray-300 px-4 py-2 text-left">
+                          Item
+                        </th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">
+                          Quantity
+                        </th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">
+                          Price
+                        </th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">
+                          Sub Total
+                        </th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">
+                          Discount
+                        </th>
+                        <th className="border border-gray-300 px-4 py-2 text-left">
+                          Total
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.products.map((item, index) => (
+                        <tr key={index}>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {item.name}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {item.quantity}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            ₱{item.price.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            ₱{(item.price * item.quantity)?.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                          </td>
+
+                          <td className="border border-gray-300 px-4 py-2">
+                            ₱{item.discountAmount?.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                          </td>
+
+                          {item.finalPrice === 0 ? (
+                            <td className="border border-gray-300 px-4 py-2">
+                              ₱{(item.price * item.quantity).toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                            </td>
+                          ) : (
+                            <td className="border border-gray-300 px-4 py-2">
+                              ₱{(item.finalPrice * item.quantity).toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Total */}
                 <div className="text-right">
-                  <p className="text-lg font-bold">Total: ₱{selectedOrder.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-lg font-bold">
+                    Total: ₱
+                    {selectedOrder.totalAmount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
 
-                <div className="text-center mt-4">
+                <div className="mt-4 text-center">
                   <p className="text-sm">Thank you for your purchase!</p>
                 </div>
               </div>
@@ -762,7 +911,7 @@ function OrdersOverview() {
               <div className="mt-4 text-center">
                 <button
                   onClick={downloadPDF}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded transition-colors duration-150"
+                  className="bg-orange-500 text-white font-bold py-2 px-6 rounded transition-colors duration-150 hover:bg-orange-600"
                 >
                   Download PDF Receipt
                 </button>

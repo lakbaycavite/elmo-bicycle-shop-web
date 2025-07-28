@@ -228,7 +228,7 @@ export function useOrder() {
     }, []);
 
     // Create a new order
-    const createOrder = useCallback(async (notes = "", contactInfo) => {
+    const createOrder = useCallback(async (notes = "", orderDetails) => {
         if (!auth.currentUser) {
             throw new Error("You must be logged in to place an order");
         }
@@ -236,7 +236,7 @@ export function useOrder() {
         try {
             setLoading(true);
             setError(null);
-            const result = await createOrderService(notes, contactInfo);
+            const result = await createOrderService(notes, orderDetails);
 
             // No need to manually refresh - real-time listener will handle it
             return result;
@@ -249,8 +249,8 @@ export function useOrder() {
         }
     }, []);
 
-    // Update order status (admin only)
-    const updateOrderStatus = useCallback(async (orderId, status, cancelReason) => {
+    // Update order status (admin only) - Modified to accept an updates object
+    const updateOrderStatus = useCallback(async (orderId, updates) => {
         if (!auth.currentUser) {
             throw new Error("You must be logged in to update an order");
         }
@@ -263,7 +263,8 @@ export function useOrder() {
             setLoading(true);
             setError(null);
 
-            const result = await updateOrderStatusService(orderId, status, cancelReason);
+            // Pass the entire updates object to the service
+            const result = await updateOrderStatusService(orderId, updates);
 
             // No need to manually refresh - real-time listeners will handle it
             return result;
@@ -317,7 +318,7 @@ export function useOrder() {
         loadAllOrders, // Keep for backward compatibility
         loadOrderById,
         createOrder,
-        updateOrderStatus,
+        updateOrderStatus, // This function is now more flexible
         formatTimestamp,
         getOrderStats,
         subscribeToOrder // New function for subscribing to specific order updates
