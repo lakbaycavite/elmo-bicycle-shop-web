@@ -44,7 +44,7 @@ const CartCard = ({
             )}
             {title && <h2 className="font-semibold mb-2">{title}</h2>}
             {/* Display star rating */}
-            {renderStars()}
+            {/* {renderStars()} */}
             {description1 && <p className="text-gray-600">{description1}</p>}
             {children}
 
