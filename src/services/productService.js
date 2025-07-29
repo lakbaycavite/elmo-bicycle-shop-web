@@ -57,7 +57,7 @@ export const productService = {
         const productRef = ref(database, `products/${id}`);
         await update(productRef, updates)
             .then(() => {
-                toast.success(`Product ${updates.name || id} updated successfully!`);
+                // toast.success(`Product ${updates.name || id} updated successfully!`);
 
             })
             .catch((error) => {

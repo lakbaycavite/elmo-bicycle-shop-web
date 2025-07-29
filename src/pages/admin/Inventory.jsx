@@ -826,8 +826,8 @@ const Inventory = () => {
                         name='name'
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
                         placeholder="Enter product name"
-                        value={formData.name}
-                        onChange={handleChange}
+                        value={editFormData.name}
+                        onChange={handleEditChange}
                       />
                     </div>
 
