@@ -18,12 +18,18 @@ const Cart = () => {
     const [completedCartItems, setCompletedCartItems] = useState([]);
     const [viewProduct, setViewProduct] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [searchFilter, setSearchFilter] = useState("");
 
     const { cart, updateQuantity, removeItem, totalPrice, totalDiscount, addToCart, clearCart } = useCart();
     const { products, getProduct } = useProducts();
 
     const navigate = useNavigate();
 
+
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchFilter.toLowerCase())
+    );
 
     // Handle checkout completion
     const handleCheckoutComplete = () => {
@@ -219,6 +225,7 @@ const Cart = () => {
                             className="w-full h-8 bg-[#444444] rounded-full pl-10 text-white placeholder-white"
                             placeholder="Search..."
                             type="text"
+                            onChange={(e) => setSearchFilter(e.target.value)} // Placeholder for search functionality
                         />
                     </div>
 
@@ -241,7 +248,7 @@ const Cart = () => {
                     <div
                         className="flex overflow-x-auto space-x-6"
                     >
-                        {products.map((product, idx) => (
+                        {filteredProducts.map((product, idx) => (
                             <div key={idx} className="flex-none md:w-80">
                                 <CartCard
                                     productDetails={product}
