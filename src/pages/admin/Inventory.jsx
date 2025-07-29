@@ -97,7 +97,9 @@ const Inventory = () => {
     spec2: '',
     stock: 0,
     type: '',
-    weight: ''
+    weight: '',
+    discount: 0,
+    discountLabel: ''
   });
 
   const formatPrice = (price) => {
@@ -192,7 +194,9 @@ const Inventory = () => {
       spec2: product.spec2 || '',
       stock: product.stock || 0,
       type: product.type || '',
-      weight: product.weight || ''
+      weight: product.weight || '',
+      discount: product.discount || 0,
+      discountLabel: product.discountLabel || ''
     });
     setShowEditModal(true);
   };
@@ -943,6 +947,40 @@ const Inventory = () => {
                           <option key={type} value={type}>{type}</option>
                         ))}
                       </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Discount Percentage (%)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          defaultValue={editProduct.discount}
+                          name='discount'
+                          value={editFormData.discount}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value.length <= 2) { // Allow up to 2 characters
+                              handleEditChange(e); // Only update state if length is 2 or less
+                            }
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Discount Label
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          defaultValue={editProduct.discountLabel}
+                          name='discountLabel'
+                          value={editFormData.discountLabel}
+                          onChange={handleEditChange}
+                        />
+                      </div>
                     </div>
 
                     {/* Product Image */}

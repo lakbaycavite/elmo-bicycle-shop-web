@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Star } from 'lucide-react';
+import { X, Star, Flame } from 'lucide-react';
 import { getRatingsByProductId } from '../services/ratingService';
 
 const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModal, formatPrice }) => {
@@ -134,8 +134,33 @@ const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModa
                                     )}
                                 </div>
 
-                                <div className="text-2xl font-bold text-[#ff6900] mb-4">
-                                    {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                <div className="text-2xl font-bold text-[#ff6900] mb-4 flex gap-4">
+                                    {
+                                        viewProduct.discount === 0 ? (
+                                            <>
+                                                {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-gray-500 line-through">
+                                                    {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                                </span>
+                                                {(viewProduct.price * (1 - (Number(viewProduct.discount) / 100))).toFixed(2) ? formatPrice((viewProduct.price * (1 - (viewProduct.discount / 100))).toFixed(2)) : '₱0.00'}
+                                            </>
+                                        )
+                                    }
+                                    {
+                                        viewProduct.discountLabel && (
+                                            <div style={{ display: 'flex', alignContent: 'center', justifyContent: 'center', gap: '0.5rem', width: '300px', backgroundColor: 'rgba(255, 105, 0, 0.1)', borderRadius: '4px', height: '27px' }} className="text-[#ff6900] font-semibold">
+                                                <p>-{viewProduct.discount}% </p>
+
+                                                <p>{viewProduct.discountLabel} </p>
+                                                <p><Flame /></p>
+
+                                            </div>
+
+                                        )
+                                    }
                                 </div>
 
                                 <div className="mb-2">
