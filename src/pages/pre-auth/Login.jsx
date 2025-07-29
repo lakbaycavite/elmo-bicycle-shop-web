@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Eye, EyeOff, Mail, X, AlertCircle, CheckCircle, Loader } from 'lucide-react';
-import { doSignInWithEmailAndPassword, doPasswordReset } from '../../firebase/auth';
+import { useState, useEffect } from 'react';
+import { Eye, EyeOff, Mail, X, AlertCircle, CheckCircle, Loader, Link } from 'lucide-react';
+import { doSignInWithEmailAndPassword, doPasswordReset, doSendSignInLinkToEmail, isSignInWithLink, doSignInWithLink } from '../../firebase/auth';
+import { auth } from '../../firebase/firebase';
 import { getUserById } from '../../services/userService';
 import { toast } from 'sonner';
 
@@ -14,12 +15,24 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [isSigningIn, setIsSigningIn] = useState(false);
+  
+  // Email link authentication states
+  const [emailLinkLoading, setEmailLinkLoading] = useState(false);
+  const [showEmailLinkSection, setShowEmailLinkSection] = useState(false);
 
   // Password reset modal states
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailError, setResetEmailError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  
+  // Check if user is coming back from email link
+  useEffect(() => {
+    if (isSignInWithLink()) {
+      // Handle sign in with email link
+      handleSignInWithEmailLink();
+    }
+  }, []);
 
   const validate = () => {
     const newErrors = { email: '', password: '' };
@@ -50,49 +63,43 @@ function Login() {
 
       if (!isSigningIn) {
         setIsSigningIn(true);
-        await doSignInWithEmailAndPassword(email, password)
-          .then(async (userCredential) => {
-
-            // Get user from userCredential
-            const user = userCredential.user;
-
-            try {
-              const userRecord = await getUserById(user.uid);
-              const role = userRecord.role || 'customer';
-
-              // Redirect based on role
-              if (role === 'admin' || role === 'staff') {
-                navigate('/admin/dashboard');
-              } else {
-                navigate('/customer/home');
-              }
-            } catch (error) {
-              if (error.message === 'ACCOUNT_DISABLED') {
-                toast.error('Your account has been disabled. Please contact support.');
-              } else {
-                toast.error(error.code === 'auth/invalid-credential'
-                  ? 'Invalid email or password'
-                  : `Login error: ${error.message}`);
-              }
-              navigate('/login');
-            }
-
-            setIsSigningIn(false);
-            setLoading(false);
-          })
-          .catch((error) => {
-            if (error.message === 'ACCOUNT_DISABLED') {
-              toast.error('Your account has been disabled. Please contact support.');
-            } else {
-              toast.error(error.code === 'auth/invalid-credential'
-                ? 'Invalid email or password'
-                : `Login error: ${error.message}`);
-            }
-          })
-          .finally(() => {
-            setLoading(false);
-            setIsSigningIn(false);
+        
+        try {
+          // First verify credentials but don't maintain the session
+          const userCredential = await doSignInWithEmailAndPassword(email, password);
+          const user = userCredential.user;
+          
+          // Sign out immediately (we'll sign back in after email verification)
+          await auth.signOut();
+          
+          // Send the email verification link
+          await doSendSignInLinkToEmail(email);
+          
+          // Show success message
+          toast.success("Verification link sent! Check your email inbox.", {
+            description: "Please check your email and click the link to complete your login."
           });
+          
+          // Show verification message and stay on login page
+          setShowEmailLinkSection(true);
+          
+          // Reset form fields if needed, but keep the email visible
+          setPassword('');
+          
+        } catch (error) {
+          console.error("Login error:", error);
+          
+          if (error.message === 'ACCOUNT_DISABLED') {
+            toast.error('Your account has been disabled. Please contact support.');
+          } else {
+            toast.error(error.code === 'auth/invalid-credential'
+              ? 'Invalid email or password'
+              : `Login error: ${error.message}`);
+          }
+        } finally {
+          setLoading(false);
+          setIsSigningIn(false);
+        }
       }
     } else {
       console.log("Validation failed", errors);
@@ -154,6 +161,80 @@ function Login() {
     setResetEmail('');
     setResetEmailError('');
     setResetLoading(false);
+  };
+  
+  // Email link authentication methods
+  const handleSendSignInLink = async () => {
+    // Validate email
+    if (!email) {
+      setErrors({ ...errors, email: 'Email is required.' });
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrors({ ...errors, email: 'Enter a valid email.' });
+      return;
+    }
+    
+    setEmailLinkLoading(true);
+    
+    try {
+      await doSendSignInLinkToEmail(email);
+      toast.success("Login link sent! Check your email inbox.", {
+        description: "Make sure to use the same device to open the link."
+      });
+      setShowEmailLinkSection(true);
+    } catch (error) {
+      toast.error("Failed to send login link: " + (error.message || "Unknown error"));
+    } finally {
+      setEmailLinkLoading(false);
+    }
+  };
+  
+  const handleSignInWithEmailLink = async () => {
+    setLoading(true);
+    
+    try {
+      // Get the email from localStorage or prompt user if not available
+      let emailForSignIn = window.localStorage.getItem('emailForSignIn');
+      
+      if (!emailForSignIn) {
+        // If on a different device, prompt for email
+        emailForSignIn = prompt("Please provide your email for confirmation:");
+        if (!emailForSignIn) {
+          throw new Error("Email is required to complete sign-in");
+        }
+      }
+      
+      const userCredential = await doSignInWithLink(emailForSignIn);
+      
+      // After successful sign-in, get user info and redirect
+      const userRecord = await getUserById(userCredential.user.uid);
+      const role = userRecord.role || 'customer';
+      
+      toast.success("Login successful!");
+      
+      // Clear any verification messages
+      setShowEmailLinkSection(false);
+      
+      // Redirect based on role
+      if (role === 'admin' || role === 'staff') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/customer/home');
+      }
+    } catch (error) {
+      console.error("Error signing in with email link:", error);
+      
+      if (error.message === 'ACCOUNT_DISABLED') {
+        toast.error('Your account has been disabled. Please contact support.');
+      } else {
+        toast.error("Login failed: " + (error.message || "Unknown error"));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -244,6 +325,18 @@ function Login() {
                   'LOGIN'
                 )}
               </button>
+              
+              {/* Verification Link sent message */}
+              {showEmailLinkSection && (
+                <div className="bg-green-100 text-green-800 p-4 rounded-lg text-sm mt-3">
+                  <p className="font-semibold text-center">Verification link sent!</p>
+                  <p className="mt-2">We've sent a secure login link to <span className="font-semibold">{email}</span>. Please check your email and click the link to complete the login process.</p>
+                  <p className="mt-2">The link will expire in 15 minutes for security reasons.</p>
+                  <div className="mt-3 pt-2 border-t border-green-200 text-center">
+                    <span className="text-xs text-green-700">You can close this page and click the link from your email</span>
+                  </div>
+                </div>
+              )}
 
               <p className="text-sm text-center text-white/80">
                 <span
