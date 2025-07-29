@@ -374,8 +374,30 @@ function OrdersOverview() {
 
   // Calculate subtotal (without discount)
   const calculateSubtotal = (items) => {
-    if (items.finalPrice === 0) return items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    console.log('Calculating subtotal for items:', items);
+
+    return items.reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0
+      let itemPrice = Number(item.price) || 0; // Default to original price
+
+      // Check if item has a valid discounted price and use it
+      // The `item.discountedFinalPrice` should be the price *after* discount for that specific item.
+      // Also ensure `item.discount` is handled if that's your primary indicator of a discount.
+      const discountedFinalPrice = Number(item.discountedFinalPrice);
+      const originalPrice = Number(item.originalPrice); // Assuming you store originalPrice
+
+      // Prioritize the discounted price if it's explicitly set and valid (greater than 0)
+      // You might also check if a discount percentage (item.discount) exists and is > 0
+      if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
+        itemPrice = discountedFinalPrice;
+      } else if (originalPrice > 0 && !isNaN(originalPrice)) {
+        // Fallback to originalPrice if no valid discountedPrice
+        itemPrice = originalPrice;
+      }
+      // If both are 0 or invalid, itemPrice remains 0
+
+      return sum + (itemPrice * quantity);
+    }, 0);
   };
 
   // Placeholder discount (0% for demo)
@@ -644,7 +666,7 @@ function OrdersOverview() {
                             <td className="border border-gray-300 px-4 py-2">
 
                               {/* ₱{((item.finalPrice) * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })} */}
-                              ₱{((item.discountedFinalPrice - item.discountAmount) * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              ₱{((item.discountedFinalPrice * item.quantity) - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
 
                             </td>
                           )}
@@ -691,7 +713,9 @@ function OrdersOverview() {
               <div className="mb-6 bg-gray-50 p-4 rounded">
                 <h3 className="text-lg font-bold mb-3">Order Summary</h3>
                 {(() => {
+                  // const subtotal = calculateSubtotal(selectedOrder.products);
                   const subtotal = calculateSubtotal(selectedOrder.products);
+
                   const discount = calculateDiscount(selectedOrder.products);
                   const total = subtotal - discount;
 
