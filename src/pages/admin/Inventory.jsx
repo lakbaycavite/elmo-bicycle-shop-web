@@ -99,7 +99,8 @@ const Inventory = () => {
     type: '',
     weight: '',
     discount: 0,
-    discountLabel: ''
+    discountLabel: '',
+    discountedPrice: 0
   });
 
   const formatPrice = (price) => {
@@ -182,6 +183,7 @@ const Inventory = () => {
       return;
     }
 
+
     setEditProduct(product);
     setEditFormData({
       id: product.id,
@@ -196,7 +198,7 @@ const Inventory = () => {
       type: product.type || '',
       weight: product.weight || '',
       discount: product.discount || 0,
-      discountLabel: product.discountLabel || ''
+      discountLabel: product.discountLabel || '',
     });
     setShowEditModal(true);
   };
@@ -359,7 +361,8 @@ const Inventory = () => {
         ...editFormData,
         image: imageUrl || editFormData.image,
         updatedAt: Date.now(),
-        updatedBy: currentUserData?.email || 'Admin'
+        updatedBy: currentUserData?.email || 'Admin',
+        discountedFinalPrice: (editFormData.price * (1 - (Number(editFormData.discount) || 0) / 100)).toFixed(2) || 0
       };
 
       await updateProduct(editProduct.id, productData);
@@ -490,7 +493,16 @@ const Inventory = () => {
                         </div>
                         <div>
                           <div className="text-sm md:text-base font-medium text-white">{product.name}</div>
-                          <div className="text-xs md:text-sm text-gray-400">{formatPrice(product.price)}</div>
+                          <div className="text-xs md:text-sm text-gray-400">
+                            {
+                              Number(product.discountedFinalPrice) > 0
+                                ? <>
+                                  <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(product.price)}`}</span>
+                                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(product.discountedFinalPrice))}`}</span>
+                                </>
+                                : `₱${new Intl.NumberFormat().format(product.price)}`
+                            }
+                          </div>
                         </div>
                       </div>
                     </td>

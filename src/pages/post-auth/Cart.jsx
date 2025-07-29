@@ -19,7 +19,7 @@ const Cart = () => {
     const [viewProduct, setViewProduct] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-    const { cart, updateQuantity, removeItem, totalPrice, addToCart, clearCart } = useCart();
+    const { cart, updateQuantity, removeItem, totalPrice, totalDiscount, addToCart, clearCart } = useCart();
     const { products, getProduct } = useProducts();
 
     const navigate = useNavigate();
@@ -147,10 +147,18 @@ const Cart = () => {
                                         </div>
                                     </td>
                                     <td className="py-5 text-right font-medium">
-                                        {formatPrice(item.price)}
+                                        {
+                                            Number(item.discountedFinalPrice) > 0
+                                                ? formatPrice(Number(item.discountedFinalPrice))
+                                                : formatPrice(item.price)
+                                        }
                                     </td>
                                     <td className="py-5 text-right font-medium">
-                                        {formatPrice(item.price * item.quantity)}
+                                        {
+                                            Number(item.discountedFinalPrice) > 0
+                                                ? formatPrice(Number(item.discountedFinalPrice) * item.quantity)
+                                                : formatPrice(item.price * item.quantity)
+                                        }
                                     </td>
                                 </tr>
                             ))}
@@ -175,7 +183,9 @@ const Cart = () => {
                                     <span className="font-medium">{formatPrice(totalPrice)}</span>
                                 </div>
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-gray-600">Discount:</span>
+                                    <span className="text-gray-600">Discount: </span>
+                                    <span className="text-red-500">{formatPrice(totalDiscount)}</span>
+
                                 </div>
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                     <span className="font-bold text-lg">Grand Total:</span>

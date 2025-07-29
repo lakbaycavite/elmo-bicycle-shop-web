@@ -72,7 +72,14 @@ const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRa
             <span className="badge" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}>{bike.category}</span>
           </div>
           <p className="fs-5 fw-bold mb-0" style={{ color: 'var(--primary-accent)' }}>
-            ₱{new Intl.NumberFormat().format(bike.price)}
+            {
+              Number(bike.discountedFinalPrice) > 0
+                ? <>
+                  <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(bike.price)}`}</span>
+                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(bike.discountedFinalPrice))}`}</span>
+                </>
+                : `₱${new Intl.NumberFormat().format(bike.price)}`
+            }
           </p>
         </div>
 
@@ -274,7 +281,7 @@ const BikesCategory = () => {
       if (location.state.ratingFilter) {
         setSelectedRatingFilter(location.state.ratingFilter);
       }
-      
+
       // Check if handleShowDetailsModal ID is passed in state
       if (location.state.handleShowDetailsModal && products) {
         // Find the product with matching ID

@@ -619,15 +619,34 @@ function OrdersOverview() {
                         <tr key={index}>
                           <td className="border border-gray-300 px-4 py-2">{item.name}</td>
                           <td className="border border-gray-300 px-4 py-2">{item.quantity}</td>
-                          <td className="border border-gray-300 px-4 py-2">₱{item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                          <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity)?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                          <td className="border border-gray-300 px-4 py-2">{
+                            Number(item.discountedFinalPrice) > 0
+                              ? <>
+                                <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(item.price)}`}</span>
+                                <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(item.discountedFinalPrice))}`}</span>
+                              </>
+                              : `₱${new Intl.NumberFormat().format(item.price)}`
+                          }</td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {
+                              Number(item.discountedFinalPrice) > 0
+                                ? <>
+                                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(item.discountedFinalPrice * item.quantity))}`}</span>
+                                </>
+                                : `₱${new Intl.NumberFormat().format(item.price)}`
+                            }</td>
 
                           <td className="border border-gray-300 px-4 py-2">₱{item.discountAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
 
                           {item.finalPrice === 0 ? (
                             <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                           ) : (
-                            <td className="border border-gray-300 px-4 py-2">₱{(item.finalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                            <td className="border border-gray-300 px-4 py-2">
+
+                              {/* ₱{((item.finalPrice) * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })} */}
+                              ₱{((item.discountedFinalPrice - item.discountAmount) * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+
+                            </td>
                           )}
                         </tr>
                       ))}
