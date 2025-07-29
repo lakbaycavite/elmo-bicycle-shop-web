@@ -268,7 +268,28 @@ function OrdersOverview() {
 
     const itemTableRows = [];
 
-    const subtotal = selectedOrder.products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = selectedOrder.products.reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0
+      let itemPrice = Number(item.price) || 0; // Default to original price
+
+      // Check if item has a valid discounted price and use it
+      // The `item.discountedFinalPrice` should be the price *after* discount for that specific item.
+      // Also ensure `item.discount` is handled if that's your primary indicator of a discount.
+      const discountedFinalPrice = Number(item.discountedFinalPrice);
+      const originalPrice = Number(item.originalPrice); // Assuming you store originalPrice
+
+      // Prioritize the discounted price if it's explicitly set and valid (greater than 0)
+      // You might also check if a discount percentage (item.discount) exists and is > 0
+      if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
+        itemPrice = discountedFinalPrice;
+      } else if (originalPrice > 0 && !isNaN(originalPrice)) {
+        // Fallback to originalPrice if no valid discountedPrice
+        itemPrice = originalPrice;
+      }
+      // If both are 0 or invalid, itemPrice remains 0
+
+      return sum + (itemPrice * quantity);
+    }, 0);
     const discount = selectedOrder.products.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     const total = subtotal - discount;
 
@@ -277,10 +298,10 @@ function OrdersOverview() {
       itemTableRows.push([
         item.quantity.toString(),
         item.name + ' (id: ' + item.id + ')',
-        `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
-        `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
         item.discountAmount ? `PHP ${item.discountAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : 'PHP 0.00',
-        item.finalPrice ? `PHP ${(item.finalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
       ]);
     });
 
