@@ -12,12 +12,13 @@ import { useCart } from '../hooks/useCart';
 import NotificationBadge from './NotificationBadge';
 import NotificationModal from './NotificationModal';
 import { toast } from 'sonner';
+import { useAuth } from '../context/authContext/createAuthContext';
 
 function Navbar({ isLoggedIn = false }) {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsModalOpen, setNotificationsModalOpen] = useState(false); // New state for modal
-
+  const { userLoggedIn } = useAuth();
   const { itemCount } = useCart();
 
   // Close drawer when screen size becomes large
@@ -75,9 +76,13 @@ function Navbar({ isLoggedIn = false }) {
           </div>
 
           {/* Search Bar (hidden on small screens) */}
-          <div className={`flex-1 flex justify-center px-6 ${isLoggedIn ? 'hidden lg:flex' : 'hidden md:flex'}`}>
-            <SearchBar />
-          </div>
+          {
+            isLoggedIn && (
+              <div className={`flex-1 flex justify-center px-6 ${isLoggedIn ? 'hidden lg:flex' : 'hidden md:flex'}`}>
+                <SearchBar />
+              </div>
+            )
+          }
 
           {/* Navigation Links & Right-side Buttons */}
           <div className={`${isLoggedIn ? 'hidden lg:flex' : 'hidden md:flex'} items-center gap-6`}>
