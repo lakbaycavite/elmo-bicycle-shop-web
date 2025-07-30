@@ -78,7 +78,7 @@ function HomePage() {
       <Navbar isLoggedIn={userLoggedIn} />
 
       {/* Hero/Header Section */}
-      <section className="w-full px-4 md:px-0 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto pt-12 pb-8">
+      <section id="about-section" className="w-full px-4 md:px-0 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto pt-12 pb-8">
         {/* Left: Text Content */}
         <div className="flex-1 md:pr-12">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">Elmo Bicycle Shop</h1>
@@ -87,7 +87,17 @@ function HomePage() {
           </p>
           <div className="flex gap-4 mb-4">
             <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded transition" type='button' onClick={() => navigate('/customer/products')}>Shop Now</button>
-            <button className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200" type='button' onClick={() => navigate('/customer/bikes-category')}>Explore Products</button>
+            <button className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200" type='button' onClick={() => {
+              navigate('/customer/home')
+              setTimeout(() => {
+                const contactSection = document.getElementById('categories-section');
+                if (contactSection) {
+                  contactSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }, 100);
+            }}>
+              Explore Products
+            </button>
           </div>
         </div>
         {/* Right: Hero Image (no overlays, no border, full scale) */}
@@ -157,7 +167,7 @@ function HomePage() {
       </section>
 
       {/* Our Categories Section */}
-      <section className="w-full bg-[#181818] py-14">
+      <section id="categories-section" className="w-full bg-[#181818] py-14">
         <div className="text-center mb-2">
           <span className="text-orange-500 font-semibold tracking-widest text-xs md:text-sm uppercase">Your Ride Start Here.</span>
         </div>
@@ -285,7 +295,14 @@ function HomePage() {
             <div className="font-semibold mb-2 text-white text-left">Shop</div>
             <div className="text-white text-sm space-y-1 text-left flex flex-col">
               <div>
-                <Link to="#" className="text-white no-underline hover:text-orange-500 transition">About Us</Link>
+                <Link to="#" className="text-white no-underline hover:text-orange-500 transition" onClick={() => {
+                  setTimeout(() => {
+                    const contactSection = document.getElementById('about-section');
+                    if (contactSection) {
+                      contactSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }, 100);
+                }}>About Us</Link>
               </div>
               <div>
                 <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</Link>
