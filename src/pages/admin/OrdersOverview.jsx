@@ -642,6 +642,9 @@ function OrdersOverview() {
               </div>
 
               {/* Order Items */}
+              // Replace your Order Items table section in the modal with this fixed version:
+
+              {/* Order Items */}
               <div className="mb-6">
                 <h3 className="text-lg font-bold mb-3">Order Items</h3>
                 <div className="overflow-x-auto">
@@ -657,41 +660,48 @@ function OrdersOverview() {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOrder.products.map((item, index) => (
-                        <tr key={index}>
-                          <td className="border border-gray-300 px-4 py-2">{item.name}</td>
-                          <td className="border border-gray-300 px-4 py-2">{item.quantity}</td>
-                          <td className="border border-gray-300 px-4 py-2">{
-                            Number(item.discountedFinalPrice) > 0
-                              ? <>
-                                <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(item.price)}`}</span>
-                                <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(item.discountedFinalPrice))}`}</span>
-                              </>
-                              : `₱${new Intl.NumberFormat().format(item.price)}`
-                          }</td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {
-                              Number(item.discountedFinalPrice) > 0
-                                ? <>
-                                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(item.discountedFinalPrice * item.quantity))}`}</span>
-                                </>
-                                : `₱${new Intl.NumberFormat().format(item.price)}`
-                            }</td>
+                      {selectedOrder.products.map((item, index) => {
+                        // Safe number conversions with fallbacks
+                        const quantity = Number(item.quantity) || 0;
+                        const originalPrice = Number(item.price) || 0;
+                        const discountedFinalPrice = Number(item.discountedFinalPrice) || 0;
+                        const discountAmount = Number(item.discountAmount) || 0;
 
-                          <td className="border border-gray-300 px-4 py-2">₱{item.discountAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        // Determine which price to use
+                        const currentPrice = discountedFinalPrice > 0 ? discountedFinalPrice : originalPrice;
+                        const subtotal = currentPrice * quantity;
+                        const finalTotal = subtotal - discountAmount;
 
-                          {item.finalPrice === 0 ? (
-                            <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                          ) : (
+                        return (
+                          <tr key={index}>
+                            <td className="border border-gray-300 px-4 py-2">{item.name}</td>
+                            <td className="border border-gray-300 px-4 py-2">{quantity}</td>
                             <td className="border border-gray-300 px-4 py-2">
-
-                              {/* ₱{((item.finalPrice) * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })} */}
-                              ₱{((item.discountedFinalPrice * item.quantity) - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-
+                              {discountedFinalPrice > 0 ? (
+                                <>
+                                  <span className="line-through text-gray-500">
+                                    ₱{originalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                  </span>
+                                  <span className="ml-2 text-green-600">
+                                    ₱{discountedFinalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </>
+                              ) : (
+                                `₱${originalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+                              )}
                             </td>
-                          )}
-                        </tr>
-                      ))}
+                            <td className="border border-gray-300 px-4 py-2">
+                              ₱{subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2">
+                              ₱{discountAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2">
+                              ₱{finalTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
