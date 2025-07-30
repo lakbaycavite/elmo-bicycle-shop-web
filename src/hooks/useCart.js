@@ -17,9 +17,7 @@ export function useCart() {
     const [totalPrice, setTotalPrice] = useState(0);
     const [totalDiscount, setTotalDiscount] = useState(0);
 
-    // Helper function to calculate the discount amount for a single item
     const calculateItemDiscountAmount = useCallback((item) => {
-        // Use parseFloat for potentially decimal numbers and provide a default of 0
         const originalPrice = parseFloat(item.originalPrice || 0);
         const discountPercentage = parseFloat(item.discount || 0);
         const quantity = parseFloat(item.quantity || 0); // Quantity should also be a number
@@ -69,34 +67,78 @@ export function useCart() {
                     let currentTotalDiscount = 0;
 
                     cartItems.forEach(item => {
-                        const quantity = parseFloat(item.quantity || 0); // Ensure quantity is a number
-                        if (isNaN(quantity)) {
+                        console.log(`Processing item: ${item.name || item.productId}`, {
+                            quantity: item.quantity,
+                            originalPrice: item.originalPrice,
+                            discountedFinalPrice: item.discountedFinalPrice,
+                            discount: item.discount,
+                            discountAmount: item.discountAmount
+                        });
+
+                        const quantity = parseFloat(item.quantity || 0);
+                        if (isNaN(quantity) || quantity <= 0) {
                             console.warn(`Invalid quantity for item ${item.productId}: ${item.quantity}`);
-                            return; // Skip this item if quantity is invalid
+                            return;
                         }
+
                         currentItemCount += quantity;
 
-                        // Use parseFloat and provide a default of 0 to prevent NaN
-                        const discountedFinalPrice = parseFloat(item.discountedFinalPrice || 0);
+                        // Parse all price-related fields
                         const originalPrice = parseFloat(item.originalPrice || 0);
+                        const discountedFinalPrice = parseFloat(item.discountedFinalPrice || 0);
+                        const discountAmount = parseFloat(item.discountAmount || 0);
 
-                        let effectivePricePerItem;
+                        let itemSubtotal = 0;
+                        let itemDiscountTotal = 0;
 
-                        // More robust check for valid discountedFinalPrice
+                        // Case 1: Item has a discounted final price
                         if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
-                            effectivePricePerItem = discountedFinalPrice;
-                        } else if (originalPrice > 0 && !isNaN(originalPrice)) {
-                            effectivePricePerItem = originalPrice;
-                        } else {
-                            console.warn(`Invalid price for item ${item.productId}. discountedFinalPrice: ${item.discountedFinalPrice}, originalPrice: ${item.originalPrice}`);
-                            effectivePricePerItem = 0; // Default to 0 if both prices are invalid
+                            itemSubtotal = discountedFinalPrice * quantity;
+
+                            // Calculate discount amount if not explicitly provided
+                            if (discountAmount > 0 && !isNaN(discountAmount)) {
+                                itemDiscountTotal = discountAmount * quantity;
+                            } else if (originalPrice > 0) {
+                                // Calculate discount based on price difference
+                                const discountPerItem = originalPrice - discountedFinalPrice;
+                                itemDiscountTotal = discountPerItem * quantity;
+                            }
+                        }
+                        // Case 2: Item has original price but no discount
+                        else if (originalPrice > 0 && !isNaN(originalPrice)) {
+                            itemSubtotal = originalPrice * quantity;
+                            itemDiscountTotal = 0;
+                        }
+                        // Case 3: Fallback to any available price field
+                        else {
+                            const fallbackPrice = parseFloat(item.price || 0);
+                            if (fallbackPrice > 0 && !isNaN(fallbackPrice)) {
+                                itemSubtotal = fallbackPrice * quantity;
+                                itemDiscountTotal = 0;
+                            } else {
+                                console.warn(`No valid price found for item ${item.productId}`);
+                                itemSubtotal = 0;
+                                itemDiscountTotal = 0;
+                            }
                         }
 
-                        currentTotalPrice += (effectivePricePerItem * quantity);
+                        console.log(`Item calculation result:`, {
+                            itemSubtotal,
+                            itemDiscountTotal,
+                            effectivePrice: itemSubtotal / quantity
+                        });
 
-                        currentTotalDiscount += calculateItemDiscountAmount(item);
+                        currentTotalPrice += itemSubtotal;
+                        currentTotalDiscount += itemDiscountTotal;
                     });
-                    console.log("currentTotalPrice:", currentTotalPrice);
+
+                    console.log("Final totals:", {
+                        currentItemCount,
+                        currentTotalPrice,
+                        currentTotalDiscount,
+                        finalTotal: currentTotalPrice - currentTotalDiscount
+                    });
+
                     setItemCount(currentItemCount);
                     setTotalPrice(currentTotalPrice);
                     setTotalDiscount(currentTotalDiscount);
@@ -114,9 +156,9 @@ export function useCart() {
             setLoading(false);
         });
 
-        // Clean up subscription
         return () => unsubscribe();
-    }, [calculateItemDiscountAmount]);
+    }, []); // Remove calculateItemDiscountAmount dependency since we're not using it anymore
+
 
     // Add item to cart
     const addToCart = useCallback(async (productId, quantity, productDetails) => {
