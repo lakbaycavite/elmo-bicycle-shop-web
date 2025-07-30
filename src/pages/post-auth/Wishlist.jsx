@@ -33,6 +33,9 @@ const Wishlist = () => {
         })
     }, [wishlist, searchFilter, categoryFilter, priceSort])
 
+    console.log("Filtered Wishlist:", filteredWishlist);
+
+    const formatPrice = (price) => `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
 
     return (
         <div className="w-full min-h-screen flex justify-center items-center bg-gradient-to-b from-stone-900 via-stone-900 to-orange-500 flex-col p-4">
@@ -146,7 +149,44 @@ const Wishlist = () => {
                                                     />
                                                 </td>
                                                 <td className="p-2" style={{ background: "transparent", color: "white", border: "none" }}>{item.name}</td>
-                                                <td className="p-2" style={{ background: "transparent", color: "white", border: "none" }}>₱{parseFloat(item.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                                                <td className="p-2" style={{ background: "transparent", color: "white", border: "none" }}>
+
+                                                    {
+                                                        // Check if discount is 0, or if it's undefined/null/not a valid number,
+                                                        // which effectively means no discount should be applied.
+                                                        // We also check if the numerical value of discount is 0 or less, which means no effective discount.
+                                                        Number(item.discount) <= 0 || item.discount === undefined || item.discount === null || isNaN(Number(item.discount)) ? (
+                                                            // Case: No discount or invalid discount value
+                                                            <>
+                                                                {/* Display the original price */}
+                                                                {item.price ? formatPrice(item.price) : '₱0.00'}
+                                                            </>
+                                                        ) : (
+                                                            // Case: There is a valid discount greater than 0
+                                                            <>
+                                                                {/* Display the original price with a strikethrough */}
+                                                                <span className="text-gray-500 line-through">
+                                                                    {item.price ? formatPrice(item.price) : '₱0.00'}
+                                                                </span>
+
+                                                                {/* Calculate and display the discounted price */}
+                                                                {(() => {
+                                                                    const price = Number(item.price);
+                                                                    const discount = Number(item.discount);
+
+                                                                    // Ensure price and discount are valid numbers before calculation
+                                                                    if (isNaN(price) || isNaN(discount) || price <= 0) {
+                                                                        return '₱0.00'; // Return default if price or discount is invalid
+                                                                    }
+
+                                                                    const discountedPrice = price * (1 - (discount / 100));
+
+                                                                    return ` ₱${discountedPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+                                                                })()}
+                                                            </>
+                                                        )
+                                                    }
+                                                </td>
                                                 <td className="p-2" style={{ background: "transparent", color: "white", border: "none" }}>{item.category}</td>
                                                 <td className="p-2 text-center" style={{ background: "transparent", color: "white", border: "none" }}>
                                                     <button className='' onClick={() => moveItemToCart(item.id)} style={{ background: "#ff6900", color: "white", padding: "0.5rem 1rem", borderRadius: "0.375rem" }} disabled={loading}>

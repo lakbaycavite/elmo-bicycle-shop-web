@@ -98,7 +98,9 @@ function HomePage() {
           category: product.category,
           brand: product.brand || '',
           type: product.type || '',
-          description: product.description || ""
+          description: product.description || "",
+          discountedFinalPrice: product.discountedFinalPrice || 0,
+          discount: product.discount || 0
         });
         toast.success(`${product.brand || product.name} added to wishlist!`);
       }

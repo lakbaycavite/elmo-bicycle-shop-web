@@ -33,7 +33,9 @@ export const addToWishlist = async (product) => {
             image: product.image || "",
             category: product.category || "",
             description: product.description || "",
-            dateAdded: new Date().toISOString()
+            dateAdded: new Date().toISOString(),
+            discountedFinalPrice: product.discountedFinalPrice || 0,
+            discount: product.discount || 0
         };
 
         await set(newItemRef, wishlistItem);
