@@ -9,14 +9,16 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart'; // Import your useCart hook
 import { useWishlist } from '../hooks/useWishlist'; // Import your useWishlist hook
 import { toast } from 'sonner'; // For showing notifications
-import { Heart } from 'lucide-react'; // Import Heart icon for wishlist
-
+import { Flame, Heart } from 'lucide-react'; // Import Heart icon for wishlist
+import ProductDetailsModal2 from '../components/ProductsDetailsModal2';
 function HomePage() {
 
   const { userLoggedIn } = useAuth();
   const [latestBikes, setLatestBikes] = useState([]);
   const [gears, setGears] = useState([]);
   const [accessories, setAccessories] = useState([]);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [viewProduct, setViewProduct] = useState(null);
   const navigate = useNavigate();
 
   // Import cart functionality
@@ -113,6 +115,35 @@ function HomePage() {
     return wishlist.some(item => item.productId === productId);
   };
 
+  // Handle product details functionality
+  const handleProductDetails = (product, isLatestBike = false) => {
+    if (!userLoggedIn) {
+      // If user is not logged in, show the ProductDetailsModal2
+      setViewProduct({
+        ...product,
+        image: product.imageUrl || product.image || (isLatestBike ? "/images/bike.png" : "/images/bikehelmet1.png")
+      });
+      setShowDetailsModal(true);
+    } else {
+      // If user is logged in, navigate to the appropriate category page
+      if (isLatestBike) {
+        navigate('/customer/bikes-category/', { state: { handleShowDetailsModal: product.id } });
+      } else {
+        const categoryRoute = product.category === 'Gears' ?
+          '/customer/gears-parts-category/' :
+          '/customer/accessories-category/';
+        navigate(categoryRoute, { state: { handleShowDetailsModal: product.id } });
+      }
+    }
+  };
+
+  // Format price helper function
+  const formatPrice = (price) => {
+    const numPrice = Number(price);
+    if (isNaN(numPrice)) return '₱0.00';
+    return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+  };
+
   // Product card component with wishlist functionality
   const ProductCard = ({ product, isLatestBike = false }) => (
     <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md relative">
@@ -142,7 +173,44 @@ function HomePage() {
       <div className="w-full text-center">
         <h3 className="text-white font-semibold text-base mb-1">{product.name}</h3>
         <div className="text-gray-400 text-xs mb-1">{product.brand || product.category}</div>
-        <div className="text-orange-400 text-sm mb-2">₱{product.price}</div>
+        <div className="text-orange-400 text-sm mb-2"> {
+          // Check if discount is 0, or if it's undefined/null/not a valid number,
+          // which effectively means no discount should be applied.
+          // We also check if the numerical value of discount is 0 or less, which means no effective discount.
+          Number(product.discount) <= 0 || product.discount === undefined || product.discount === null || isNaN(Number(product.discount)) ? (
+            // Case: No discount or invalid discount value
+            <>
+              {/* Display the original price */}
+              {product.price ? formatPrice(product.price) : '₱0.00'}
+            </>
+          ) : (
+            // Case: There is a valid discount greater than 0
+            <>
+              {/* Display the original price with a strikethrough */}
+              <span className="text-gray-500 line-through">
+                {product.price ? formatPrice(product.price) : '₱0.00'}
+              </span>
+
+              {/* Calculate and display the discounted price */}
+              {(() => {
+                const price = Number(product.price);
+                const discount = Number(product.discount);
+
+                // Ensure price and discount are valid numbers before calculation
+                if (isNaN(price) || isNaN(discount) || price <= 0) {
+                  return '₱0.00'; // Return default if price or discount is invalid
+                }
+
+                const discountedPrice = price * (1 - (discount / 100));
+
+                return ` ₱${discountedPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+              })()}
+            </>
+          )
+        }
+
+
+        </div>
         <div className="flex justify-center gap-2 mt-2">
           <button
             className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
@@ -154,16 +222,7 @@ function HomePage() {
           <button
             className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200"
             type='button'
-            onClick={() => {
-              if (isLatestBike) {
-                navigate('/customer/bikes-category/', { state: { handleShowDetailsModal: product.id } });
-              } else {
-                const categoryRoute = product.category === 'Gears' ?
-                  '/customer/gears-parts-category/' :
-                  '/customer/accessories-category/';
-                navigate(categoryRoute, { state: { handleShowDetailsModal: product.id } });
-              }
-            }}
+            onClick={() => handleProductDetails(product, isLatestBike)}
           >
             Details
           </button>
@@ -330,6 +389,14 @@ function HomePage() {
           }
         </div >
       </section >
+
+      {/* ProductDetailsModal2 for non-logged-in users */}
+      <ProductDetailsModal2
+        showDetailsModal={showDetailsModal}
+        viewProduct={viewProduct}
+        setShowDetailsModal={setShowDetailsModal}
+        formatPrice={formatPrice}
+      />
 
       {/* Footer Section */}
       <footer id="contact-section" className="bg-[#181818] text-white pt-12 pb-4 mt-8">
