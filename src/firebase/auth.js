@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updatePassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateEmail, updatePassword } from "firebase/auth";
 import { auth } from "./firebase";
 import { get, getDatabase, ref, set } from "firebase/database";
 
@@ -143,6 +143,159 @@ export const doPasswordChange = async (currentPassword, newPassword) => {
         return updatePassword(user, newPassword);
     } catch (error) {
         console.error("Error changing password:", error);
+        throw error;
+    }
+}
+
+export const doEmailChange = async (currentPassword, newEmail) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("No user is currently logged in");
+    }
+
+    try {
+        // Create credential with user's current email and password
+        const credential = EmailAuthProvider.credential(
+            user.email,
+            currentPassword
+        );
+
+        // Reauthenticate the user
+        await reauthenticateWithCredential(user, credential);
+
+        // Reload user to get latest verification status
+        await user.reload();
+        const refreshedUser = auth.currentUser;
+
+        // Check if email is verified
+        if (!refreshedUser.emailVerified) {
+            // Send verification email and store pending request
+            await sendEmailVerification(refreshedUser);
+
+            const db = getDatabase();
+            await set(ref(db, 'users/' + user.uid + '/pendingEmailChange'), {
+                newEmail: newEmail,
+                requestedAt: new Date().toISOString(),
+                status: 'awaiting_verification'
+            });
+
+            return {
+                success: false,
+                requiresVerification: true,
+                message: 'Please check your current email and click the verification link, then try changing your email again.'
+            };
+        }
+
+        // Try to update email directly
+        try {
+            await updateEmail(refreshedUser, newEmail);
+
+            // If successful, update database
+            const db = getDatabase();
+            await set(ref(db, 'users/' + user.uid + '/email'), newEmail);
+            await set(ref(db, 'users/' + user.uid + '/lastEmailUpdate'), new Date().toISOString());
+
+            // Clear any pending email change requests
+            await set(ref(db, 'users/' + user.uid + '/pendingEmailChange'), null);
+
+            return { success: true, newEmail, requiresVerification: false };
+
+        } catch (updateError) {
+            console.error("Update email error:", updateError);
+
+            // Handle specific Firebase errors
+            if (updateError.code === 'auth/operation-not-allowed') {
+                // This might happen if the Firebase project settings don't allow email changes
+                return {
+                    success: false,
+                    message: 'Email changes are not allowed in this configuration. Please contact your administrator.',
+                    adminRequired: true
+                };
+            } else if (updateError.code === 'auth/requires-recent-login') {
+                return {
+                    success: false,
+                    message: 'Please sign out and sign back in, then try changing your email again.',
+                    requiresReauth: true
+                };
+            }
+
+            throw updateError;
+        }
+    } catch (error) {
+        console.error("Error changing email:", error);
+        throw error;
+    }
+}
+
+// Check if user's email is verified
+export const checkEmailVerificationStatus = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("No user is currently logged in");
+    }
+
+    // Reload user to get latest status
+    await user.reload();
+    return auth.currentUser.emailVerified;
+}
+
+// Force refresh user token and verification status
+export const refreshUserVerificationStatus = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("No user is currently logged in");
+    }
+
+    // Reload user data from Firebase
+    await user.reload();
+
+    // Get fresh token
+    await user.getIdToken(true);
+
+    return {
+        emailVerified: auth.currentUser.emailVerified,
+        email: auth.currentUser.email
+    };
+}
+
+// Alternative method: Send verification to new email directly
+export const doSendEmailChangeVerification = async (currentPassword, newEmail) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("No user is currently logged in");
+    }
+
+    try {
+        // Create credential with user's current email and password
+        const credential = EmailAuthProvider.credential(
+            user.email,
+            currentPassword
+        );
+
+        // Reauthenticate the user
+        await reauthenticateWithCredential(user, credential);
+
+        // Store the pending email change request
+        const db = getDatabase();
+        await set(ref(db, 'users/' + user.uid + '/pendingEmailChange'), {
+            newEmail: newEmail,
+            requestedAt: new Date().toISOString(),
+            status: 'verification_sent'
+        });
+
+        // For now, we'll use a workaround - send verification to current email
+        // and inform user to contact admin for email change
+        await sendEmailVerification(user);
+
+        return {
+            success: true,
+            message: 'Email change request submitted. Please verify your current email and contact administrator to complete the email change process.',
+            requiresAdminAction: true
+        };
+    } catch (error) {
+        console.error("Error requesting email change:", error);
         throw error;
     }
 }
