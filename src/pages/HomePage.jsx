@@ -135,24 +135,25 @@ function HomePage() {
 
       {/* Best Sellers Products This week Section */}
       <section className="w-full bg-[#f5f5f5] py-12">
-        <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-10">Best Sellers Products<br />This week</h2>
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
-          {/* Most Popular Bike This Month */}
-          <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
-            <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bike This Month</h3>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category', { state: { ratingFilter: '5' } })}>Show More</button>
-            <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
-          </div>
-          {/* Most Popular Bike This Week */}
-          <div className="bg-[#232323] rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
+        {/* <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4"> */}
+        {/* Most Popular Bike This Month */}
+        <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
+          <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-10">Best Sellers Products<br />This week</h2>
+
+          <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bike This Month</h3>
+          <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category', { state: { ratingFilter: '5' } })}>Show More</button>
+          <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
+        </div>
+        {/* Most Popular Bike This Week */}
+        {/* <div className="bg-[#232323] rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
             <h3 className="text-white font-semibold text-base mb-2 text-center">Most Popular Bike This Week</h3>
             <div className="text-gray-400 text-sm mb-3 mt-2">COMING SOON!</div>
             <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Show More</button>
             <div className="text-gray-400 text-xs mt-4 text-center">
               Price: Unknown<br />Stock: Unknown<br />Weight: Unknown
             </div>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
       </section>
 
       {/* Our Categories Section */}
@@ -295,19 +296,22 @@ function HomePage() {
             </div>
           </div>
           {/* Right: About & Socials */}
-          <div className="flex-1">
+          {/* <div className="flex-1">
             <div className="font-semibold mb-2 text-white">About The Shop</div>
-            <div className="flex gap-4 mt-4">
-              {/* Facebook SVG */}
-              <Link to="#" aria-label="Facebook" className="text-white hover:text-orange-500 transition">
+         
+
+               <div className="flex gap-4 mt-4">
+              <Link to="" aria-label="Facebook" className="text-white hover:text-orange-500 transition">
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H5v4h5v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
               </Link>
-              {/* Instagram SVG */}
               <Link to="#" aria-label="Instagram" className="text-white hover:text-orange-500 transition">
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.5" y2="6.5" /></svg>
               </Link>
             </div>
-          </div>
+
+
+          </div> */}
+
         </div>
         <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs text-gray-400">
           2024 Copyright Act: <Link to="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</Link>
