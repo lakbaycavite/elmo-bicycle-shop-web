@@ -7,7 +7,6 @@ import {
     removeFromCart as removeItemService,
     clearCart as clearCartService
 } from '../services/cartService'
-import Cart from '../pages/post-auth/Cart';
 import { toast } from 'sonner';
 
 export function useCart() {
@@ -16,14 +15,14 @@ export function useCart() {
     const [error, setError] = useState(null);
     const [itemCount, setItemCount] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
-    const [totalDiscount, setTotalDiscount] = useState(0); // New state for total discount
+    const [totalDiscount, setTotalDiscount] = useState(0);
 
     // Helper function to calculate the discount amount for a single item
-    // Make sure this logic matches how discounts are applied and stored
     const calculateItemDiscountAmount = useCallback((item) => {
-        const originalPrice = Number(item.originalPrice); // Ensure you're storing originalPrice
-        const discountPercentage = Number(item.discount || 0); // Your 'discount' field is the percentage
-        const quantity = Number(item.quantity);
+        // Use parseFloat for potentially decimal numbers and provide a default of 0
+        const originalPrice = parseFloat(item.originalPrice || 0);
+        const discountPercentage = parseFloat(item.discount || 0);
+        const quantity = parseFloat(item.quantity || 0); // Quantity should also be a number
 
         if (isNaN(originalPrice) || isNaN(discountPercentage) || isNaN(quantity) || originalPrice <= 0 || discountPercentage <= 0) {
             return 0; // No valid discount or price
@@ -40,7 +39,7 @@ export function useCart() {
             setCart([]);
             setItemCount(0);
             setTotalPrice(0);
-            setTotalDiscount(0); // Reset total discount
+            setTotalDiscount(0);
             setLoading(false);
             return;
         }
@@ -55,7 +54,7 @@ export function useCart() {
                     setCart([]);
                     setItemCount(0);
                     setTotalPrice(0);
-                    setTotalDiscount(0); // Reset total discount
+                    setTotalDiscount(0);
                 } else {
                     const cartData = snapshot.val();
                     const cartItems = Object.keys(cartData).map(key => ({
@@ -65,30 +64,42 @@ export function useCart() {
 
                     setCart(cartItems);
 
-                    // Calculate totals
                     let currentItemCount = 0;
                     let currentTotalPrice = 0;
-                    let currentTotalDiscount = 0; // Initialize for discount calculation
+                    let currentTotalDiscount = 0;
 
                     cartItems.forEach(item => {
-                        currentItemCount += Number(item.quantity);
+                        const quantity = parseFloat(item.quantity || 0); // Ensure quantity is a number
+                        if (isNaN(quantity)) {
+                            console.warn(`Invalid quantity for item ${item.productId}: ${item.quantity}`);
+                            return; // Skip this item if quantity is invalid
+                        }
+                        currentItemCount += quantity;
 
-                        // Calculate the price for totalPrice
-                        // Prefer discountedFinalPrice if it exists and is valid, otherwise use original price
-                        const effectivePricePerItem = (Number(item.discountedFinalPrice) > 0 && !isNaN(Number(item.discountedFinalPrice)))
-                            ? Number(item.discountedFinalPrice)
-                            : Number(item.originalPrice); // Fallback to originalPrice
+                        // Use parseFloat and provide a default of 0 to prevent NaN
+                        const discountedFinalPrice = parseFloat(item.discountedFinalPrice || 0);
+                        const originalPrice = parseFloat(item.originalPrice || 0);
 
-                        currentTotalPrice += (effectivePricePerItem * Number(item.quantity));
+                        let effectivePricePerItem;
 
-                        // Calculate and add to total discount
+                        // More robust check for valid discountedFinalPrice
+                        if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
+                            effectivePricePerItem = discountedFinalPrice;
+                        } else if (originalPrice > 0 && !isNaN(originalPrice)) {
+                            effectivePricePerItem = originalPrice;
+                        } else {
+                            console.warn(`Invalid price for item ${item.productId}. discountedFinalPrice: ${item.discountedFinalPrice}, originalPrice: ${item.originalPrice}`);
+                            effectivePricePerItem = 0; // Default to 0 if both prices are invalid
+                        }
+
+                        currentTotalPrice += (effectivePricePerItem * quantity);
+
                         currentTotalDiscount += calculateItemDiscountAmount(item);
-                      
                     });
-
+                    console.log("currentTotalPrice:", currentTotalPrice);
                     setItemCount(currentItemCount);
                     setTotalPrice(currentTotalPrice);
-                    setTotalDiscount(currentTotalDiscount); // Update the total discount state
+                    setTotalDiscount(currentTotalDiscount);
                 }
                 setError(null);
             } catch (err) {
@@ -105,11 +116,9 @@ export function useCart() {
 
         // Clean up subscription
         return () => unsubscribe();
-    }, [calculateItemDiscountAmount]); // Add calculateItemDiscountAmount to dependencies
-
+    }, [calculateItemDiscountAmount]);
 
     // Add item to cart
-    // IMPORTANT: Ensure `productDetails` here includes `originalPrice` and `discount`
     const addToCart = useCallback(async (productId, quantity, productDetails) => {
         try {
             setError(null);
@@ -172,17 +181,13 @@ export function useCart() {
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }, []);
 
-    // This useEffect with no dependencies isn't doing anything useful and can be removed
-    // useEffect(() => {
-    // })
-
     return {
         cart,
         loading,
         error,
         itemCount,
         totalPrice,
-        totalDiscount, // Expose totalDiscount
+        totalDiscount,
         addToCart,
         updateQuantity,
         removeItem,
