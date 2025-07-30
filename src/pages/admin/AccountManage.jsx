@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, CircleUser, Loader2, Mail, X } from 'lucide-react';
+import { AlertCircle, CircleUser, Loader2, Mail, X, Edit, Camera } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 import { createUserAsAdmin, doPasswordChange } from '../../firebase/auth';
 import { useUserStatus } from '../../hooks/useUserStatus';
 import { toast } from 'sonner';
 import { doPasswordReset } from '../../firebase/auth';
+import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 
 function AccountManage() {
   const { users, loading, error, loadUsers, removeUser } = useUsers();
   const { disableUser, reactivateUser } = useUserStatus();
+  const { uploadImage, uploading: imageUploading, progress } = useCloudinaryUpload();
 
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [newAccount, setNewAccount] = useState({
     firstName: '',
@@ -35,11 +38,27 @@ function AccountManage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState(null);
 
+  // Admin profile state
+  const [adminProfile, setAdminProfile] = useState({
+    firstName: 'ADMIN',
+    lastName: '',
+    email: 'admin@elmo.com',
+    profileImage: null
+  });
+
+  // Edit profile state
+  const [editProfile, setEditProfile] = useState({
+    firstName: '',
+    lastName: '',
+    profileImage: null
+  });
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
   //password reset
   const [resetPasswordAccount, setResetPasswordAccount] = useState(null);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-
 
   // Update accounts when users data changes
   useEffect(() => {
@@ -47,6 +66,20 @@ function AccountManage() {
       setAccounts(users);
     }
   }, [users]);
+
+  // Initialize edit profile data when modal opens
+  useEffect(() => {
+    if (isEditProfileModalOpen) {
+      setEditProfile({
+        firstName: adminProfile.firstName,
+        lastName: adminProfile.lastName,
+        profileImage: adminProfile.profileImage
+      });
+      setImagePreview(adminProfile.profileImage);
+      setSelectedImage(null);
+    }
+  }, [isEditProfileModalOpen, adminProfile]);
+
   // Filter accounts based on available fields
   const filteredAccounts = accounts.filter(account => {
     // Search term filtering
@@ -104,6 +137,55 @@ function AccountManage() {
     }));
   };
 
+  const handleEditProfileInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditProfile(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  const handleEditProfileSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      let profileImageUrl = editProfile.profileImage;
+
+      // Upload new image if selected
+      if (selectedImage) {
+        profileImageUrl = await uploadImage(selectedImage, 'users');
+      }
+
+      // Update admin profile state
+      setAdminProfile(prev => ({
+        ...prev,
+        firstName: editProfile.firstName,
+        lastName: editProfile.lastName,
+        profileImage: profileImageUrl
+      }));
+
+      toast.success('Profile updated successfully!');
+      setIsEditProfileModalOpen(false);
+
+      // Clean up preview URL
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    } catch (error) {
+      toast.error(`Error updating profile: ${error.message}`);
+      console.error("Error updating profile:", error);
+    }
+  };
+
   const handleAddAccountSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -132,32 +214,6 @@ function AccountManage() {
       console.error("Error creating account:", error);
     }
   };
-
-  // const handleEditAccountInputChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setEditAccount(prev => ({
-  //     ...prev,
-  //     [name]: value
-  //   }));
-  // };
-
-  // const handleEditAccountSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!editAccount) return;
-  //   try {
-  //     await editUser(editAccount.id, {
-  //       firstName: editAccount.firstName,
-  //       lastName: editAccount.lastName,
-  //       email: editAccount.email,
-  //       role: editAccount.role,
-  //     });
-  //     toast.success('Account updated successfully!');
-  //     setIsEditAccountModalOpen(false);
-  //     setEditAccount(null);
-  //   } catch (error) {
-  //     toast.error(`Error updating account: ${error.message}`);
-  //   }
-  // };
 
   const handleDisableAccount = async () => {
     if (!accountToDisable) return;
@@ -191,8 +247,6 @@ function AccountManage() {
     }
     setAccountToDelete(null);
     setIsDeleteModalOpen(false);
-
-
   }
 
   // Helper function to format user name
@@ -217,6 +271,14 @@ function AccountManage() {
       console.error("Error formatting date:", e);
       return dateString;
     }
+  };
+
+  // Helper function to format admin name
+  const formatAdminName = () => {
+    if (adminProfile.firstName && adminProfile.lastName) {
+      return `${adminProfile.firstName} ${adminProfile.lastName}`;
+    }
+    return adminProfile.firstName || 'ADMIN';
   };
 
   if (loading && accounts.length === 0) return (
@@ -257,8 +319,6 @@ function AccountManage() {
           toast.error(`New password and confirm password do not match or wrong current password`);
         });
     }
-
-
   };
 
   const handleResetSubmit = async (e) => {
@@ -282,7 +342,6 @@ function AccountManage() {
         setShowResetModal(false);
         setResetPasswordAccount(null);
       })
-
   }
 
   const closeResetModal = () => {
@@ -302,16 +361,35 @@ function AccountManage() {
           {/* Profile Card */}
           <div className="flex flex-col sm:flex-row items-center justify-between w-full mx-auto mt-4 sm:mt-8 bg-white shadow-md sm:shadow-xl p-4 sm:p-6 rounded-lg mb-6 sm:mb-10 gap-4">
             <div className="flex flex-col sm:flex-row items-center sm:items-start sm:space-x-4 md:space-x-6 w-full sm:w-auto">
-              <CircleUser className="h-16 w-16 sm:h-20 sm:w-20 text-purple-800 bg-gray-200 rounded-full p-2" />
+              <div className="relative">
+                {adminProfile.profileImage ? (
+                  <img
+                    src={adminProfile.profileImage}
+                    alt="Admin Profile"
+                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <CircleUser className="h-16 w-16 sm:h-20 sm:w-20 text-purple-800 bg-gray-200 rounded-full p-2" />
+                )}
+              </div>
               <div className="text-center sm:text-left mt-2 sm:mt-0">
-                <h2 className="text-xl sm:text-2xl font-semibold text-black">ADMIN</h2>
-                <p className="text-sm sm:text-base text-gray-600">Email Address: admin@elmo.com</p>
-                <button
-                  onClick={() => setIsAddAccountModalOpen(true)}
-                  className="mt-2 sm:mt-3 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
-                >
-                  Add Account
-                </button>
+                <h2 className="text-xl sm:text-2xl font-semibold text-black">{formatAdminName()}</h2>
+                <p className="text-sm sm:text-base text-gray-600">Email Address: {adminProfile.email}</p>
+                <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-3">
+                  <button
+                    onClick={() => setIsAddAccountModalOpen(true)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base"
+                  >
+                    Add Account
+                  </button>
+                  <button
+                    onClick={() => setIsEditProfileModalOpen(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base flex items-center gap-1"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Profile
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -445,6 +523,121 @@ function AccountManage() {
             </div>
           </div>
 
+          {/* Edit Profile Modal */}
+          {isEditProfileModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-orange-500">Edit Profile</h2>
+                  <button
+                    onClick={() => {
+                      setIsEditProfileModalOpen(false);
+                      if (imagePreview && imagePreview.startsWith('blob:')) {
+                        URL.revokeObjectURL(imagePreview);
+                      }
+                      setImagePreview(null);
+                      setSelectedImage(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleEditProfileSubmit}>
+                  {/* Profile Image Upload */}
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Profile Image</label>
+                    <div className="flex flex-col items-center">
+                      <div className="relative mb-3">
+                        {imagePreview ? (
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="h-20 w-20 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        ) : (
+                          <CircleUser className="h-20 w-20 text-purple-800 bg-gray-200 rounded-full p-2" />
+                        )}
+                        <label className="absolute bottom-0 right-0 bg-orange-500 hover:bg-orange-600 text-white rounded-full p-1 cursor-pointer">
+                          <Camera className="h-4 w-4" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      {imageUploading && (
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                          <div
+                            className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={editProfile.firstName}
+                      onChange={handleEditProfileInputChange}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={editProfile.lastName}
+                      onChange={handleEditProfileInputChange}
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditProfileModalOpen(false);
+                        if (imagePreview && imagePreview.startsWith('blob:')) {
+                          URL.revokeObjectURL(imagePreview);
+                        }
+                        setImagePreview(null);
+                        setSelectedImage(null);
+                      }}
+                      className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                      disabled={imageUploading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50 flex items-center gap-2"
+                      disabled={imageUploading}
+                    >
+                      {imageUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Add Account Modal */}
           {isAddAccountModalOpen && (
@@ -684,7 +877,6 @@ function AccountManage() {
               </div>
             </div>
           )}
-
 
           {isDeleteModalOpen && accountToDelete && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
