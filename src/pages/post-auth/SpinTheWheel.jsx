@@ -42,18 +42,26 @@ const SpinTheWheel = ({ isAdmin = false }) => {
         clearSpinResult();
 
         try {
-            // Calculate random rotation (minimum 5 full spins + random position)
-            const segmentAngle = 360 / spinWheelConfig.segments.length;
-            const minSpins = 5;
-            const randomSpins = Math.random() * 3; // Additional 0-3 spins
-            const totalSpins = minSpins + randomSpins;
-
+            // Get spin result first
             const result = await handleSpin();
             const resultIndex = spinWheelConfig.segments.findIndex(seg => seg.id === result.result.id);
-            const finalAngle = (resultIndex * segmentAngle) + (segmentAngle / 2);
 
-            const newRotation = rotation + (totalSpins * 360) - finalAngle;
-            setRotation(newRotation);
+            // For 4 segments (90° each)
+            const segmentAngle = 90; // 360 / 4 = 90
+            const minSpins = 5; // Minimum full rotations
+            const randomSpins = Math.floor(Math.random() * 3); // 0-2 additional spins
+
+            // Calculate where the segment should land (pointer is at top - 0°)
+            // We need the segment's center to land at 0°
+            // Formula: 360 - (segmentCenterAngle)
+            const segmentCenter = (resultIndex * segmentAngle) + (segmentAngle / 2);
+            const targetAngle = 360 - segmentCenter;
+
+            // Total rotation = full spins + target angle
+            const totalRotation = (minSpins * 360) + (randomSpins * 360) + targetAngle;
+
+            // Apply rotation
+            setRotation(totalRotation);
 
             // Wait for animation to complete
             setTimeout(() => {
@@ -205,6 +213,7 @@ const SpinTheWheel = ({ isAdmin = false }) => {
                         className={`transition-transform duration-3000 ease-out ${isSpinning ? 'animate-pulse' : ''}`}
                         style={{
                             transform: `rotate(${rotation}deg)`,
+                            transformOrigin: 'center',
                             transitionDuration: isSpinning ? '3s' : '0.3s'
                         }}
                     >
@@ -218,10 +227,10 @@ const SpinTheWheel = ({ isAdmin = false }) => {
                             strokeWidth="8"
                         />
 
-                        {/* Segments */}
+                        {/* 4 Segments */}
                         {spinWheelConfig.segments.map((segment, index) => {
-                            const startAngle = (index * segmentAngle - 90) * Math.PI / 180;
-                            const endAngle = ((index + 1) * segmentAngle - 90) * Math.PI / 180;
+                            const startAngle = (index * 90 - 90) * Math.PI / 180;
+                            const endAngle = ((index + 1) * 90 - 90) * Math.PI / 180;
                             const midAngle = (startAngle + endAngle) / 2;
 
                             // Calculate path for segment
@@ -230,12 +239,10 @@ const SpinTheWheel = ({ isAdmin = false }) => {
                             const x2 = 160 + 150 * Math.cos(endAngle);
                             const y2 = 160 + 150 * Math.sin(endAngle);
 
-                            const largeArcFlag = segmentAngle > 180 ? 1 : 0;
-
                             const pathData = [
                                 `M 160 160`,
                                 `L ${x1} ${y1}`,
-                                `A 150 150 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                                `A 150 150 0 0 1 ${x2} ${y2}`,
                                 `Z`
                             ].join(' ');
 
@@ -247,15 +254,12 @@ const SpinTheWheel = ({ isAdmin = false }) => {
 
                             return (
                                 <g key={segment.id}>
-                                    {/* Segment path */}
                                     <path
                                         d={pathData}
                                         fill={segment.color}
                                         stroke="#fff"
                                         strokeWidth="2"
                                     />
-
-                                    {/* Text label */}
                                     <text
                                         x={textX}
                                         y={textY}
@@ -266,8 +270,7 @@ const SpinTheWheel = ({ isAdmin = false }) => {
                                         dominantBaseline="middle"
                                         transform={`rotate(${textRotation} ${textX} ${textY})`}
                                         style={{
-                                            textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
-                                            filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.7))'
+                                            textShadow: '1px 1px 2px rgba(0,0,0,0.7)'
                                         }}
                                     >
                                         {segment.label}
