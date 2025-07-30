@@ -7,7 +7,9 @@ import { ref, onValue } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart'; // Import your useCart hook
+import { useWishlist } from '../hooks/useWishlist'; // Import your useWishlist hook
 import { toast } from 'sonner'; // For showing notifications
+import { Heart } from 'lucide-react'; // Import Heart icon for wishlist
 
 function HomePage() {
 
@@ -19,6 +21,9 @@ function HomePage() {
 
   // Import cart functionality
   const { addToCart, loading: cartLoading } = useCart();
+
+  // Import wishlist functionality
+  const { wishlist, addItem: addToWishlist, removeItem: removeFromWishlist, refreshWishlist } = useWishlist(addToCart);
 
   useEffect(() => {
     const productsRef = ref(database, 'products');
@@ -57,20 +62,115 @@ function HomePage() {
     }
 
     try {
-      // const productDetails = {
-      //   name: product.name,
-      //   price: product.price,
-      //   imageUrl: product.image,
-      //   brand: product.brand || '',
-      //   category: product.category
-      // };
-
       await addToCart(product.id, 1, { ...product });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');
     }
   };
+
+  // Handle wishlist toggle functionality
+  const handleToggleWishlist = async (product) => {
+    // Check if user is logged in
+    if (!userLoggedIn) {
+      toast.error('Please log in to manage your wishlist');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const inWishlist = wishlist.some(item => item.productId === product.id);
+
+      if (inWishlist) {
+        const wishlistItem = wishlist.find(item => item.productId === product.id);
+        if (wishlistItem) {
+          await removeFromWishlist(wishlistItem.id);
+          toast.success(`${product.brand || product.name} removed from wishlist!`);
+        }
+      } else {
+        await addToWishlist({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.imageUrl || product.image || "/images/bike.png",
+          category: product.category,
+          brand: product.brand || '',
+          type: product.type || '',
+          description: product.description || ""
+        });
+        toast.success(`${product.brand || product.name} added to wishlist!`);
+      }
+
+      refreshWishlist();
+    } catch (error) {
+      console.error("Error updating wishlist:", error);
+      toast.error(`Error updating wishlist: ${error.message}`);
+    }
+  };
+
+  // Check if product is in wishlist
+  const isInWishlist = (productId) => {
+    return wishlist.some(item => item.productId === productId);
+  };
+
+  // Product card component with wishlist functionality
+  const ProductCard = ({ product, isLatestBike = false }) => (
+    <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md relative">
+      {/* Wishlist Heart Icon */}
+      {userLoggedIn && (
+        <div
+          className="absolute top-3 right-3 cursor-pointer transition-all duration-200 hover:scale-110 z-10"
+          onClick={() => handleToggleWishlist(product)}
+          style={{
+            color: isInWishlist(product.id) ? '#ff8c00' : '#9ca3af',
+            opacity: isInWishlist(product.id) ? 1 : 0.6
+          }}
+        >
+          <Heart
+            size={20}
+            fill={isInWishlist(product.id) ? "currentColor" : "none"}
+            className="transition-all duration-200"
+          />
+        </div>
+      )}
+
+      <img
+        src={product.imageUrl || product.image || (isLatestBike ? "/images/bike.png" : "/images/bikehelmet1.png")}
+        alt={product.name}
+        className="w-32 h-28 object-contain mb-4"
+      />
+      <div className="w-full text-center">
+        <h3 className="text-white font-semibold text-base mb-1">{product.name}</h3>
+        <div className="text-gray-400 text-xs mb-1">{product.brand || product.category}</div>
+        <div className="text-orange-400 text-sm mb-2">₱{product.price}</div>
+        <div className="flex justify-center gap-2 mt-2">
+          <button
+            className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => handleAddToCart(product)}
+            disabled={cartLoading}
+          >
+            {cartLoading ? 'Adding...' : 'Add to Cart'}
+          </button>
+          <button
+            className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200"
+            type='button'
+            onClick={() => {
+              if (isLatestBike) {
+                navigate('/customer/bikes-category/', { state: { handleShowDetailsModal: product.id } });
+              } else {
+                const categoryRoute = product.category === 'Gears' ?
+                  '/customer/gears-parts-category/' :
+                  '/customer/accessories-category/';
+                navigate(categoryRoute, { state: { handleShowDetailsModal: product.id } });
+              }
+            }}
+          >
+            Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#181818] text-white">
@@ -145,8 +245,6 @@ function HomePage() {
 
       {/* Best Sellers Products This week Section */}
       <section className="w-full bg-[#f5f5f5] py-12">
-        {/* <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4"> */}
-        {/* Most Popular Bike This Month */}
         <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
           <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-10">Best Sellers Products<br />This week</h2>
 
@@ -154,16 +252,6 @@ function HomePage() {
           <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category', { state: { ratingFilter: '5' } })}>Show More</button>
           <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
         </div>
-        {/* Most Popular Bike This Week */}
-        {/* <div className="bg-[#232323] rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
-            <h3 className="text-white font-semibold text-base mb-2 text-center">Most Popular Bike This Week</h3>
-            <div className="text-gray-400 text-sm mb-3 mt-2">COMING SOON!</div>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded">Show More</button>
-            <div className="text-gray-400 text-xs mt-4 text-center">
-              Price: Unknown<br />Stock: Unknown<br />Weight: Unknown
-            </div>
-          </div> */}
-        {/* </div> */}
       </section>
 
       {/* Our Categories Section */}
@@ -214,24 +302,7 @@ function HomePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
           {latestBikes.length > 0 ? (
             latestBikes.map((bike) => (
-              <div key={bike.id} className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-                <img src={bike.imageUrl || "/images/bike.png"} alt={bike.name} className="w-32 h-28 object-contain mb-4" />
-                <div className="w-full text-center">
-                  <h3 className="text-white font-semibold text-base mb-1">{bike.name}</h3>
-                  <div className="text-gray-400 text-xs mb-1">{bike.brand}</div>
-                  <div className="text-orange-400 text-sm mb-2">₱{bike.price}</div>
-                  <div className="flex justify-center gap-2 mt-2">
-                    <button
-                      className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handleAddToCart(bike)}
-                      disabled={cartLoading}
-                    >
-                      {cartLoading ? 'Adding...' : 'Add to Cart'}
-                    </button>
-                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200" type='button' onClick={() => navigate('/customer/bikes-category/', { state: { handleShowDetailsModal: bike.id } })}>Details</button>
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={bike.id} product={bike} isLatestBike={true} />
             ))
           ) : (
             <p className="text-center text-white col-span-full">Loading latest bikes...</p>
@@ -251,24 +322,7 @@ function HomePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
           {[...gears, ...accessories].length > 0 ? (
             [...gears, ...accessories].slice(0, 8).map((item) => (
-              <div key={item.id} className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-                <img src={item.imageUrl || "/images/bikehelmet1.png"} alt={item.name} className="w-32 h-28 object-contain mb-4" />
-                <div className="w-full text-center">
-                  <h3 className="text-white font-semibold text-base mb-1">{item.name}</h3>
-                  <div className="text-gray-400 text-xs mb-1">{item.category}</div>
-                  <div className="text-orange-400 text-sm mb-2">₱{item.price}</div>
-                  <div className="flex justify-center gap-2 mt-2">
-                    <button
-                      className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handleAddToCart(item)}
-                      disabled={cartLoading}
-                    >
-                      {cartLoading ? 'Adding...' : 'Add to Cart'}
-                    </button>
-                    <button className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200" type='button' onClick={() => navigate(item.category === 'Gears' ? '/customer/gears-parts-category/' : '/customer/accessories-category/', { state: { handleShowDetailsModal: item.id } })}>Details</button>
-                  </div >
-                </div >
-              </div >
+              <ProductCard key={item.id} product={item} isLatestBike={false} />
             ))
           ) : (
             <p className="text-center text-white col-span-full">Loading products...</p>
@@ -276,7 +330,6 @@ function HomePage() {
           }
         </div >
       </section >
-      {/* More sections to be implemented next... */}
 
       {/* Footer Section */}
       <footer id="contact-section" className="bg-[#181818] text-white pt-12 pb-4 mt-8">
@@ -312,23 +365,6 @@ function HomePage() {
               </div>
             </div>
           </div>
-          {/* Right: About & Socials */}
-          {/* <div className="flex-1">
-            <div className="font-semibold mb-2 text-white">About The Shop</div>
-         
-
-               <div className="flex gap-4 mt-4">
-              <Link to="" aria-label="Facebook" className="text-white hover:text-orange-500 transition">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H5v4h5v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
-              </Link>
-              <Link to="#" aria-label="Instagram" className="text-white hover:text-orange-500 transition">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.5" y2="6.5" /></svg>
-              </Link>
-            </div>
-
-
-          </div> */}
-
         </div>
         <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs text-gray-400">
           2024 Copyright Act: <Link to="https://www.nyongt.com" className="text-orange-500 hover:underline">www.nyongt.com</Link>
