@@ -78,7 +78,11 @@ const Cart = () => {
 
     // Format price to Philippine Peso
     const formatPrice = (price) => {
-        return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+        // Ensure price is a valid number
+        if (price === undefined || price === null || isNaN(price)) {
+            return `₱0.00`;
+        }
+        return `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
     };
 
     return (
@@ -152,10 +156,10 @@ const Cart = () => {
                                     </div>
                                 </td>
                                 <td className="py-5 text-right font-medium">
-                                    {formatPrice(item.price)}
+                                    {formatPrice(item.originalPrice || item.price || 0)}
                                 </td>
                                 <td className="py-5 text-right font-medium">
-                                    {formatPrice(item.price * item.quantity)}
+                                    {formatPrice((item.originalPrice || item.price || 0) * item.quantity)}
                                 </td>
                             </tr>
                         ))}
@@ -174,14 +178,15 @@ const Cart = () => {
                     <div className="w-full sm:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-gray-600">Subtotal:</span>
-                            <span className="font-medium">{formatPrice(totalPrice)}</span>
+                            <span className="font-medium">{formatPrice(totalPrice || 0)}</span>
                         </div>
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-gray-600">Discount:</span>
+                            <span className="font-medium">{formatPrice(totalDiscount || 0)}</span>
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                             <span className="font-bold text-lg">Grand Total:</span>
-                            <span className="font-bold text-lg">{formatPrice(totalPrice)}</span>
+                            <span className="font-bold text-lg">{formatPrice((totalPrice || 0) - (totalDiscount || 0))}</span>
                         </div>
 
                         <button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center"

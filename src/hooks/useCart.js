@@ -21,15 +21,16 @@ export function useCart() {
     // Helper function to calculate the discount amount for a single item
     // Make sure this logic matches how discounts are applied and stored
     const calculateItemDiscountAmount = useCallback((item) => {
-        const originalPrice = Number(item.originalPrice); // Ensure you're storing originalPrice
+        // Consistent with the price calculation in the component
+        const basePrice = Number(item.originalPrice || item.price || 0); // Use originalPrice or price with fallback
         const discountPercentage = Number(item.discount || 0); // Your 'discount' field is the percentage
-        const quantity = Number(item.quantity);
+        const quantity = Number(item.quantity || 0); // Ensure quantity has a fallback
 
-        if (isNaN(originalPrice) || isNaN(discountPercentage) || isNaN(quantity) || originalPrice <= 0 || discountPercentage <= 0) {
+        if (isNaN(basePrice) || isNaN(discountPercentage) || isNaN(quantity) || basePrice <= 0 || discountPercentage <= 0) {
             return 0; // No valid discount or price
         }
 
-        const discountAmountPerItem = originalPrice * (discountPercentage / 100);
+        const discountAmountPerItem = basePrice * (discountPercentage / 100);
         return discountAmountPerItem * quantity;
     }, []);
 
@@ -74,10 +75,14 @@ export function useCart() {
                         currentItemCount += Number(item.quantity);
 
                         // Calculate the price for totalPrice
-                        // Prefer discountedFinalPrice if it exists and is valid, otherwise use original price
-                        const effectivePricePerItem = (Number(item.discountedFinalPrice) > 0 && !isNaN(Number(item.discountedFinalPrice)))
-                            ? Number(item.discountedFinalPrice)
-                            : Number(item.originalPrice); // Fallback to originalPrice
+                        // Use price field consistently across the application
+                        // First try originalPrice, then price, finally fallback to 0
+                        const effectivePricePerItem = 
+                            (Number(item.originalPrice) > 0 && !isNaN(Number(item.originalPrice))) 
+                            ? Number(item.originalPrice)
+                            : (Number(item.price) > 0 && !isNaN(Number(item.price))
+                               ? Number(item.price)
+                               : 0); // Fallback to 0 if both are invalid
 
                         currentTotalPrice += (effectivePricePerItem * Number(item.quantity));
 
