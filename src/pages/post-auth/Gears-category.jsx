@@ -5,7 +5,7 @@ import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
-import { onValue, ref } from 'firebase/database';
+import { onValue, ref, set } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ProductDetailsModal from '../../components/ProductsDetailsModal';
 
@@ -141,7 +141,7 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
     );
 };
 
-const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggleWishlist, wishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter, handleShowDetailsModal }) => {
+const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggleWishlist, wishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter, handleShowDetailsModal, setSelectedCategoryFilter, selectedCategoryFilter }) => {
     const navigate = useNavigate();
 
     const isInWishlist = (gearId) => {
@@ -180,9 +180,12 @@ const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggle
                             <button className="btn" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }} type="submit">
                                 <i className="bi bi-search"></i>Search
                             </button>
+
                         </div>
                     </form>
+
                 </div>
+
                 <div className="col-md-4 col-lg-6 text-md-end mt-2 mt-md-0">
                     <button
                         className="btn me-2"
@@ -201,34 +204,64 @@ const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggle
             </div>
 
             {/* Rating Filter Dropdown */}
-            <div className="row mb-3">
-                <div className="col-md-6">
-                    <div className="d-flex align-items-center">
-                        <label htmlFor="ratingFilter" className="form-label me-2 mb-0" style={{ color: 'var(--text-primary)' }}>
-                            Filter by Rating:
-                        </label>
-                        <select
-                            id="ratingFilter"
-                            className="form-select"
-                            style={{
-                                backgroundColor: 'var(--card-background)',
-                                color: 'var(--text-primary)',
-                                borderColor: 'var(--border-color)',
-                                maxWidth: '200px'
-                            }}
-                            value={selectedRatingFilter}
-                            onChange={(e) => setSelectedRatingFilter(e.target.value)}
-                        >
-                            <option value="all">All Ratings</option>
-                            <option value="5">5 Stars & Above</option>
-                            <option value="4">4 Stars & Above</option>
-                            <option value="3">3 Stars & Above</option>
-                            <option value="2">2 Stars & Above</option>
-                            <option value="1">1 Star & Above</option>
-                        </select>
-                    </div>
+            <div className="d-flex align-items-center mb-3">
+                <div className="d-flex align-items-center" style={{ width: '330px' }}>
+                    <label
+                        htmlFor="ratingFilter"
+                        className="form-label me-2 mb-0"
+                        style={{ color: 'var(--text-primary)' }}
+                    >
+                        Filter by Rating:
+                    </label>
+                    <select
+                        id="ratingFilter"
+                        className="form-select"
+                        style={{
+                            backgroundColor: 'var(--card-background)',
+                            color: 'var(--text-primary)',
+                            borderColor: 'var(--border-color)',
+                            maxWidth: '200px'
+                        }}
+                        value={selectedRatingFilter}
+                        onChange={(e) => setSelectedRatingFilter(e.target.value)}
+                    >
+                        <option value="all">All Ratings</option>
+                        <option value="5">5 Stars & Above</option>
+                        <option value="4">4 Stars & Above</option>
+                        <option value="3">3 Stars & Above</option>
+                        <option value="2">2 Stars & Above</option>
+                        <option value="1">1 Star & Above</option>
+                    </select>
                 </div>
+
+                <label
+                    htmlFor="ratingFilter"
+                    className="form-label me-2 mb-0"
+                    style={{ color: 'var(--text-primary)' }}
+                >
+                </label>
+                <select
+                    id="ratingFilter"
+                    className="form-select"
+                    style={{
+                        backgroundColor: 'var(--card-background)',
+                        color: 'var(--text-primary)',
+                        borderColor: 'var(--border-color)',
+                        maxWidth: '200px'
+                    }}
+                    value={selectedCategoryFilter}
+                    onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                >
+                    <option value="all">Gears & Parts</option>
+                    <option value="gears">Gears</option>
+                    <option value="parts">Parts</option>
+                </select>
             </div>
+
+
+
+
+
 
             <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 {gears.length > 0 ? (
@@ -285,6 +318,7 @@ const GearsCategory = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [viewProduct, setViewProduct] = useState(null);
     const location = useLocation();
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
 
     // Get products from your hook
     const { products, getProduct } = useProducts();
@@ -486,9 +520,14 @@ const GearsCategory = () => {
                 }
             }
 
-            return categoryMatch && searchMatch && ratingMatch;
+
+            const categoryMatchWithToggle = selectedCategoryFilter === 'all' ||
+                (selectedCategoryFilter === 'gears' && gear.category.toLowerCase().includes('gear')) ||
+                (selectedCategoryFilter === 'parts' && gear.category.toLowerCase().includes('part'));
+
+            return categoryMatch && searchMatch && ratingMatch && categoryMatchWithToggle;
         });
-    }, [gears, selectedCategories, searchTerm, selectedRatingFilter, ratingsMap]);
+    }, [gears, selectedCategories, searchTerm, selectedRatingFilter, ratingsMap, selectedCategoryFilter]);
 
     return (
         <>
@@ -567,6 +606,8 @@ const GearsCategory = () => {
                         selectedRatingFilter={selectedRatingFilter}
                         setSelectedRatingFilter={setSelectedRatingFilter}
                         handleShowDetailsModal={handleShowDetailsModal}
+                        setSelectedCategoryFilter={setSelectedCategoryFilter}
+                        selectedCategoryFilter={selectedCategoryFilter}
                     />
                 </div>
             </div>
