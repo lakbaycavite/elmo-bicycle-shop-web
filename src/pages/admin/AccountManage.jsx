@@ -7,11 +7,16 @@ import { useUserStatus } from '../../hooks/useUserStatus';
 import { toast } from 'sonner';
 import { doPasswordReset } from '../../firebase/auth';
 import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
+import { useAuth } from '../../context/authContext/createAuthContext';
+
 
 function AccountManage() {
-  const { users, loading, error, loadUsers, removeUser } = useUsers();
+  const { users, loading, error, loadUsers, removeUser, editUser, currentUserData, getUserProfile } = useUsers();
   const { disableUser, reactivateUser } = useUserStatus();
   const { uploadImage, uploading: imageUploading, progress } = useCloudinaryUpload();
+  const { currentUser } = useAuth();
+  const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
+
 
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,18 +44,18 @@ function AccountManage() {
   const [accountToDelete, setAccountToDelete] = useState(null);
 
   // Admin profile state
-  const [adminProfile, setAdminProfile] = useState({
-    firstName: 'ADMIN',
-    lastName: '',
-    email: 'admin@elmo.com',
-    profileImage: null
-  });
+  // const [adminProfile, setAdminProfile] = useState({
+  //   firstName: 'ADMIN',
+  //   lastName: '',
+  //   email: 'admin@elmo.com',
+  //   image: null
+  // });
 
   // Edit profile state
   const [editProfile, setEditProfile] = useState({
     firstName: '',
     lastName: '',
-    profileImage: null
+    image: null
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -69,16 +74,16 @@ function AccountManage() {
 
   // Initialize edit profile data when modal opens
   useEffect(() => {
-    if (isEditProfileModalOpen) {
+    if (isEditProfileModalOpen && currentUserData) {
       setEditProfile({
-        firstName: adminProfile.firstName,
-        lastName: adminProfile.lastName,
-        profileImage: adminProfile.profileImage
+        firstName: currentUserData.firstName || '',
+        lastName: currentUserData.lastName || '',
+        image: currentUserData.image || null
       });
-      setImagePreview(adminProfile.profileImage);
+      setImagePreview(currentUserData.image || null);
       setSelectedImage(null);
     }
-  }, [isEditProfileModalOpen, adminProfile]);
+  }, [isEditProfileModalOpen, currentUserData]);
 
   // Filter accounts based on available fields
   const filteredAccounts = accounts.filter(account => {
@@ -157,32 +162,45 @@ function AccountManage() {
 
   const handleEditProfileSubmit = async (e) => {
     e.preventDefault();
+    setProfileUpdateLoading(true);
+
     try {
-      let profileImageUrl = editProfile.profileImage;
+      let profileImageUrl = editProfile.image;
 
       // Upload new image if selected
       if (selectedImage) {
         profileImageUrl = await uploadImage(selectedImage, 'users');
       }
 
-      // Update admin profile state
-      setAdminProfile(prev => ({
-        ...prev,
+      // Prepare the updated data - only include changed fields
+      const updatedProfileData = {
         firstName: editProfile.firstName,
         lastName: editProfile.lastName,
-        profileImage: profileImageUrl
-      }));
+        image: profileImageUrl,
+      };
 
-      toast.success('Profile updated successfully!');
+      // Update user in database using the current user's UID
+      await editUser(currentUser.uid, updatedProfileData);
+
+      // Refresh current user data from database
+      await getUserProfile();
+
+      // Close modal and clean up
       setIsEditProfileModalOpen(false);
+      setSelectedImage(null);
+      setImagePreview(null);
 
       // Clean up preview URL
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
+
+
     } catch (error) {
       toast.error(`Error updating profile: ${error.message}`);
       console.error("Error updating profile:", error);
+    } finally {
+      setProfileUpdateLoading(false); // Fixed: was setting to true instead of false
     }
   };
 
@@ -275,10 +293,10 @@ function AccountManage() {
 
   // Helper function to format admin name
   const formatAdminName = () => {
-    if (adminProfile.firstName && adminProfile.lastName) {
-      return `${adminProfile.firstName} ${adminProfile.lastName}`;
+    if (currentUserData?.firstName && currentUserData?.lastName) {
+      return `${currentUserData.firstName} ${currentUserData.lastName}`;
     }
-    return adminProfile.firstName || 'ADMIN';
+    return currentUserData?.firstName || 'ADMIN';
   };
 
   if (loading && accounts.length === 0) return (
@@ -362,9 +380,9 @@ function AccountManage() {
           <div className="flex flex-col sm:flex-row items-center justify-between w-full mx-auto mt-4 sm:mt-8 bg-white shadow-md sm:shadow-xl p-4 sm:p-6 rounded-lg mb-6 sm:mb-10 gap-4">
             <div className="flex flex-col sm:flex-row items-center sm:items-start sm:space-x-4 md:space-x-6 w-full sm:w-auto">
               <div className="relative">
-                {adminProfile.profileImage ? (
+                {currentUserData?.image ? (
                   <img
-                    src={adminProfile.profileImage}
+                    src={currentUserData.image}
                     alt="Admin Profile"
                     className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-2 border-gray-200"
                   />
@@ -374,7 +392,7 @@ function AccountManage() {
               </div>
               <div className="text-center sm:text-left mt-2 sm:mt-0">
                 <h2 className="text-xl sm:text-2xl font-semibold text-black">{formatAdminName()}</h2>
-                <p className="text-sm sm:text-base text-gray-600">Email Address: {adminProfile.email}</p>
+                <p className="text-sm sm:text-base text-gray-600">Email Address: {currentUserData?.email}</p>
                 <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-3">
                   <button
                     onClick={() => setIsAddAccountModalOpen(true)}

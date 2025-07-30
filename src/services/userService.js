@@ -95,15 +95,10 @@ export const getAllUsers = async () => {
 export const updateUser = async (userId, userData) => {
     try {
         const userRef = ref(database, `users/${userId}`);
+        await update(userRef, userData); // Use update, not set
 
-        // Create update object with new timestamp
-        const updates = {
-            ...userData,
-            updatedAt: new Date().toISOString(),
-        };
-
-        await update(userRef, updates);
-        return { id: userId, ...updates };
+        const snapshot = await get(userRef);
+        return snapshot.exists() ? { id: userId, ...snapshot.val() } : null;
     } catch (error) {
         console.error("Error updating user:", error);
         throw error;

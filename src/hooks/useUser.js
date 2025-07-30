@@ -75,16 +75,24 @@ export const useUsers = (initialUserId = null) => {
     }, [isAdmin]);
 
     async function getUserProfile() {
-        const userData = await getCurrentUserData();
+        try {
+            setLoading(true);
+            const userData = await getCurrentUserData();
 
-        if (userData) {
-            setCurrentUserData(userData);
-            return userData;
-        }
-        else {
-            console.error("No user data found");
-            setCurrentUserData(null);
+            if (userData) {
+                setCurrentUserData(userData);
+                return userData;
+            } else {
+                console.error("No user data found");
+                setCurrentUserData(null);
+                return null;
+            }
+        } catch (error) {
+            console.error("Error getting user profile:", error);
+            setError(error.message);
             return null;
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -112,13 +120,24 @@ export const useUsers = (initialUserId = null) => {
         setLoading(true);
         setError(null);
         try {
+            // Make sure updateUser function actually updates the database
             const updatedUser = await updateUser(id, userData);
+
+            // Update users list
             setUsers(prev =>
-                prev.map(u => u.id === id ? { ...u, ...updatedUser } : u)
+                prev.map(u => u.id === id ? { ...u, ...userData } : u)
             );
+
+            // Update single user if it matches
             if (user && user.id === id) {
-                setUser({ ...user, ...updatedUser });
+                setUser({ ...user, ...userData });
             }
+
+            // If editing current user, update currentUserData immediately
+            if (auth.currentUser && auth.currentUser.uid === id) {
+                setCurrentUserData(prev => ({ ...prev, ...userData }));
+            }
+
             return updatedUser;
         } catch (err) {
             setError(err.message);
