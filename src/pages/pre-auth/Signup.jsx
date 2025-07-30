@@ -52,10 +52,7 @@ function Signup() {
       console.log("Validation passed"); // ✅ Check 2
       setLoading(true);
 
-      // setTimeout(() => {
-      //   console.log("Navigating to login"); // ✅ Check 3
-      //   navigate('/login');
-      // }, 1500);
+
       const additionalUserData = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -64,7 +61,6 @@ function Signup() {
 
       await doCreateUserWithEmailAndPassword(email, password, additionalUserData)
         .then(() => {
-          console.log("Signup successful"); // ✅ Check 4
           setLoading(false);
           navigate('/login');
         })

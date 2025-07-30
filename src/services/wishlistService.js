@@ -18,7 +18,6 @@ export const addToWishlist = async (product) => {
         // Check if product is already in wishlist
         const existingItem = await checkInWishlist(product.id);
         if (existingItem) {
-            console.log("Product already in wishlist");
             return existingItem.id;
         }
 
@@ -38,7 +37,6 @@ export const addToWishlist = async (product) => {
         };
 
         await set(newItemRef, wishlistItem);
-        console.log("Product added to wishlist:", product.name);
 
         return newItemRef.key;
     } catch (error) {
@@ -190,7 +188,6 @@ export const moveToCart = async (itemId, addToCartFn) => {
         }
 
         const item = snapshot.val();
-        console.log("Moving wishlist item to cart:", item);
 
         // Add to cart
         await addToCartFn(item.productId, 1, {
@@ -205,7 +202,6 @@ export const moveToCart = async (itemId, addToCartFn) => {
         // Remove from wishlist
         await removeFromWishlist(itemId);
 
-        console.log("Item moved from wishlist to cart");
     } catch (error) {
         console.error("Error moving to cart:", error);
         throw error;
@@ -226,7 +222,6 @@ export const clearWishlist = async () => {
         );
 
         await Promise.all(removePromises);
-        console.log("Wishlist cleared");
     } catch (error) {
         console.error("Error clearing wishlist:", error);
         throw error;

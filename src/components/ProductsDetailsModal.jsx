@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Star } from 'lucide-react';
+import { X, Star, Flame } from 'lucide-react';
 import { getRatingsByProductId } from '../services/ratingService';
 
 const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModal, formatPrice }) => {
@@ -134,8 +134,59 @@ const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModa
                                     )}
                                 </div>
 
-                                <div className="text-2xl font-bold text-[#ff6900] mb-4">
-                                    {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                <div className="text-2xl font-bold text-[#ff6900] mb-4 flex gap-4">
+                                    {
+                                        // Check if discount is 0, or if it's undefined/null/not a valid number,
+                                        // which effectively means no discount should be applied.
+                                        // We also check if the numerical value of discount is 0 or less, which means no effective discount.
+                                        Number(viewProduct.discount) <= 0 || viewProduct.discount === undefined || viewProduct.discount === null || isNaN(Number(viewProduct.discount)) ? (
+                                            // Case: No discount or invalid discount value
+                                            <>
+                                                {/* Display the original price */}
+                                                {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                            </>
+                                        ) : (
+                                            // Case: There is a valid discount greater than 0
+                                            <>
+                                                {/* Display the original price with a strikethrough */}
+                                                <span className="text-gray-500 line-through">
+                                                    {viewProduct.price ? formatPrice(viewProduct.price) : '₱0.00'}
+                                                </span>
+
+                                                {/* Calculate and display the discounted price */}
+                                                {(() => {
+                                                    const price = Number(viewProduct.price);
+                                                    const discount = Number(viewProduct.discount);
+
+                                                    // Ensure price and discount are valid numbers before calculation
+                                                    if (isNaN(price) || isNaN(discount) || price <= 0) {
+                                                        return '₱0.00'; // Return default if price or discount is invalid
+                                                    }
+
+                                                    const discountedPrice = price * (1 - (discount / 100));
+
+                                                    return ` ₱${discountedPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+                                                })()}
+                                            </>
+                                        )
+                                    }
+
+                                    {/* Second Conditional: Displaying Discount Label */}
+                                    {
+                                        // Display the discount label ONLY IF:
+                                        // 1. There is an actual discount (viewProduct.discount is greater than 0 and a valid number)
+                                        // 2. viewProduct.discountLabel is not null or undefined
+                                        // 3. viewProduct.discountLabel is not an empty string (trim() is used to handle strings with only spaces)
+                                        Number(viewProduct.discount) > 0 &&
+                                        (viewProduct.discountLabel !== null && viewProduct.discountLabel !== undefined && String(viewProduct.discountLabel).trim() !== '') && (
+                                            <div style={{ display: 'flex', alignContent: 'center', justifyContent: 'center', gap: '0.5rem', width: '300px', backgroundColor: 'rgba(255, 105, 0, 0.1)', borderRadius: '4px', height: '27px' }} className="text-[#ff6900] font-semibold">
+                                                <p>-{viewProduct.discount}% </p>
+                                                <p>{viewProduct.discountLabel} </p>
+                                                <p><Flame /></p> {/* Assuming Flame is a React component */}
+                                            </div>
+                                        )
+                                    }
+
                                 </div>
 
                                 <div className="mb-2">

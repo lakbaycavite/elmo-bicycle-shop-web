@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import { useOrder } from '../hooks/useOrder';
 import { toast } from 'sonner';
 import { useUsers } from '../hooks/useUser';
 import VoucherSelector from './VoucherSelector';
+import { useDiscount } from '../hooks/useDiscount';
 
 const OrderDetailsModal = ({ show, onClose, onComplete }) => {
     const { getUserProfile } = useUsers();
@@ -12,9 +13,12 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
     const [paymentMethod, setPaymentMethod] = useState('Walk-in');
     const [isProcessing, setIsProcessing] = useState(false);
     const [notes, setNotes] = useState('');
+    const { deleteUsedVoucher } = useDiscount();
 
     // New state to manage item-specific vouchers
     const [itemVouchers, setItemVouchers] = useState({}); // Stores { productId: { voucherId, discountPercentage, discountAmount } }
+
+
 
     // Calculate total discount from all applied vouchers
     const calculateTotalDiscount = () => {
@@ -23,6 +27,10 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
             return sum + voucher.discountAmount;
         }, 0);
     };
+    const getAllSelectedVoucherIds = useMemo(() => {
+        return Object.values(itemVouchers).map(voucherInfo => voucherInfo.voucherId);
+    }, [itemVouchers]);
+
 
     // Calculate total after all discounts
     const calculateTotal = () => {
@@ -53,7 +61,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
 
             const currentUser = await getUserProfile();
 
-            console.log("ItemVouchers:", itemVouchers);
+
             // Create a modified cart with voucher details
             const cartWithVouchers = cart.map(item => {
                 const appliedVoucher = itemVouchers[item.productId];
@@ -62,6 +70,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                     discountPercentage: appliedVoucher?.discountPercentage || 0,
                     discountAmount: appliedVoucher?.discountAmount || 0,
                     voucherCode: appliedVoucher?.voucherCode || null,
+                    voucherId: appliedVoucher?.voucherId || null,
                     // The price of the item after discount
                     finalPrice: item.price - (appliedVoucher?.discountAmount / item.quantity || 0)
                 };
@@ -78,6 +87,9 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                 cart: cartWithVouchers // Use the modified cart
             };
 
+            const usedVouchers = orderDetails.cart.filter(item => item.voucherId)
+
+            await deleteUsedVoucher(usedVouchers.map(voucher => voucher.voucherId));
             // Create the order
             await createOrder(notes, orderDetails)
                 .then(() => {
@@ -86,7 +98,8 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                 .catch((error) => {
                     console.error("Error placing order:", error);
                     toast.error(`Failed to place order`);
-                });
+                }); ``
+
 
             // Clear the cart
             await clearCart();
@@ -217,6 +230,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                                 onVoucherSelect={(voucherData) => handleVoucherSelect(item.productId, voucherData)}
                                                 selectedVoucherId={itemVouchers[item.productId]?.voucherId}
                                                 className="mb-2"
+                                                disabledVoucherIds={getAllSelectedVoucherIds}
                                             />
                                         </div>
                                     </div>

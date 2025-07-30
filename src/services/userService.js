@@ -11,7 +11,6 @@ export const getCurrentUserData = async () => {
         const currentUser = auth.currentUser;
 
         if (!currentUser) {
-            console.log("No user is currently logged in");
             return null;
         }
 
@@ -23,7 +22,6 @@ export const getCurrentUserData = async () => {
         if (snapshot.exists()) {
             return { id: userId, ...snapshot.val() };
         } else {
-            console.log("User record not found in database");
             return null;
         }
     } catch (error) {
@@ -42,7 +40,7 @@ export const createUser = async (userData) => {
             ...userData,
             createdAt: timestamp,
             updatedAt: timestamp,
-            createdBy: auth.currentUser?.uid || "unknown"
+            createdBy: auth.currentUser?.uid || "Admin"
         });
 
         return { id: newUserRef.key, ...userData };
@@ -171,7 +169,7 @@ export const changeUserRoleById = async (userId, newRole) => {
         await update(userRef, {
             role: newRole,
             updatedAt: formattedDate,
-            updatedBy: "lanceballicud"
+            updatedBy: getCurrentUserData()?.email || 'Admin'
         });
 
         return {

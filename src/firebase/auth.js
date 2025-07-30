@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updatePassword, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
+import { createUserWithEmailAndPassword, EmailAuthProvider, GoogleAuthProvider, reauthenticateWithCredential, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updatePassword } from "firebase/auth";
 import { auth } from "./firebase";
 import { get, getDatabase, ref, set } from "firebase/database";
 
@@ -153,74 +153,6 @@ export const doSendEmailVerification = async () => {
     })
 }
 
-// Email Link Authentication Functions
-export const doSendSignInLinkToEmail = async (email) => {
-    try {
-        const actionCodeSettings = {
-            // URL you want to redirect back to. The domain must be in the authorized domains list in Firebase Console
-            url: `${window.location.origin}/login`,
-            handleCodeInApp: true, // This must be true
-        };
-        
-        // Store the email locally so you can access it when the user completes sign-in
-        window.localStorage.setItem('emailForSignIn', email);
-        
-        // Send the email verification link
-        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-        return true;
-    } catch (error) {
-        console.error("Error sending sign-in link:", error);
-        throw error;
-    }
-};
-
-// Check if the current URL is an email sign-in link
-export const isSignInWithLink = () => {
-    return isSignInWithEmailLink(auth, window.location.href);
-};
-
-// Complete the sign-in process with the email stored in localStorage
-export const doSignInWithLink = async (email) => {
-    // Get the email from localStorage if not provided
-    if (!email) {
-        email = window.localStorage.getItem('emailForSignIn');
-    }
-    
-    if (!email) {
-        // User opened the link on a different device
-        throw new Error("Email not found. Please try signing in again on the same device where you requested the link.");
-    }
-
-    try {
-        const userCredential = await signInWithEmailLink(auth, email, window.location.href);
-        
-        // Clear email from storage
-        window.localStorage.removeItem('emailForSignIn');
-        
-        // Update user info in database
-        const db = getDatabase();
-        const userRef = ref(db, 'users/' + userCredential.user.uid);
-        const userSnapshot = await get(userRef);
-
-        if (userSnapshot.exists()) {
-            const userData = userSnapshot.val();
-            
-            // Check if account is disabled
-            if (userData.accountStatus === "disabled") {
-                await auth.signOut();
-                throw new Error("ACCOUNT_DISABLED");
-            }
-            
-            // Update last login time
-            await set(ref(db, 'users/' + userCredential.user.uid + '/lastLogin'), new Date().toISOString());
-        }
-
-        return userCredential;
-    } catch (error) {
-        console.error("Error signing in with email link:", error);
-        throw error;
-    }
-};
 
 // For Google Sign-In.
 // export const doSignInWithGoogle = async () => {

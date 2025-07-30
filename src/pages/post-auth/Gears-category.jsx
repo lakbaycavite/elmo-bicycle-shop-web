@@ -93,7 +93,14 @@ const GearCard = ({ gear, onAddToCart, onToggleWishlist, isInWishlist, averageRa
                         <span className="badge" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}>{gear.category}</span>
                     </div>
                     <p className="fs-5 fw-bold mb-0" style={{ color: 'var(--primary-accent)' }}>
-                        ₱{new Intl.NumberFormat().format(gear.price)}
+                        {
+                            Number(gear.discountedFinalPrice) > 0
+                                ? <>
+                                    <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(gear.price)}`}</span>
+                                    <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(gear.discountedFinalPrice))}`}</span>
+                                </>
+                                : `₱${new Intl.NumberFormat().format(gear.price)}`
+                        }
                     </p>
                 </div>
 

@@ -5,9 +5,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import elmoLogo from '/images/logos/elmo.png';
 import { toast } from 'sonner';
+import { useDiscount } from '../../hooks/useDiscount';
 
 function OrdersOverview() {
   const { adminOrders, updateOrderStatus } = useOrder();
+  const { returnVoucherOnCancel, deleteUsedVoucher } = useDiscount();
 
   // Modal states
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -133,6 +135,7 @@ function OrdersOverview() {
 
   // Handle view button click
   const handleViewOrder = (order) => {
+
     setSelectedOrder(order);
     setEditablePaymentMethod(order.paymentMethod);
     setShowDetailsModal(true);
@@ -150,16 +153,21 @@ function OrdersOverview() {
     setShowCancelModal(true);
   };
 
+
+
   // Handle confirm approval
   const handleConfirmApprove = async () => {
     try {
 
-      const updatedOrder = { ...selectedOrder, status: 'paid' };
+      const updatedOrder = { ...selectedOrder, status: 'paid', paymentMethod: editablePaymentMethod };
 
       await updateOrderStatus(selectedOrder.id, updatedOrder)
         .then(() => {
           toast.success('Order approved successfully!');
         })
+      const usedVouchers = selectedOrder.products.filter(item => item.voucherId);
+
+      await deleteUsedVoucher(usedVouchers.map(voucher => voucher.voucherId)); // Delete vouchers if used
       setShowConfirmModal(false);
       setShowDetailsModal(false);
       setShowPDFPreview(true);
@@ -181,6 +189,9 @@ function OrdersOverview() {
         .then(() => {
           toast.success('Order cancelled successfully!');
         })
+
+      await returnVoucherOnCancel(selectedOrder.products.map(item => item.voucherCode));
+
       setShowCancelModal(false);
       setCancelReason('');
       setShowDetailsModal(false);
@@ -241,7 +252,7 @@ function OrdersOverview() {
     // Add shop name
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('ELMO BIKE SHOP', 20, 25); // Start closer to left edge
+    doc.text('ELMO BIKE SHOP', 50, 25); // Start closer to left edge
 
     // Add a line under the header
     doc.setLineWidth(0.5);
@@ -257,7 +268,28 @@ function OrdersOverview() {
 
     const itemTableRows = [];
 
-    const subtotal = selectedOrder.products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = selectedOrder.products.reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0
+      let itemPrice = Number(item.price) || 0; // Default to original price
+
+      // Check if item has a valid discounted price and use it
+      // The `item.discountedFinalPrice` should be the price *after* discount for that specific item.
+      // Also ensure `item.discount` is handled if that's your primary indicator of a discount.
+      const discountedFinalPrice = Number(item.discountedFinalPrice);
+      const originalPrice = Number(item.originalPrice); // Assuming you store originalPrice
+
+      // Prioritize the discounted price if it's explicitly set and valid (greater than 0)
+      // You might also check if a discount percentage (item.discount) exists and is > 0
+      if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
+        itemPrice = discountedFinalPrice;
+      } else if (originalPrice > 0 && !isNaN(originalPrice)) {
+        // Fallback to originalPrice if no valid discountedPrice
+        itemPrice = originalPrice;
+      }
+      // If both are 0 or invalid, itemPrice remains 0
+
+      return sum + (itemPrice * quantity);
+    }, 0);
     const discount = selectedOrder.products.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     const total = subtotal - discount;
 
@@ -266,10 +298,10 @@ function OrdersOverview() {
       itemTableRows.push([
         item.quantity.toString(),
         item.name + ' (id: ' + item.id + ')',
-        `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
-        `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
         item.discountAmount ? `PHP ${item.discountAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : 'PHP 0.00',
-        item.finalPrice ? `PHP ${(item.finalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
       ]);
     });
 
@@ -363,8 +395,29 @@ function OrdersOverview() {
 
   // Calculate subtotal (without discount)
   const calculateSubtotal = (items) => {
-    if (items.finalPrice === 0) return items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    return items.reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0
+      let itemPrice = Number(item.price) || 0; // Default to original price
+
+      // Check if item has a valid discounted price and use it
+      // The `item.discountedFinalPrice` should be the price *after* discount for that specific item.
+      // Also ensure `item.discount` is handled if that's your primary indicator of a discount.
+      const discountedFinalPrice = Number(item.discountedFinalPrice);
+      const originalPrice = Number(item.originalPrice); // Assuming you store originalPrice
+
+      // Prioritize the discounted price if it's explicitly set and valid (greater than 0)
+      // You might also check if a discount percentage (item.discount) exists and is > 0
+      if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
+        itemPrice = discountedFinalPrice;
+      } else if (originalPrice > 0 && !isNaN(originalPrice)) {
+        // Fallback to originalPrice if no valid discountedPrice
+        itemPrice = originalPrice;
+      }
+      // If both are 0 or invalid, itemPrice remains 0
+
+      return sum + (itemPrice * quantity);
+    }, 0);
   };
 
   // Placeholder discount (0% for demo)
@@ -608,15 +661,34 @@ function OrdersOverview() {
                         <tr key={index}>
                           <td className="border border-gray-300 px-4 py-2">{item.name}</td>
                           <td className="border border-gray-300 px-4 py-2">{item.quantity}</td>
-                          <td className="border border-gray-300 px-4 py-2">₱{item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-                          <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity)?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                          <td className="border border-gray-300 px-4 py-2">{
+                            Number(item.discountedFinalPrice) > 0
+                              ? <>
+                                <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(item.price)}`}</span>
+                                <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(item.discountedFinalPrice))}`}</span>
+                              </>
+                              : `₱${new Intl.NumberFormat().format(item.price)}`
+                          }</td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {
+                              Number(item.discountedFinalPrice) > 0
+                                ? <>
+                                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(item.discountedFinalPrice * item.quantity))}`}</span>
+                                </>
+                                : `₱${new Intl.NumberFormat().format(item.price)}`
+                            }</td>
 
                           <td className="border border-gray-300 px-4 py-2">₱{item.discountAmount?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
 
                           {item.finalPrice === 0 ? (
                             <td className="border border-gray-300 px-4 py-2">₱{(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                           ) : (
-                            <td className="border border-gray-300 px-4 py-2">₱{(item.finalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                            <td className="border border-gray-300 px-4 py-2">
+
+                              {/* ₱{((item.finalPrice) * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })} */}
+                              ₱{((item.discountedFinalPrice * item.quantity) - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+
+                            </td>
                           )}
                         </tr>
                       ))}
@@ -643,8 +715,8 @@ function OrdersOverview() {
               <div className="mb-6">
                 <label className="block text-sm font-bold mb-2">Vouchers Used:</label>
                 <select
-                  value={editablePaymentMethod}
-                  onChange={(e) => setEditablePaymentMethod(e.target.value)}
+                  // value={editablePaymentMethod}
+                  // onChange={(e) => setEditablePaymentMethod(e.target.value)}
                   className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-orange-500"
                 >
                   {selectedOrder.products.map((item) => (
@@ -661,7 +733,9 @@ function OrdersOverview() {
               <div className="mb-6 bg-gray-50 p-4 rounded">
                 <h3 className="text-lg font-bold mb-3">Order Summary</h3>
                 {(() => {
+                  // const subtotal = calculateSubtotal(selectedOrder.products);
                   const subtotal = calculateSubtotal(selectedOrder.products);
+
                   const discount = calculateDiscount(selectedOrder.products);
                   const total = subtotal - discount;
 

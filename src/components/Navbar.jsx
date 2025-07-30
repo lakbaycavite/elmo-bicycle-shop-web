@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Heart, User, Bell } from 'lucide-react';
+import { ShoppingCart, Heart, User } from 'lucide-react'; // Removed Bell here
 import NavLinks from './NavLinks';
 import SearchBar from './SearchBar';
 import AuthButtons from './AuthButtons';
@@ -8,17 +8,22 @@ import Drawer from './Drawer';
 import { doSignOut } from '../firebase/auth';
 import { useCart } from '../hooks/useCart';
 
+// Import Notification Components
+import NotificationBadge from './NotificationBadge';
+import NotificationModal from './NotificationModal';
+import { toast } from 'sonner';
+
 function Navbar({ isLoggedIn = false }) {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false); // New state for modal
 
-  const { itemCount } = useCart()
+  const { itemCount } = useCart();
 
   // Close drawer when screen size becomes large
   useEffect(() => {
     const handleResize = () => {
-      // Use lg breakpoint for logged-in users (more items), md for logged-out users
-      const breakpoint = isLoggedIn ? 1024 : 768; // lg: 1024px, md: 768px
+      const breakpoint = isLoggedIn ? 1024 : 768;
       if (window.innerWidth >= breakpoint) {
         setDrawerOpen(false);
       }
@@ -36,12 +41,19 @@ function Navbar({ isLoggedIn = false }) {
   const handleCart = () => { setDrawerOpen(false); navigate('/customer/cart'); };
   const handleWishlist = () => { setDrawerOpen(false); navigate('/customer/wishlist'); };
   const handleProfile = () => { setDrawerOpen(false); navigate('/customer/profile'); };
-  const handleNotifications = () => { setDrawerOpen(false); navigate('/customer/notifications'); };
+
+  // Toggle notification modal instead of navigating
+  const handleNotificationsToggle = () => {
+    setDrawerOpen(false); // Close drawer if open
+    setNotificationsModalOpen(prev => !prev); // Toggle modal visibility
+  };
+
   const handleLogout = async () => {
     setDrawerOpen(false);
+    setNotificationsModalOpen(false); // Close modal on logout
     await doSignOut()
       .then(() => {
-        console.log("Logout successful");
+        toast.success("Logout successful");
       })
       .catch((error) => {
         console.error("Logout failed", error);
@@ -95,11 +107,12 @@ function Navbar({ isLoggedIn = false }) {
                 >
                   <User size={24} />
                 </button>
+                {/* Notification Bell Button */}
                 <button
-                  onClick={handleNotifications}
-                  className="text-white hover:text-orange-500"
+                  onClick={handleNotificationsToggle}
+                  className="text-white hover:text-orange-500 relative" // Added relative for badge positioning
                 >
-                  <Bell size={24} />
+                  <NotificationBadge /> {/* Use the dedicated badge component */}
                 </button>
                 <button
                   onClick={handleLogout}
@@ -124,9 +137,24 @@ function Navbar({ isLoggedIn = false }) {
           </div>
         </div>
       </nav>
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onLogin={handleLogin} onSignup={handleSignup} onLogout={handleLogout} isLoggedIn={isLoggedIn} />
+
+      {/* Drawer Component */}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onLogin={handleLogin}
+        onSignup={handleSignup}
+        onLogout={handleLogout}
+        isLoggedIn={isLoggedIn}
+      />
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isOpen={notificationsModalOpen}
+        onClose={() => setNotificationsModalOpen(false)}
+      />
     </>
-  )
+  );
 }
 
-export default Navbar 
+export default Navbar;

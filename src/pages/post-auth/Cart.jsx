@@ -9,6 +9,7 @@ import ProductRatingModal from "../../components/ProductRatingModal";
 import { useState } from "react";
 import ProductDetailsModal from "../../components/ProductsDetailsModal";
 import { toast } from "sonner";
+// import { useDiscount } from "../../hooks/useDiscount";
 
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
@@ -17,12 +18,18 @@ const Cart = () => {
     const [completedCartItems, setCompletedCartItems] = useState([]);
     const [viewProduct, setViewProduct] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [searchFilter, setSearchFilter] = useState("");
 
-    const { cart, updateQuantity, removeItem, totalPrice, addToCart, clearCart } = useCart();
+    const { cart, updateQuantity, removeItem, totalPrice, totalDiscount, addToCart, clearCart } = useCart();
     const { products, getProduct } = useProducts();
 
     const navigate = useNavigate();
 
+
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchFilter.toLowerCase())
+    );
 
     // Handle checkout completion
     const handleCheckoutComplete = () => {
@@ -52,7 +59,6 @@ const Cart = () => {
     const handleRatingSubmit = async (ratings) => {
         try {
             // Here you would send the ratings to your backend
-            console.log("Submitting ratings:", ratings);
 
             // You might want to call an API here
             // await submitProductRatings(ratings);

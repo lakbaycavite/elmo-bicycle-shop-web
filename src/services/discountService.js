@@ -1,4 +1,4 @@
-import { getDatabase, ref, get, set, update, push, query, orderByChild, equalTo } from "firebase/database";
+import { getDatabase, ref, get, set, update, push, query, orderByChild, equalTo, remove } from "firebase/database";
 import { auth } from "../firebase/firebase";
 
 // Get current formatted time
@@ -61,13 +61,13 @@ export const getSpinWheelConfig = async () => {
         return {
             segments: [
                 { id: 1, label: "5% OFF", discount: 5, color: "#FF6B6B" },
-                { id: 2, label: "Better Luck Next Time", discount: 0, color: "#4ECDC4" },
+                { id: 2, label: "Try Again", discount: 0, color: "#4ECDC4" },
                 { id: 3, label: "10% OFF", discount: 10, color: "#45B7D1" },
-                { id: 4, label: "Better Luck Next Time", discount: 0, color: "#96CEB4" },
-                { id: 5, label: "15% OFF", discount: 15, color: "#FFEAA7" },
-                { id: 6, label: "Better Luck Next Time", discount: 0, color: "#DDA0DD" },
-                { id: 7, label: "20% OFF", discount: 20, color: "#98D8C8" },
-                { id: 8, label: "Better Luck Next Time", discount: 0, color: "#F7DC6F" }
+                { id: 4, label: "Try Again", discount: 0, color: "#96CEB4" },
+                { id: 5, label: "5% OFF", discount: 5, color: "#FFEAA7" },
+                { id: 6, label: "Try Again", discount: 0, color: "#DDA0DD" },
+                { id: 7, label: "10% OFF", discount: 10, color: "#98D8C8" },
+                { id: 8, label: "Try Again", discount: 0, color: "#F7DC6F" }
             ],
             minOrderAmount: 1000
         };
@@ -325,6 +325,59 @@ const generateVoucherCode = () => {
     }
     return result;
 };
+
+export const deleteVoucher = async (voucherIds) => {
+    try {
+        const db = getDatabase();
+        const idsToDelete = Array.isArray(voucherIds) ? voucherIds : [voucherIds]; // Ensure it's an array
+
+        const results = await Promise.all(
+            idsToDelete.map(async (voucherId) => {
+                const voucherRef = ref(db, `vouchers/${voucherId}`);
+                await remove(voucherRef);
+                return { voucherId, success: true, message: "Voucher deleted successfully." };
+            })
+        );
+        return { success: true, results, message: "Voucher(s) deletion process complete." };
+    } catch (error) {
+        console.error("Error deleting voucher(s):", error);
+        throw error;
+    }
+};
+export const unuseVoucher = async (voucherIds) => { // Now accepts voucherIds (single ID or array)
+    try {
+        const db = getDatabase();
+        const idsToUnuse = Array.isArray(voucherIds) ? voucherIds : [voucherIds]; // Ensure it's an array
+
+        const results = await Promise.all(
+            idsToUnuse.map(async (voucherId) => {
+                const voucherRef = ref(db, `vouchers/${voucherId}`);
+                const snapshot = await get(voucherRef);
+
+                if (!snapshot.exists()) {
+                    return { voucherId, success: false, message: "Voucher not found." };
+                }
+
+                const voucher = snapshot.val();
+                if (!voucher.isUsed) {
+                    return { voucherId, success: true, message: "Voucher is already unused." };
+                }
+
+                await update(voucherRef, {
+                    isUsed: false,
+                    usedAt: null, // Clear used timestamp
+                    usedForOrderId: null // Clear associated order ID
+                });
+                return { voucherId, success: true, message: "Voucher returned successfully." };
+            })
+        );
+        return { success: true, results, message: "Voucher(s) return process complete." };
+    } catch (error) {
+        console.error("Error un-using voucher(s):", error);
+        throw error;
+    }
+};
+
 
 // Helper function to get expiration date
 const getExpirationDate = (days) => {

@@ -174,11 +174,13 @@ export const updateOrderStatus = async (orderId, updates) => {
         // Merge existing data with new updates
         const newStatus = updates.status || order.status; // Use new status if provided, else keep old
         const newCancelReason = updates.cancelReason !== undefined ? updates.cancelReason : order.cancelReason || "";
+        const newPaymentMethod = updates.paymentMethod || order.paymentMethod || "Walk-in";
 
         await update(orderRef, {
             ...updates, // Apply all updates passed in
             status: newStatus,
             cancelReason: newCancelReason,
+            paymentMethod: newPaymentMethod,
             updatedAt: getCurrentFormattedTime()
         });
 
@@ -188,7 +190,6 @@ export const updateOrderStatus = async (orderId, updates) => {
                 // Use the potentially updated totalAmount from 'updates' or the original order's totalAmount
                 const amountForSpinAttempts = updates.totalAmount !== undefined ? updates.totalAmount : order.totalAmount;
                 await addSpinAttempts(order.userId, amountForSpinAttempts);
-                console.log(`Added spin attempts for user ${order.userId} with order amount ${amountForSpinAttempts}`);
             } catch (spinError) {
                 console.error("Error adding spin attempts:", spinError);
                 // Don't throw error here as the order update was successful

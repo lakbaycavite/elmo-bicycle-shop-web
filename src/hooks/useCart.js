@@ -16,12 +16,31 @@ export function useCart() {
     const [error, setError] = useState(null);
     const [itemCount, setItemCount] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [totalDiscount, setTotalDiscount] = useState(0); // New state for total discount
+
+    // Helper function to calculate the discount amount for a single item
+    // Make sure this logic matches how discounts are applied and stored
+    const calculateItemDiscountAmount = useCallback((item) => {
+        const originalPrice = Number(item.originalPrice); // Ensure you're storing originalPrice
+        const discountPercentage = Number(item.discount || 0); // Your 'discount' field is the percentage
+        const quantity = Number(item.quantity);
+
+        if (isNaN(originalPrice) || isNaN(discountPercentage) || isNaN(quantity) || originalPrice <= 0 || discountPercentage <= 0) {
+            return 0; // No valid discount or price
+        }
+
+        const discountAmountPerItem = originalPrice * (discountPercentage / 100);
+        return discountAmountPerItem * quantity;
+    }, []);
 
     // Subscribe to cart changes in real-time
     useEffect(() => {
         const user = auth.currentUser;
         if (!user) {
             setCart([]);
+            setItemCount(0);
+            setTotalPrice(0);
+            setTotalDiscount(0); // Reset total discount
             setLoading(false);
             return;
         }
@@ -36,6 +55,7 @@ export function useCart() {
                     setCart([]);
                     setItemCount(0);
                     setTotalPrice(0);
+                    setTotalDiscount(0); // Reset total discount
                 } else {
                     const cartData = snapshot.val();
                     const cartItems = Object.keys(cartData).map(key => ({
@@ -46,27 +66,50 @@ export function useCart() {
                     setCart(cartItems);
 
                     // Calculate totals
-                    setItemCount(cartItems.reduce((total, item) => total + item.quantity, 0));
-                    setTotalPrice(cartItems.reduce((total, item) =>
-                        total + ((item.price || 0) * item.quantity), 0));
+                    let currentItemCount = 0;
+                    let currentTotalPrice = 0;
+                    let currentTotalDiscount = 0; // Initialize for discount calculation
+
+                    cartItems.forEach(item => {
+                        currentItemCount += Number(item.quantity);
+
+                        // Calculate the price for totalPrice
+                        // Prefer discountedFinalPrice if it exists and is valid, otherwise use original price
+                        const effectivePricePerItem = (Number(item.discountedFinalPrice) > 0 && !isNaN(Number(item.discountedFinalPrice)))
+                            ? Number(item.discountedFinalPrice)
+                            : Number(item.originalPrice); // Fallback to originalPrice
+
+                        currentTotalPrice += (effectivePricePerItem * Number(item.quantity));
+
+                        // Calculate and add to total discount
+                        currentTotalDiscount += calculateItemDiscountAmount(item);
+                      
+                    });
+
+                    setItemCount(currentItemCount);
+                    setTotalPrice(currentTotalPrice);
+                    setTotalDiscount(currentTotalDiscount); // Update the total discount state
                 }
                 setError(null);
             } catch (err) {
+                console.error("Error processing cart snapshot:", err);
                 setError(err.message);
             } finally {
                 setLoading(false);
             }
         }, (err) => {
+            console.error("Firebase onValue error:", err);
             setError(err.message);
             setLoading(false);
         });
 
-
         // Clean up subscription
         return () => unsubscribe();
-    }, []);
+    }, [calculateItemDiscountAmount]); // Add calculateItemDiscountAmount to dependencies
+
 
     // Add item to cart
+    // IMPORTANT: Ensure `productDetails` here includes `originalPrice` and `discount`
     const addToCart = useCallback(async (productId, quantity, productDetails) => {
         try {
             setError(null);
@@ -74,6 +117,7 @@ export function useCart() {
             return await addToCartService(productId, quantity, productDetails);
         } catch (err) {
             setError(err.message);
+            toast.error(`Failed to add item to cart: ${err.message}`);
             throw err;
         }
     }, []);
@@ -85,6 +129,7 @@ export function useCart() {
             return await updateQuantityService(productId, quantity);
         } catch (err) {
             setError(err.message);
+            toast.error(`Failed to update quantity: ${err.message}`);
             throw err;
         }
     }, []);
@@ -97,6 +142,7 @@ export function useCart() {
             return await removeItemService(productId);
         } catch (err) {
             setError(err.message);
+            toast.error(`Failed to remove item: ${err.message}`);
             throw err;
         }
     }, []);
@@ -108,11 +154,12 @@ export function useCart() {
             return await clearCartService();
         } catch (err) {
             setError(err.message);
+            toast.error(`Failed to clear cart: ${err.message}`);
             throw err;
         }
     }, []);
 
-    // Format the timestamp
+    // Format the timestamp (kept as is)
     const formatTimestamp = useCallback(() => {
         const now = new Date();
         const year = now.getFullYear();
@@ -125,9 +172,9 @@ export function useCart() {
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }, []);
 
-    useEffect(() => {
-
-    })
+    // This useEffect with no dependencies isn't doing anything useful and can be removed
+    // useEffect(() => {
+    // })
 
     return {
         cart,
@@ -135,6 +182,7 @@ export function useCart() {
         error,
         itemCount,
         totalPrice,
+        totalDiscount, // Expose totalDiscount
         addToCart,
         updateQuantity,
         removeItem,

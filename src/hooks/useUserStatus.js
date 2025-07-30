@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 /**
  * Hook for managing user status in Firebase
  * @param {Object} config - Configuration object
- * @param {string} config.currentUserLogin - Current admin username (default: 'lanceballicud')
+ * @param {string} config.currentUserLogin - Current admin username
  * @param {string} config.currentDateTime - Current date/time (default: '2025-07-26 06:17:23')
  * @returns {Object} - User status management methods and state
  */
