@@ -17,7 +17,6 @@ export function AuthProvider({ children }) {
 
     async function initializeUser(user) {
         if (user) {
-            console.log("User is logged in:", user.email);
             setCurrentUser({ ...user });
             setUserLoggedIn(true);
             // Fetch user record from DB

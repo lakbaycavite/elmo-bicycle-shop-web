@@ -274,8 +274,6 @@ const Inventory = () => {
       return;
     }
 
-    console.log('Adding new Product:', formData);
-
     if (!formData.name || !formData.category || !formData.price || formData.stock < 0) {
       alert('Please fill in all required fields.');
       return;
@@ -325,8 +323,6 @@ const Inventory = () => {
       toast.error("You don't have permission to delete products");
       return;
     }
-
-    console.log(`Deleting product with ID: ${id}`);
 
     try {
       await deleteProduct(id);

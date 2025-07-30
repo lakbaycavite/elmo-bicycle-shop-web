@@ -395,7 +395,6 @@ function OrdersOverview() {
 
   // Calculate subtotal (without discount)
   const calculateSubtotal = (items) => {
-    console.log('Calculating subtotal for items:', items);
 
     return items.reduce((sum, item) => {
       const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0

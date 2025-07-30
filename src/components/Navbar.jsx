@@ -11,6 +11,7 @@ import { useCart } from '../hooks/useCart';
 // Import Notification Components
 import NotificationBadge from './NotificationBadge';
 import NotificationModal from './NotificationModal';
+import { toast } from 'sonner';
 
 function Navbar({ isLoggedIn = false }) {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ function Navbar({ isLoggedIn = false }) {
     setNotificationsModalOpen(false); // Close modal on logout
     await doSignOut()
       .then(() => {
-        console.log("Logout successful");
+        toast.success("Logout successful");
       })
       .catch((error) => {
         console.error("Logout failed", error);

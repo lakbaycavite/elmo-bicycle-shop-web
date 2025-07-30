@@ -83,8 +83,7 @@ export function useCart() {
 
                         // Calculate and add to total discount
                         currentTotalDiscount += calculateItemDiscountAmount(item);
-                        console.log(`Item: ${item.name}, Effective Price: ${effectivePricePerItem}, Quantity: ${item.quantity}, Discount Amount: ${calculateItemDiscountAmount(item)}`);
-                        console.log(`Current Total Price: ${currentTotalPrice}, Current Total Discount: ${currentTotalDiscount}, Current Item Count: ${currentItemCount}`);
+                      
                     });
 
                     setItemCount(currentItemCount);

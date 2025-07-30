@@ -59,7 +59,6 @@ const Cart = () => {
     const handleRatingSubmit = async (ratings) => {
         try {
             // Here you would send the ratings to your backend
-            console.log("Submitting ratings:", ratings);
 
             // You might want to call an API here
             // await submitProductRatings(ratings);

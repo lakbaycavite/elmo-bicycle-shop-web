@@ -75,7 +75,6 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                     finalPrice: item.price - (appliedVoucher?.discountAmount / item.quantity || 0)
                 };
             });
-            console.log(cartWithVouchers);
 
             // Create additional order details
             const orderDetails = {
@@ -89,7 +88,6 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
             };
 
             const usedVouchers = orderDetails.cart.filter(item => item.voucherId)
-            console.log(usedVouchers.map(voucher => voucher.voucherId))
 
             await deleteUsedVoucher(usedVouchers.map(voucher => voucher.voucherId));
             // Create the order
