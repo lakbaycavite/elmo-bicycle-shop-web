@@ -425,10 +425,19 @@ function HomePage() {
                 }}>About Us</Link>
               </div>
               <div>
-                <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</Link>
+                <Link to="/customer/bikes-category" className="text-white no-underline hover:text-orange-500 transition">Our Bikes</Link>
               </div>
               <div>
-                <Link to="#" className="text-white no-underline hover:text-orange-500 transition">Our Services</Link>
+                <Link to="#" className="text-white no-underline hover:text-orange-500 transition" onClick={
+                  () => {
+                    setTimeout(() => {
+                      const contactSection = document.getElementById('about-section');
+                      if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 100);
+                  }
+                }>Our Services</Link>
               </div>
             </div>
           </div>
