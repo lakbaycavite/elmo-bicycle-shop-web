@@ -190,7 +190,6 @@ export const updateOrderStatus = async (orderId, updates) => {
                 // Use the potentially updated totalAmount from 'updates' or the original order's totalAmount
                 const amountForSpinAttempts = updates.totalAmount !== undefined ? updates.totalAmount : order.totalAmount;
                 await addSpinAttempts(order.userId, amountForSpinAttempts);
-                console.log(`Added spin attempts for user ${order.userId} with order amount ${amountForSpinAttempts}`);
             } catch (spinError) {
                 console.error("Error adding spin attempts:", spinError);
                 // Don't throw error here as the order update was successful

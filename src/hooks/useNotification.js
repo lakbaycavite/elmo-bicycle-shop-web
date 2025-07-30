@@ -60,7 +60,6 @@ export function useNotifications() {
             setLoading(false);
         });
 
-        // --- USER-SPECIFIC DATA LISTENERS (Only active if user is logged in) ---
         if (user) {
             userSettingsRef = ref(db, `users/${user.uid}/notificationSettings`);
             unsubscribeUserGlobalSettings = onValue(userSettingsRef, (snapshot) => {
@@ -74,22 +73,7 @@ export function useNotifications() {
                 }
             }, (err) => console.error("Error reading user global notification settings:", err));
 
-            // --- USER-SPECIFIC NOTIFICATIONS LISTENER (Uncomment if needed) ---
-            /*
-            userNotificationsRef = ref(db, `notifications/${user.uid}`);
-            unsubscribeUserSpecificNotifications = onValue(userNotificationsRef, (snapshot) => {
-                const notificationsData = snapshot.val();
-                if (notificationsData) {
-                    const loadedNotifications = Object.keys(notificationsData).map(key => ({
-                        id: key,
-                        ...notificationsData[key]
-                    }));
-                    setUserSpecificNotifications(loadedNotifications.filter(notif => !notif.read));
-                } else {
-                    setUserSpecificNotifications([]);
-                }
-            }, (err) => console.error("Error fetching user-specific notifications:", err));
-            */
+        
         } else {
             // If no user, reset user-specific states (important for unreadCount calculation)
             setLastReadGlobalTimestamp(0);
@@ -108,15 +92,11 @@ export function useNotifications() {
         };
     }, [auth.currentUser]);
 
-    // --- REFACTORED getActiveNotifications ---
     const getActiveNotifications = useCallback(() => {
         const user = auth.currentUser;
 
-        // Global notifications: ALWAYS include all fetched global notifications for display.
-        // The filtering for 'unreadCount' will happen separately.
         const activeGlobalForDisplay = [...globalNotifications]; // Simply return all global notifications
 
-        // User-specific notifications: Only active if a user is logged in AND they are not read
         const activeUserSpecific = user ? userSpecificNotifications.filter(notif => !notif.read) : [];
 
         const combined = [...activeGlobalForDisplay, ...activeUserSpecific];
@@ -124,29 +104,24 @@ export function useNotifications() {
         return combined;
     }, [globalNotifications, userSpecificNotifications, auth.currentUser]); // Removed lastReadGlobalTimestamp, dismissedGlobalIds from deps
 
-    // --- NEW: Calculate unread count based on user's specific read/dismissed status ---
     const calculateUnreadCount = useCallback(() => {
         const user = auth.currentUser;
         if (!user) {
-            // If no user logged in, all global notifications are considered unread by default
             return globalNotifications.length;
         }
 
-        // For logged-in users, filter based on their read/dismissed settings
         const unreadGlobal = globalNotifications.filter(notif => {
             const isReadByTimestamp = notif.timestamp <= lastReadGlobalTimestamp;
             const isDismissed = dismissedGlobalIds[notif.id];
             return !isReadByTimestamp && !isDismissed;
         });
 
-        // Unread user-specific notifications
         const unreadUserSpecific = userSpecificNotifications.filter(notif => !notif.read);
 
         return unreadGlobal.length + unreadUserSpecific.length;
     }, [globalNotifications, userSpecificNotifications, lastReadGlobalTimestamp, dismissedGlobalIds, auth.currentUser]);
 
 
-    // Update unread count whenever relevant data changes
     useEffect(() => {
         setUnreadCount(calculateUnreadCount());
     }, [calculateUnreadCount]);
