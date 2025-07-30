@@ -244,7 +244,7 @@ const CustomerProfile = () => {
                                                 <td className="py-3 px-4">{transaction.id}</td>
                                                 <td className="py-3 px-4">{formatDate(transaction.createdAt)}</td>
                                                 <td className="py-3 px-4">{transaction.paymentMethod}</td>
-                                                <td className="py-3 px-4 font-medium">{transaction.totalAmount}</td>
+                                                <td className="py-3 px-4 font-medium">{`₱${transaction.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</td>
                                                 <td className="py-3 px-4">
                                                     <span className="px-2 py-1 bg-green-900 text-green-300 rounded-full text-xs">
                                                         {transaction.status}
