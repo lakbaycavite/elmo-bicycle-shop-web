@@ -33,7 +33,6 @@ const Wishlist = () => {
         })
     }, [wishlist, searchFilter, categoryFilter, priceSort])
 
-    console.log("Filtered Wishlist:", filteredWishlist);
 
     const formatPrice = (price) => `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
 

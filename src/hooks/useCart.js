@@ -67,13 +67,6 @@ export function useCart() {
                     let currentTotalDiscount = 0;
 
                     cartItems.forEach(item => {
-                        console.log(`Processing item: ${item.name || item.productId}`, {
-                            quantity: item.quantity,
-                            originalPrice: item.originalPrice,
-                            discountedFinalPrice: item.discountedFinalPrice,
-                            discount: item.discount,
-                            discountAmount: item.discountAmount
-                        });
 
                         const quantity = parseFloat(item.quantity || 0);
                         if (isNaN(quantity) || quantity <= 0) {
@@ -122,22 +115,12 @@ export function useCart() {
                             }
                         }
 
-                        console.log(`Item calculation result:`, {
-                            itemSubtotal,
-                            itemDiscountTotal,
-                            effectivePrice: itemSubtotal / quantity
-                        });
+                  
 
                         currentTotalPrice += itemSubtotal;
                         currentTotalDiscount += itemDiscountTotal;
                     });
 
-                    console.log("Final totals:", {
-                        currentItemCount,
-                        currentTotalPrice,
-                        currentTotalDiscount,
-                        finalTotal: currentTotalPrice - currentTotalDiscount
-                    });
 
                     setItemCount(currentItemCount);
                     setTotalPrice(currentTotalPrice);

@@ -43,9 +43,7 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted");
     if (validate()) {
-      console.log("Validation passed");
       setLoading(true);
 
       if (!isSigningIn) {
@@ -72,7 +70,7 @@ function Login() {
               } else {
                 toast.error(error.code === 'auth/invalid-credential'
                   ? 'Invalid email or password'
-                  : `Login error: ${error.message}`);
+                  : `Invalid email or password`);
               }
               navigate('/login');
             }
@@ -86,7 +84,7 @@ function Login() {
             } else {
               toast.error(error.code === 'auth/invalid-credential'
                 ? 'Invalid email or password'
-                : `Login error: ${error.message}`);
+                : `Invalid email or password`);
             }
           })
           .finally(() => {

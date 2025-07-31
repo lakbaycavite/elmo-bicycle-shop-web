@@ -46,10 +46,8 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted"); // ✅ Check 1
 
     if (validate()) {
-      console.log("Validation passed"); // ✅ Check 2
       setLoading(true);
 
 
