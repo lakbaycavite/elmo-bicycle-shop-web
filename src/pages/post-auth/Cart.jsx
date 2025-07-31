@@ -6,10 +6,10 @@ import { useProducts } from "../../hooks/useProduct";
 import elmoLogo from '/images/logos/elmo.png'
 import OrderDetailsModal from "../../components/OrderDetailsModal";
 import ProductRatingModal from "../../components/ProductRatingModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductDetailsModal from "../../components/ProductsDetailsModal";
 import { toast } from "sonner";
-// import { useDiscount } from "../../hooks/useDiscount";
+import { useOrder } from "../../hooks/useOrder";
 
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
@@ -20,23 +20,58 @@ const Cart = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [searchFilter, setSearchFilter] = useState("");
 
+    // New states for order status monitoring
+    const [currentOrderId, setCurrentOrderId] = useState(null);
+    const [orderStatusCheckInterval, setOrderStatusCheckInterval] = useState(null);
+
     const { cart, updateQuantity, removeItem, totalPrice, totalDiscount, addToCart, clearCart } = useCart();
     const { products, getProduct } = useProducts();
+    const { subscribeToOrder, userOrders } = useOrder();
 
     const navigate = useNavigate();
-
 
     const filteredProducts = products.filter(product =>
         product.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
         product.category.toLowerCase().includes(searchFilter.toLowerCase())
     );
 
-    // Handle checkout completion
-    const handleCheckoutComplete = () => {
+    // Monitor order status changes using real-time listener
+    useEffect(() => {
+        if (!currentOrderId) return;
+
+        const unsubscribe = subscribeToOrder(currentOrderId);
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [currentOrderId, subscribeToOrder]);
+
+    // Monitor userOrders for status changes of the current order
+    useEffect(() => {
+        if (!currentOrderId || !userOrders.length) return;
+
+        const currentOrder = userOrders.find(order => order.id === currentOrderId);
+
+        if (currentOrder && currentOrder.status === 'paid' && !showRatingModal) {
+            // Order has been paid, show rating modal
+            setShowRatingModal(true);
+            setCurrentOrderId(null); // Reset to prevent multiple triggers
+
+            toast.success('Your order has been confirmed! Please rate your products.');
+        }
+    }, [userOrders, currentOrderId, showRatingModal]);
+
+    // Handle checkout completion - modified to not show rating modal immediately
+    const handleCheckoutComplete = (orderId) => {
         setCompletedCartItems([...cart]);
         setShowOrderModal(false);
         setOrderCompleted(true);
-        setShowRatingModal(true);
+
+        // Store the order ID to monitor its status
+        setCurrentOrderId(orderId);
+
+        // Show success message but don't open rating modal yet
+        toast.success('Order placed successfully! You can rate your products once payment is confirmed.');
     };
 
     const handleShowDetailsModal = async (product) => {
@@ -59,7 +94,6 @@ const Cart = () => {
     const handleRatingSubmit = async (ratings) => {
         try {
             // Here you would send the ratings to your backend
-
             // You might want to call an API here
             // await submitProductRatings(ratings);
 
@@ -80,6 +114,15 @@ const Cart = () => {
     const formatPrice = (price) => {
         return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
     };
+
+    // Cleanup interval on unmount
+    useEffect(() => {
+        return () => {
+            if (orderStatusCheckInterval) {
+                clearInterval(orderStatusCheckInterval);
+            }
+        };
+    }, [orderStatusCheckInterval]);
 
     return (
         <div className="w-full h-full flex flex-col space-y-4 items-center justify-center p-4 bg-gray-950">

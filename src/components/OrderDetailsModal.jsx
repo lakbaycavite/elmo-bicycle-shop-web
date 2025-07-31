@@ -15,12 +15,8 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
     const [notes, setNotes] = useState('');
     const { deleteUsedVoucher } = useDiscount();
 
-    // New state to manage item-specific vouchers
     const [itemVouchers, setItemVouchers] = useState({}); // Stores { productId: { voucherId, discountPercentage, discountAmount } }
 
-
-
-    // Calculate total discount from all applied vouchers
     const calculateTotalDiscount = () => {
         return Object.values(itemVouchers).reduce((sum, voucher) => {
             // Ensure we are only applying the discount once per item
@@ -30,7 +26,6 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
     const getAllSelectedVoucherIds = useMemo(() => {
         return Object.values(itemVouchers).map(voucherInfo => voucherInfo.voucherId);
     }, [itemVouchers]);
-
 
     // Calculate total after all discounts
     const calculateTotal = () => {
@@ -61,7 +56,6 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
 
             const currentUser = await getUserProfile();
 
-
             // Create a modified cart with voucher details
             const cartWithVouchers = cart.map(item => {
                 const appliedVoucher = itemVouchers[item.productId];
@@ -90,26 +84,26 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
             const usedVouchers = orderDetails.cart.filter(item => item.voucherId)
 
             await deleteUsedVoucher(usedVouchers.map(voucher => voucher.voucherId));
-            // Create the order
-            await createOrder(notes, orderDetails)
-                .then(() => {
-                    toast.success('Order placed successfully!');
-                })
-                .catch((error) => {
-                    console.error("Error placing order:", error);
-                    toast.error(`Failed to place order`);
-                }); ``
 
+            // Create the order and get the result
+            const orderResult = await createOrder(notes, orderDetails);
 
-            // Clear the cart
-            await clearCart();
+            if (orderResult.success) {
+                toast.success('Order placed successfully!');
 
-            // Close the modal
-            onClose();
-            onComplete();
+                // Clear the cart
+                await clearCart();
+
+                // Close the modal and pass the order ID to the parent
+                onClose();
+                onComplete(orderResult.orderId); // Pass the order ID
+            } else {
+                throw new Error(orderResult.message || 'Failed to place order');
+            }
 
         } catch (error) {
-            alert(`Error placing order: ${error.message}`);
+            console.error("Error placing order:", error);
+            toast.error(`Failed to place order: ${error.message}`);
         } finally {
             setIsProcessing(false);
         }
@@ -266,28 +260,6 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                         <option value="Walk-in">Walk-in</option>
                                         <option value="Gcash">Gcash</option>
                                     </select>
-                                </div>
-
-                                <div>
-                                    {/* <label htmlFor="notes" style={{ display: 'block', marginBottom: '8px', color: '#333' }}>
-                                        Order Notes (Optional)
-                                    </label>
-                                    <textarea
-                                        id="notes"
-                                        rows={3}
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        placeholder="Add any special instructions or notes about your order"
-                                        style={{
-                                            width: '100%',
-                                            padding: '8px 12px',
-                                            backgroundColor: 'white',
-                                            color: '#333',
-                                            border: '1px solid #ced4da',
-                                            borderRadius: '4px',
-                                            resize: 'vertical'
-                                        }}
-                                    /> */}
                                 </div>
                             </div>
 
