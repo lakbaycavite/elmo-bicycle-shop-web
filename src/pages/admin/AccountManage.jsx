@@ -120,9 +120,10 @@ function AccountManage() {
 
     // Role filtering
     const matchesRole = roleFilter === 'all' || (account.role || 'customer') === roleFilter;
+    const matchesAdmin = account.role !== 'admin';
 
     // Return true only if both conditions are met
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesRole && matchesAdmin;
   });
 
   const handleActionChange = async (account, action) => {
@@ -556,7 +557,7 @@ function AccountManage() {
                 <option value="all">All Roles</option>
                 <option value="customer">Customer</option>
                 <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
+                {/* <option value="admin">Admin</option> */}
               </select>
             </div>
 
@@ -834,7 +835,7 @@ function AccountManage() {
                     >
                       <option value="customer">Customer</option>
                       <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
+                      {/* <option value="admin">Admin</option> */}
                     </select>
                   </div>
 
