@@ -36,16 +36,16 @@ function NavLinks({ className = '', isLoggedIn = false }) {
       // For logged-out users, navigate to pre-auth routes
       switch (route) {
         case 'home':
-          navigate('/');
+          navigate('/customer/home');
           break;
         case 'shop':
-          navigate('/products');
+          navigate('/login');
           break;
         case 'about':
-          navigate('/about');
+          navigate('/customer/about');
           break;
         case 'contact':
-          navigate('/');
+          navigate('/customer/home');
           setTimeout(() => {
             const contactSection = document.getElementById('contact-section');
             if (contactSection) {
@@ -54,7 +54,7 @@ function NavLinks({ className = '', isLoggedIn = false }) {
           }, 100);
           break;
         default:
-          navigate('/');
+          navigate('/customer/home');
       }
     }
   };

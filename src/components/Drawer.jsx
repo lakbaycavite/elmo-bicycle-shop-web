@@ -12,8 +12,8 @@ function Drawer({ open, onClose, onLogin, onSignup, onLogout, isLoggedIn = false
   const handleWishlist = () => { onClose(); /* navigate to wishlist */ };
   const handleProfile = () => { onClose(); /* navigate to profile */ };
   const handleNotifications = () => { onClose(); /* navigate to notifications */ };
-  const handleLogout = () => { 
-    onClose(); 
+  const handleLogout = () => {
+    onClose();
     if (onLogout) {
       onLogout();
     }
@@ -33,12 +33,19 @@ function Drawer({ open, onClose, onLogin, onSignup, onLogout, isLoggedIn = false
         >
           ×
         </button>
-        
+
         {/* Content with top margin to avoid close button */}
         <div className="mt-12 flex flex-col gap-8">
-          <SearchBar className="mb-4" />
+          {
+            isLoggedIn && (
+              <>
+                <SearchBar className="mb-4" />
+
+              </>
+            )
+          }
           <NavLinks className="flex-col gap-4" isLoggedIn={isLoggedIn} />
-          
+
           {isLoggedIn ? (
             // Logged-in user icons
             <div className="flex flex-col gap-4 mt-8">
