@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AdminLayout from './AdminLayout';
 import { useOrder } from '../../hooks/useOrder';
 import jsPDF from 'jspdf';
@@ -7,9 +7,10 @@ import elmoLogo from '/images/logos/elmo.png';
 import { toast } from 'sonner';
 import { useDiscount } from '../../hooks/useDiscount';
 import { deleteOrder } from '../../services/orderSerivce';
+import { FileWarning } from 'lucide-react';
 
 function OrdersOverview() {
-  const { adminOrders, updateOrderStatus } = useOrder();
+  const { adminOrders, updateOrderStatus, loading: orderLoading } = useOrder();
   const { returnVoucherOnCancel, deleteUsedVoucher } = useDiscount();
 
   // Modal states
@@ -21,6 +22,8 @@ function OrdersOverview() {
   const [confirmAction, setConfirmAction] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [editablePaymentMethod, setEditablePaymentMethod] = useState('');
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -426,9 +429,24 @@ function OrdersOverview() {
     return subtotal.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
   };
 
-  const handleDelete = async (orderId) => {
+  const confirmDelete = useCallback((orderId) => {
+    setOrderToDelete(orderId);
+    setShowDeleteModal(true);
+  }, []);
+
+  // Function to close the confirmation modal
+  const cancelDelete = useCallback(() => {
+    setOrderToDelete(null);
+    setShowDeleteModal(false);
+  }, []);
+
+  const handleDelete = async () => {
+    if (!orderToDelete) return; // Should not happen if called correctly
+
+    setShowDeleteModal(false); // Close the modal immediately after confirmation
+
     // Implement delete functionality here
-    await deleteOrder(orderId)
+    await deleteOrder(orderToDelete)
       .then(() => {
         toast.success('Order deleted successfully!');
         // Optionally, refresh the order list or update the UI
@@ -436,7 +454,11 @@ function OrdersOverview() {
       .catch((error) => {
         console.log('Error deleting order:', error);
         toast.error('Failed to delete order.');
-      });
+      })
+      .finally(() => {
+        setOrderToDelete(null); // Clear the ID after operation
+
+      })
   };
 
   return (
@@ -558,7 +580,8 @@ function OrdersOverview() {
                         </button>
                         <button
                           className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
-                          onClick={() => handleDelete(order.id)}
+                          onClick={() => confirmDelete(order.id)}
+                          disabled={orderLoading}
                         >
                           Delete
                         </button>
@@ -1019,6 +1042,50 @@ function OrdersOverview() {
           </div>
         )}
       </div>
+      {/* {showConfirmModal && (
+        <div className="confirmation-modal-overlay">
+          <div className="confirmation-modal-content">
+            <h2>Confirm Deletion</h2>
+            <p>Are you sure you want to delete order <strong>{orderToDelete}</strong>?</p>
+            <p>This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button onClick={handleDelete} className="confirm-delete-button" disabled={orderLoading}>
+                {orderLoading ? 'Deleting...' : 'Delete'}
+              </button>
+              <button onClick={cancelDelete} className="cancel-button" disabled={orderLoading}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )} */}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            {/* <p className="mb-6 text-red-600 text-center w-full"><FileWarning size={50} /></p> */}
+
+            <h3 className="text-lg font-bold mb-4 text-center">Confirm Deletion</h3>
+            <p className="mb-6 text-red-600 text-center">Are you sure you want to cancel this order?</p>
+            <div className="flex space-x-4 justify-center gap-2 mt-4">
+              <button
+                onClick={cancelDelete}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150"
+              >
+                No
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={orderLoading}
+                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+
+                {orderLoading ? 'Deleting...' : 'Yes, Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
