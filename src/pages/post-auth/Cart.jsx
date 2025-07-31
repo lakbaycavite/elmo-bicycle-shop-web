@@ -220,12 +220,14 @@ const Cart = () => {
                             className="w-full h-8 bg-[#444444] rounded-full pl-10 text-white placeholder-white"
                             placeholder="Search..."
                             type="text"
+                            onChange={(e) => setSearchFilter(e.target.value)}
+                            value={searchFilter}
                         />
                     </div>
                 </div>
-                <div className="w-full px-3 flex flex-wrap gap-4 justify-center">
+                <div className="w-full px-3 flex flex-wrap gap-4 justify-center mb-2">
 
-                    {products.slice(0, 9).map((product, idx) => (
+                    {filteredProducts.slice(0, 9).map((product, idx) => (
                         <div key={idx} className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
                             <CartCard
                                 productDetails={product}
@@ -240,14 +242,20 @@ const Cart = () => {
                         </div>
 
                     ))}
+
+                </div>
+                <div className="w-full h-16 bg-[#2E2E2E] rounded-b-xl flex items-center justify-center">
                     <button
-                        className="w-2xl mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition-colors"
+                        className="w-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition-colors"
+                        style={{ borderRadius: "10px" }}
                         onClick={() => navigate("/customer/products")}
                     >
                         Show More
                     </button>
                 </div>
+
             </div>
+
 
             {/* Modals */}
             <OrderDetailsModal
