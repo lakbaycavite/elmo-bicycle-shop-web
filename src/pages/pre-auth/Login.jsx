@@ -93,7 +93,7 @@ function Login() {
           });
       }
     } else {
-      console.log("Validation failed", errors);
+      toast.error('Validation failed. Please check your inputs.');
     }
   };
 
@@ -166,15 +166,16 @@ function Login() {
             <div className="flex flex-row gap-3 mb-3">
               <label className='text-amber-500'>
                 <h2 className="text-4xl sm:text-5xl font-extrabold mb-6 drop-shadow-lg">
-                  ELMO's
+                  ELMO
                 </h2>
               </label>
               <h2>Bicycle Shop</h2>
             </div>
+            {/* Added responsive classes here: hidden on small screens, block on large screens */}
             <img
               src="/images/logos/login-bike.png"
               alt="Elmo Bicycle Shop"
-              className="max-h-[500px] w-auto"
+              className="max-h-[500px] w-auto hidden lg:block"
             />
           </div>
 

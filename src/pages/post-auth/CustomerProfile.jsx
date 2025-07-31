@@ -16,7 +16,8 @@ import {
     Edit2,
     Save,
     Camera,
-    Check
+    Check,
+    CircleUser
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../../hooks/useUser';
@@ -230,11 +231,17 @@ const CustomerProfile = () => {
                         {/* Profile Image */}
                         <div className="flex flex-col items-center">
                             <div className="relative">
-                                <img
-                                    src={profileData.image}
-                                    alt="Profile"
-                                    className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
-                                />
+                                {
+                                    profileData.image ? (
+                                        <img
+                                            src={profileData.image}
+                                            alt="Profile"
+                                            className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
+                                        />
+                                    ) : (
+                                        <CircleUser className="h-32 w-32 text-orange-600 bg-gray-200 rounded-full p-2" />
+                                    )
+                                }
                                 {isEditing && (
                                     <label className="absolute bottom-0 right-0 bg-[#ff6900] hover:bg-[#e55e00] rounded-full p-2 cursor-pointer">
                                         <Camera size={16} className="text-white" />
