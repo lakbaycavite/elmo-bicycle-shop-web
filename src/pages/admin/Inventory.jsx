@@ -515,7 +515,7 @@ const Inventory = () => {
                           <div className="text-sm md:text-base font-medium text-white">{product.name}</div>
                           <div className="text-xs md:text-sm text-gray-400">
                             {
-                              Number(product.discountedFinalPrice) > 0
+                              Number(product.discount) > 0
                                 ? <>
                                   <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(product.price)}`}</span>
                                   <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(product.discountedFinalPrice))}`}</span>

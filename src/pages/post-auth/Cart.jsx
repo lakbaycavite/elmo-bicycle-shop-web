@@ -153,14 +153,14 @@ const Cart = () => {
                                     </td>
                                     <td className="py-5 text-right font-medium">
                                         {
-                                            Number(item.discountedFinalPrice) > 0
+                                            Number(item.discount) > 0
                                                 ? formatPrice(Number(item.discountedFinalPrice))
                                                 : formatPrice(item.price)
                                         }
                                     </td>
                                     <td className="py-5 text-right font-medium">
                                         {
-                                            Number(item.discountedFinalPrice) > 0
+                                            Number(item.discount) > 0
                                                 ? formatPrice(Number(item.discountedFinalPrice) * item.quantity)
                                                 : formatPrice(item.price * item.quantity)
                                         }

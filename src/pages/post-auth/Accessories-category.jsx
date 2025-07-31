@@ -71,7 +71,7 @@ const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist,
           </div>
           <p className="fs-5 fw-bold mb-0" style={{ color: 'var(--primary-accent)' }}>
             {
-              Number(accessory.discountedFinalPrice) > 0
+              Number(accessory.discount) > 0
                 ? <>
                   <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(accessory.price)}`}</span>
                   <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(accessory.discountedFinalPrice))}`}</span>

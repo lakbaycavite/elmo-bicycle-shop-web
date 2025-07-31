@@ -100,7 +100,7 @@ function SearchBar({ className = '' }) {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-orange-500 font-semibold">
                   </span>
-                  {product.discountedFinalPrice > 0 ? (
+                  {product.discount > 0 ? (
                     <>
                       <span className="text-xs text-gray-400 line-through">
                         ₱{(product.discountedFinalPrice / (1 - product.discount / 100)).toLocaleString('en-PH', { minimumFractionDigits: 2 })}

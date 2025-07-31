@@ -298,10 +298,10 @@ function OrdersOverview() {
       itemTableRows.push([
         item.quantity.toString(),
         item.name + ' (id: ' + item.id + ')',
-        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
-        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        Number(item.discount) > 0 ? `PHP ${Number(item.discountedFinalPrice).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+        Number(item.discount) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
         item.discountAmount ? `PHP ${item.discountAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : 'PHP 0.00',
-        Number(item.discountedFinalPrice) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+        Number(item.discount) > 0 ? `PHP ${Number(item.discountedFinalPrice * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : `PHP ${(item.price * item.quantity - item.discountAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
       ]);
     });
 
@@ -677,7 +677,7 @@ function OrdersOverview() {
                             <td className="border border-gray-300 px-4 py-2">{item.name}</td>
                             <td className="border border-gray-300 px-4 py-2">{quantity}</td>
                             <td className="border border-gray-300 px-4 py-2">
-                              {discountedFinalPrice > 0 ? (
+                              {Number(item.discount) > 0 ? (
                                 <>
                                   <span className="line-through text-gray-500">
                                     ₱{originalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
