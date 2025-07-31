@@ -12,7 +12,11 @@ import {
     LogOut,
     ArrowLeft,
     X,
-    Loader2
+    Loader2,
+    Edit2,
+    Save,
+    Camera,
+    Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../../hooks/useUser';
@@ -21,7 +25,7 @@ import { doPasswordChange, doSignOut } from '../../firebase/auth';
 import { toast } from 'sonner';
 
 const CustomerProfile = () => {
-    const { currentUserData } = useUsers();
+    const { currentUserData, editUser, loading: userLoading } = useUsers();
     const navigate = useNavigate();
     const { userOrders, loadUserOrders } = useOrder();
 
@@ -36,8 +40,29 @@ const CustomerProfile = () => {
     });
 
     const [loading, setLoading] = useState(false);
-
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+
+    // Edit profile states
+    const [isEditing, setIsEditing] = useState(false);
+    const [editLoading, setEditLoading] = useState(false);
+    const [profileData, setProfileData] = useState({
+        firstName: '',
+        lastName: '',
+        phone: '',
+        image: ''
+    });
+
+    // Initialize profile data when currentUserData changes
+    useEffect(() => {
+        if (currentUserData) {
+            setProfileData({
+                firstName: currentUserData.firstName || '',
+                lastName: currentUserData.lastName || '',
+                phone: currentUserData.phone || '',
+                image: currentUserData.image || "https://randomuser.me/api/portraits/men/44.jpg"
+            });
+        }
+    }, [currentUserData]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -105,8 +130,69 @@ const CustomerProfile = () => {
                     setIsChangePasswordModalOpen(false);
                 })
         }
+    };
 
+    // Edit profile handlers
+    const handleEditToggle = () => {
+        if (isEditing) {
+            // Reset to original data if canceling
+            setProfileData({
+                firstName: currentUserData.firstName || '',
+                lastName: currentUserData.lastName || '',
+                phone: currentUserData.phone || '',
+                image: currentUserData.image || "https://randomuser.me/api/portraits/men/44.jpg"
+            });
+        }
+        setIsEditing(!isEditing);
+    };
 
+    const handleProfileInputChange = (e) => {
+        const { name, value } = e.target;
+        setProfileData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // For demo purposes, we'll use a file reader to convert to base64
+            // In a real app, you'd upload to a service like Firebase Storage
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileData(prev => ({
+                    ...prev,
+                    image: reader.result
+                }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        if (!currentUserData?.id) {
+            toast.error("User ID not found");
+            return;
+        }
+
+        setEditLoading(true);
+        try {
+            await editUser(currentUserData.id, {
+                firstName: profileData.firstName,
+                lastName: profileData.lastName,
+                phone: profileData.phone,
+                image: profileData.image
+            });
+
+            setIsEditing(false);
+            // toast.success("Profile updated successfully");
+        } catch (error) {
+            toast.error("Failed to update profile");
+            console.error("Profile update error:", error);
+        } finally {
+            setEditLoading(false);
+        }
     };
 
     if (!currentUserData) {
@@ -143,23 +229,92 @@ const CustomerProfile = () => {
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                         {/* Profile Image */}
                         <div className="flex flex-col items-center">
-                            <img
-                                src={"https://randomuser.me/api/portraits/men/44.jpg"}
-                                alt="Profile"
-                                className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
-                            />
+                            <div className="relative">
+                                <img
+                                    src={profileData.image}
+                                    alt="Profile"
+                                    className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
+                                />
+                                {isEditing && (
+                                    <label className="absolute bottom-0 right-0 bg-[#ff6900] hover:bg-[#e55e00] rounded-full p-2 cursor-pointer">
+                                        <Camera size={16} className="text-white" />
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            className="hidden"
+                                        />
+                                    </label>
+                                )}
+                            </div>
                         </div>
 
                         {/* Account Details */}
                         <div className="flex-1">
-                            <h2 className="text-2xl font-bold mb-4 text-[#ff6900] border-b border-gray-700 pb-2">Account Details</h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-2xl font-bold text-[#ff6900] border-b border-gray-700 pb-2">Account Details</h2>
+                                <div className="flex gap-2">
+                                    {!isEditing ? (
+                                        <button
+                                            onClick={handleEditToggle}
+                                            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-3 py-2 rounded-md border border-[#ff6900]"
+                                        >
+                                            <Edit2 size={16} className="text-[#ff6900]" />
+                                            Edit Profile
+                                        </button>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleSaveProfile}
+                                                disabled={editLoading}
+                                                className="flex items-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white px-3 py-2 rounded-md disabled:opacity-50"
+                                            >
+                                                {editLoading ? (
+                                                    <Loader2 size={16} className="animate-spin" />
+                                                ) : (
+                                                    <Save size={16} />
+                                                )}
+                                                Save
+                                            </button>
+                                            <button
+                                                onClick={handleEditToggle}
+                                                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-md"
+                                            >
+                                                <X size={16} />
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     <User className="text-[#ff6900]" size={20} />
-                                    <div>
+                                    <div className="flex-1">
                                         <span className="text-gray-400 font-medium">Name:</span>
-                                        <span className="ml-2 text-white">{fullName}</span>
+                                        {isEditing ? (
+                                            <div className="flex gap-2 mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="firstName"
+                                                    value={profileData.firstName}
+                                                    onChange={handleProfileInputChange}
+                                                    placeholder="First Name"
+                                                    className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    name="lastName"
+                                                    value={profileData.lastName}
+                                                    onChange={handleProfileInputChange}
+                                                    placeholder="Last Name"
+                                                    className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <span className="ml-2 text-white">{fullName}</span>
+                                        )}
                                     </div>
                                 </div>
 
@@ -168,17 +323,30 @@ const CustomerProfile = () => {
                                     <div>
                                         <span className="text-gray-400 font-medium">Email:</span>
                                         <span className="ml-2 text-white">{email}</span>
+                                        {isEditing && (
+                                            <span className="ml-2 text-xs text-gray-500">(Cannot be changed)</span>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-3">
                                     <Phone className="text-[#ff6900]" size={20} />
-                                    <div>
+                                    <div className="flex-1">
                                         <span className="text-gray-400 font-medium">Phone:</span>
-                                        <span className="ml-2 text-white">{phone}</span>
+                                        {isEditing ? (
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                value={profileData.phone}
+                                                onChange={handleProfileInputChange}
+                                                placeholder="Phone Number"
+                                                className="ml-2 bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none"
+                                            />
+                                        ) : (
+                                            <span className="ml-2 text-white">{phone}</span>
+                                        )}
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     </div>

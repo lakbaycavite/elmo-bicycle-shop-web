@@ -408,7 +408,7 @@ function HomePage() {
             <div className="font-bold text-lg mb-2">
               <span className="text-orange-500">E</span><span className="text-white">BS</span>
             </div>
-            <div className="text-gray-300 text-sm mb-1">Brokenshire, Panacan.</div>
+            <div className="text-gray-300 text-sm mb-1">Binalonan, Pangasinan.</div>
             <div className="text-gray-300 text-sm mb-1">+63 9201234563</div>
             <div className="text-gray-300 text-sm mb-1">elmobikeshop24@gmail.com</div>
           </div>
