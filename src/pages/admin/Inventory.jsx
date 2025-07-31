@@ -111,6 +111,44 @@ const Inventory = () => {
     discountedPrice: 0
   });
 
+  const [errors, setErrors] = useState({
+    name: '',
+    category: '',
+    brand: '',
+    price: 0,
+    stock: 0
+  });
+
+  const validate = () => {
+    const newErrors = { ...errors };
+
+    if (!formData.name) {
+      newErrors.name = 'Name is required.';
+    }
+
+    if (!formData.category) {
+      newErrors.category = 'Category is required.';
+    }
+
+    if (!formData.brand) {
+      newErrors.brand = 'Brand is required.';
+    }
+
+    if (formData.price <= 0) {
+      newErrors.price = 'Price must be greater than 0.';
+    }
+    if (!formData.stock) {
+      newErrors.stock = 'Stock is required.';
+    } else if (formData.stock < 1) {
+      newErrors.stock = 'Stock must be at least 1.';
+    }
+
+    setErrors(newErrors);
+    return Object.values(newErrors).every((msg) => msg === '');
+  };
+
+
+
   const formatPrice = (price) => {
     return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
   };
@@ -228,6 +266,8 @@ const Inventory = () => {
     setShowEditModal(true);
   };
 
+
+
   // Modified to check permissions before opening details modal
   const handleViewDetails = (product) => {
     // Check if user has view permission
@@ -264,6 +304,7 @@ const Inventory = () => {
       }));
     }
   };
+
 
   // Categories and types for dropdowns
   const categories = ['Bikes', 'Gears', 'Parts', 'Accessories'];
@@ -338,32 +379,38 @@ const Inventory = () => {
       return;
     }
 
-    if (!formData.name || !formData.category || !formData.price || formData.stock < 0) {
-      alert('Please fill in all required fields.');
-      return;
+    // if (!formData.name || !formData.category || !formData.price || formData.stock < 0) {
+    //   toast.error('Please fill in all required fields.');
+    //   return;
+    // }
+
+    if (validate()) {
+      let imageUrl = null;
+      if (formData.image instanceof File) {
+        imageUrl = await uploadImage(formData.image, 'products');
+      }
+
+      const productData = {
+        ...formData,
+        image: imageUrl || formData.image,
+        createdAt: '2025-07-26 10:55:20',
+        createdBy: currentUserData?.email
+      };
+
+      try {
+        await createProduct(productData);
+        setShowAddModal(false);
+        toast.success(`Product added ${productData.name} successfully`);
+        resetForm(); // Reset form and image preview
+      } catch (err) {
+        console.error('Error creating product:', err);
+        alert('Failed to create product. Please try again.');
+      }
+    }
+    else {
+      toast.error('Please fill in all required fields correctly.');
     }
 
-    let imageUrl = null;
-    if (formData.image instanceof File) {
-      imageUrl = await uploadImage(formData.image, 'products');
-    }
-
-    const productData = {
-      ...formData,
-      image: imageUrl || formData.image,
-      createdAt: '2025-07-26 10:55:20',
-      createdBy: currentUserData?.email
-    };
-
-    try {
-      await createProduct(productData);
-      setShowAddModal(false);
-      toast.success(`Product added ${productData.name} successfully`);
-      resetForm(); // Reset form and image preview
-    } catch (err) {
-      console.error('Error creating product:', err);
-      alert('Failed to create product. Please try again.');
-    }
   };
 
   // Modified to check permissions before deleting
@@ -422,6 +469,7 @@ const Inventory = () => {
 
   // Handle modal close with form reset
   const handleAddModalClose = () => {
+    setErrors({})
     setShowAddModal(false);
     resetForm();
   };
@@ -723,7 +771,7 @@ const Inventory = () => {
                     </button>
                   </div>
 
-                  <form className="space-y-4 sm:space-y-6">
+                  <form className="space-y-4 sm:space-y-4">
                     {/* Product Name and Brand in a row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -737,11 +785,16 @@ const Inventory = () => {
                           value={formData.name}
                           onChange={handleChange}
                           placeholder="Enter product name"
+                          required
                         />
+                        {errors.name && (
+                          <p className="text-red-500 text-sm">{errors.name}</p>
+                        )}
+
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Brand
+                          Brand *
                         </label>
                         <input
                           type="text"
@@ -750,7 +803,11 @@ const Inventory = () => {
                           value={formData.brand}
                           onChange={handleChange}
                           placeholder="Enter brand name"
+
                         />
+                        {errors.brand && (
+                          <p className="text-red-500 text-sm">{errors.brand}</p>
+                        )}
                       </div>
                     </div>
 
@@ -771,6 +828,9 @@ const Inventory = () => {
                             <option key={category} value={category}>{category}</option>
                           ))}
                         </select>
+                        {errors.category && (
+                          <p className="text-red-500 text-sm">{errors.category}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -807,6 +867,9 @@ const Inventory = () => {
                           value={formData.price}
                           onChange={handleChange}
                         />
+                        {errors.price && (
+                          <p className="text-red-500 text-sm">{errors.price}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -821,6 +884,9 @@ const Inventory = () => {
                           value={formData.stock}
                           onChange={handleChange}
                         />
+                        {errors.stock && (
+                          <p className="text-red-500 text-sm">{errors.stock}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
