@@ -4,9 +4,10 @@ import { auth } from '../firebase/firebase'; // Update import path as needed
 import { getDatabase, ref, get } from 'firebase/database';
 import { toast } from 'sonner'; // Or your preferred toast library
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requiredRoles = [] }) => {
     const [isChecking, setIsChecking] = useState(true);
     const [isAllowed, setIsAllowed] = useState(false);
+    const [userRole, setUserRole] = useState(null);
     const location = useLocation();
 
     useEffect(() => {
@@ -30,21 +31,28 @@ const ProtectedRoute = ({ children }) => {
                 }
 
                 const userData = snapshot.val();
+                setUserRole(userData.role);
 
                 // Check if account is disabled
                 if (userData.accountStatus === 'disabled') {
                     toast.error('Your account has been disabled. Please contact support.');
                     await auth.signOut();
                     setIsAllowed(false);
+                    setIsChecking(false);
+                    return;
                 }
-                // Check role if required
-                // else if (requiredRole && userData.role !== requiredRole) {
-                //     toast.error('You do not have permission to access this page.');
-                //     setIsAllowed(false);
-                // }
-                else {
-                    setIsAllowed(true);
+
+                // Check role permissions if requiredRoles is specified
+                if (requiredRoles.length > 0) {
+                    if (!requiredRoles.includes(userData.role)) {
+                        toast.error('You do not have permission to access this page.');
+                        setIsAllowed(false);
+                        setIsChecking(false);
+                        return;
+                    }
                 }
+
+                setIsAllowed(true);
             } catch (error) {
                 console.error('Error checking user status:', error);
                 setIsAllowed(false);
@@ -54,7 +62,7 @@ const ProtectedRoute = ({ children }) => {
         };
 
         checkUserStatus();
-    }, []);
+    }, [requiredRoles]);
 
     if (isChecking) {
         return (
@@ -69,7 +77,14 @@ const ProtectedRoute = ({ children }) => {
     }
 
     if (!isAllowed) {
-        return <Navigate to="/" replace />;
+        // Redirect based on user role to appropriate dashboard
+        if (userRole === 'admin') {
+            return <Navigate to="/admin/dashboard" replace />;
+        } else if (userRole === 'staff') {
+            return <Navigate to="/admin/dashboard" replace />; // or "/staff/dashboard" if you have separate staff routes
+        } else {
+            return <Navigate to="/customer/home" replace />;
+        }
     }
 
     return children;
