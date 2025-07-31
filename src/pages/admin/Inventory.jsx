@@ -84,7 +84,9 @@ const Inventory = () => {
     spec2Label: '',
     stock: 0,
     type: '',
-    weight: ''
+    weight: '',
+    discount: 0,
+    discountLabel: '',
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -107,6 +109,22 @@ const Inventory = () => {
     return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
   };
 
+  // Function to get type options based on category
+  const getTypeOptions = (category) => {
+    switch (category) {
+      case 'Bikes':
+        return bike_types;
+      case 'Accessories':
+        return accessories_types;
+      case 'Gears':
+        return gears_types;
+      case 'Parts':
+        return parts_types;
+      default:
+        return [];
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
 
@@ -127,7 +145,9 @@ const Inventory = () => {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'price' || name === 'stock' ? Number(value) : value
+        [name]: name === 'price' || name === 'stock' ? Number(value) : value,
+        // Reset type when category changes
+        ...(name === 'category' && { type: '' })
       }));
     }
 
@@ -234,7 +254,9 @@ const Inventory = () => {
     } else {
       setEditFormData(prev => ({
         ...prev,
-        [name]: name === 'price' || name === 'stock' ? Number(value) : value
+        [name]: name === 'price' || name === 'stock' ? Number(value) : value,
+        // Reset type when category changes
+        ...(name === 'category' && { type: '' })
       }));
     }
 
@@ -242,12 +264,32 @@ const Inventory = () => {
 
   // Categories and types for dropdowns
   const categories = ['Bikes', 'Gears', 'Parts', 'Accessories'];
-  const types = [
-    'Frame', 'Fork', 'Handlebar', 'Stem', 'Headset', 'Grips/Bar Tape',
-    'Saddle', 'Seatpost', 'Seatpost clamp', 'Pedals', 'Breaks', 'Rims',
-    'Hubs', 'Spokes', 'Tires', 'Tubes', 'Valve caps', 'Axles/Quick release',
-    'Chain guard', 'Kickstand', 'Mudguards/Fenders'
+
+  const bike_types = [
+    'Road Bike', 'Mountain Bike', 'Hybrid Bike', 'Gravel Bike', 'Touring Bike', 'BMX Bike', 'Cyclocross Bike',
+    'Folding Bike', 'Electric Bike (E-Bike)', 'Cruiser Bike', 'Fat Bike', 'Fixed Gear Bike (Fixie)', 'Track Bike',
+    'Recumbent Bike', 'Tandem Bike', 'Cargo Bike', 'Commuter Bike', 'Time Trial Bike', 'Triathlon Bike', 'Kids Bike'
   ];
+
+  const accessories_types = [
+    'Helmet', 'Bike Lock', 'Lights (Front/Rear)', 'Bell or Horn', 'Water Bottle', 'Water Bottle Cage', 'Bike Pump',
+    'Saddle Bag', 'Phone Mount', 'Bike Computer', 'Mirror', 'Kickstand', 'Mudguards/Fenders', 'Panniers',
+    'Handlebar Grips/Tape', 'Chain Lube', 'Multi-tool', 'Tire Levers', 'Spare Tube', 'Patch Kit', 'Cycling Gloves',
+    'Cycling Glasses', 'Bike Rack (for car or storage)', 'Frame Bag', 'Bike Cover'
+  ];
+
+  const gears_types = [
+    'Cassette', 'Chainring', 'Cranks', 'Bottom Bracket', 'Front Derailleur', 'Rear Derailleur', 'Shifters',
+    'Gear Cables', 'Gear Levers', 'Freewheel', 'Derailleur Hanger', 'Gear Housing', 'Jockey Wheels',
+    'Electronic Shifters', 'Internal Gear Hub', 'Gear Indicator Display', 'Thumb Shifter', 'Grip Shifter', 'Trigger Shifter'
+  ];
+  const parts_types = [
+    'Frame', 'Fork', 'Handlebar', 'Stem', 'Headset', 'Grips/Bar Tape', 'Saddle', 'Seatpost', 'Seatpost Clamp',
+    'Pedals', 'Brakes', 'Rims', 'Hubs', 'Spokes', 'Tires', 'Tubes', 'Valve Caps', 'Axles/Quick Release',
+    'Chain Guard', 'Kickstand', 'Mudguards/Fenders'
+  ];
+
+
 
   // Reset to first page when search term changes
   useEffect(() => {
@@ -302,10 +344,10 @@ const Inventory = () => {
         category: '',
         brand: '',
         price: 0,
-        spec1: '',
-        spec1Label: '',
-        spec2: '',
-        spec2Label: '',
+        // spec1: '',
+        // spec1Label: '',
+        // spec2: '',
+        // spec2Label: '',
         stock: 0,
         type: '',
         weight: ''
@@ -483,7 +525,7 @@ const Inventory = () => {
                         <div className="h-12 w-12 md:h-16 md:w-16 flex-shrink-0 mr-3 md:mr-4">
                           <img
                             className="h-12 w-12 md:h-16 md:w-16 rounded-md object-cover"
-                            src={product.image || '/placeholder-product.png'}
+                            src={product.image || '/images/logos/elmo.png'}
                             alt={product.name}
                           />
                         </div>
@@ -666,10 +708,10 @@ const Inventory = () => {
               </nav>
             </div>
           )}
-          {/* Add Product Modal */}
+          {/* Add Product Modal - ENHANCED */}
           {showAddModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
-              <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div className="p-4 sm:p-6">
                   <div className="flex justify-between items-center mb-4 sm:mb-6">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Add Product</h2>
@@ -682,44 +724,78 @@ const Inventory = () => {
                   </div>
 
                   <form className="space-y-4 sm:space-y-6">
-                    {/* Product Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Product Name
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
-                        defaultValue={formData?.name}
-                        name='name'
-                        value={formData.name}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Category
-                      </label>
-                      <select
-                        name="category"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
-                        value={formData.category}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select category</option>
-                        {categories.map((category) => (
-                          <option key={category} value={category}>{category}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Price and Stock in a row */}
+                    {/* Product Name and Brand in a row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Price (₱)
+                          Product Name *
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          name='name'
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="Enter product name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Brand
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          name='brand'
+                          value={formData.brand}
+                          onChange={handleChange}
+                          placeholder="Enter brand name"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Category and Type in a row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Category *
+                        </label>
+                        <select
+                          name="category"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          value={formData.category}
+                          onChange={handleChange}
+                        >
+                          <option value="">Select category</option>
+                          {categories.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Type
+                        </label>
+                        <select
+                          name="type"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          value={formData.type}
+                          onChange={handleChange}
+                          disabled={!formData.category}
+                        >
+                          <option value="">Select type</option>
+                          {getTypeOptions(formData.category).map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Price, Stock, and Weight in a row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Price (₱) *
                         </label>
                         <input
                           name='price'
@@ -734,7 +810,7 @@ const Inventory = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Stock
+                          Stock *
                         </label>
                         <input
                           name='stock'
@@ -743,6 +819,21 @@ const Inventory = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
                           placeholder="0"
                           value={formData.stock}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Weight (kg)
+                        </label>
+                        <input
+                          name='weight'
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          placeholder="0.00"
+                          value={formData.weight}
                           onChange={handleChange}
                         />
                       </div>
@@ -786,8 +877,14 @@ const Inventory = () => {
                         type="submit"
                         className="px-4 py-2 bg-[#ff6900] hover:bg-[#e55e00] text-white rounded-md"
                         onClick={handleSubmit}
+                        disabled={uploading || loading}
                       >
-                        Add Product
+                        {uploading || loading ? (
+                          <>
+                            <Loader2 className='animate-spin text-white h-4 w-4 sm:h-5 sm:w-5 inline mr-2' />
+                            Adding...
+                          </>
+                        ) : 'Add Product'}
                       </button>
                     </div>
                   </form>
@@ -796,10 +893,10 @@ const Inventory = () => {
             </div>
           )}
 
-          {/* Edit Product Modal */}
+          {/* Edit Product Modal - ENHANCED */}
           {showEditModal && editProduct && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">Edit Product</h2>
@@ -812,51 +909,82 @@ const Inventory = () => {
                   </div>
 
                   <form className="space-y-4 sm:space-y-6">
-                    {/* Product Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Product Name
-                      </label>
-                      <input
-                        type="text"
-                        name='name'
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
-                        placeholder="Enter product name"
-                        value={editFormData.name}
-                        onChange={handleEditChange}
-                      />
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Category
-                      </label>
-                      <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                        defaultValue={editProduct.category}
-                        name='category'
-                        value={editFormData.category}
-                        onChange={handleEditChange}
-                      >
-                        {categories.map((category) => (
-                          <option key={category} value={category}>{category}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Price and Stock in a row */}
+                    {/* Product Name and Brand in a row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Price (₱)
+                          Product Name *
+                        </label>
+                        <input
+                          type="text"
+                          name='name'
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          placeholder="Enter product name"
+                          value={editFormData.name}
+                          onChange={handleEditChange}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Brand
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          name='brand'
+                          value={editFormData.brand}
+                          onChange={handleEditChange}
+                          placeholder="Enter brand name"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Category and Type in a row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Category *
+                        </label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          name='category'
+                          value={editFormData.category}
+                          onChange={handleEditChange}
+                        >
+                          {categories.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Type
+                        </label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          name='type'
+                          value={editFormData.type}
+                          onChange={handleEditChange}
+                        >
+                          <option value="">Select type</option>
+                          {getTypeOptions(editFormData.category).map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Price, Stock, and Weight in a row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Price (₱) *
                         </label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                          defaultValue={editProduct.price}
                           name='price'
                           value={editFormData.price}
                           onChange={handleEditChange}
@@ -864,99 +992,32 @@ const Inventory = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Stock
+                          Stock *
                         </label>
                         <input
                           type="number"
                           min="0"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                          defaultValue={editProduct.stock}
                           name='stock'
                           value={editFormData.stock}
                           onChange={handleEditChange}
                         />
                       </div>
-                    </div>
-
-                    {/* Brand */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Brand
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                        defaultValue={editProduct.brand}
-                        name='brand'
-                        value={editFormData.brand}
-                        onChange={handleEditChange}
-                      />
-                    </div>
-
-                    {/* Specs in a row */}
-                    {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Spec 1
+                          Weight (kg)
                         </label>
                         <input
                           type="text"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                          defaultValue={editProduct.spec1}
-                          name='spec1'
-                          value={editFormData.spec1}
+                          name='weight'
+                          value={editFormData.weight}
                           onChange={handleEditChange}
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Spec 2
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                          defaultValue={editProduct.spec2}
-                          name='spec2'
-                          value={editFormData.spec2}
-                          onChange={handleEditChange}
-                        />
-                      </div>
-                    </div> */}
-
-                    {/* Weight */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Weight
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                        defaultValue={editProduct.weight}
-                        name='weight'
-                        value={editFormData.weight}
-                        onChange={handleEditChange}
-                      />
                     </div>
 
-                    {/* Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Type
-                      </label>
-                      <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                        defaultValue={editProduct.type || ''}
-                        name='type'
-                        value={editFormData.type}
-                        onChange={handleEditChange}
-                      >
-                        <option value="">Not Applicable</option>
-                        {types.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-
+                    {/* Discount Percentage and Label in a row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -965,7 +1026,6 @@ const Inventory = () => {
                         <input
                           type="number"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                          defaultValue={editProduct.discount}
                           name='discount'
                           value={editFormData.discount}
                           onChange={(e) => {
@@ -983,7 +1043,6 @@ const Inventory = () => {
                         <input
                           type="text"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
-                          defaultValue={editProduct.discountLabel}
                           name='discountLabel'
                           value={editFormData.discountLabel}
                           onChange={handleEditChange}
@@ -998,7 +1057,7 @@ const Inventory = () => {
                       </label>
                       <div className="flex items-center space-x-4">
                         <img
-                          src={editProduct.image ? editProduct.image : null}
+                          src={editProduct.image ? editProduct.image : '/images/logos/elmo.png'}
                           alt={editProduct?.name}
                           className="h-20 w-20 rounded-md object-cover border border-gray-300"
                         />
