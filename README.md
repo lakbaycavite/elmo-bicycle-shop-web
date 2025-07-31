@@ -1,12 +1,38 @@
-# React + Vite
+# Elmo Bike Shop
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🚀 Getting Started
 
-Currently, two official plugins are available:
+Follow the steps below to set up the project locally.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. 📥 Clone the Repository
 
-## Expanding the ESLint configuration
+```bash
+git clone https://github.com/lakbaycavite/elmo-bicycle-shop-web.git
+cd elmo-bicycle-shop-web
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+### 2. 📥 Create .env File
+
+```bash
+# Copy or Drag the .env file to the root of the project.
+
+# project-root/
+├── public/              # Static files
+├── src/                 # Source files
+│   ├── components/      # React components
+│   ├── pages/           # Page components                
+│   ├── App.jsx          # Main App component
+│   └── main.jsx         # Entry point
+├── .env                 <------------------- # Important Part
+├── package.json         # Project dependencies and scripts
+└── README.md  
+```
+### 3. 📥 Running the Development Server
+
+```bash
+# Installs required dependency
+npm install
+
+# Starts the development server
+npm run dev
+```
