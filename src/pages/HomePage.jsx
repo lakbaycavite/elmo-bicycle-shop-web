@@ -307,9 +307,9 @@ function HomePage() {
       {/* Best Sellers Products This week Section */}
       <section className="w-full bg-[#f5f5f5] py-12">
         <div className="bg-white rounded-lg p-8 flex flex-col justify-center items-center shadow-md">
-          <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-10">Best Sellers Products<br />This week</h2>
+          {/* <h2 className="text-center text-black text-xl md:text-2xl font-bold mb-10">Best Sellers Products<br />This week</h2> */}
 
-          <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bike This Month</h3>
+          <h3 className="text-black font-semibold text-base mb-2 text-center">The Most Popular Bikes</h3>
           <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-5 py-2 rounded mb-3 mt-2" type='button' onClick={() => navigate('/customer/bikes-category', { state: { ratingFilter: '5' } })}>Show More</button>
           <p className="text-gray-700 text-sm text-center">Want To Take Cycling To The Next Level<br />Be creative and organized to find more time to ride.</p>
         </div>

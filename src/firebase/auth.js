@@ -2,7 +2,6 @@ import { createUserWithEmailAndPassword, EmailAuthProvider, GoogleAuthProvider, 
 import { auth } from "./firebase";
 import { get, getDatabase, ref, set } from "firebase/database";
 
-
 export const doCreateUserWithEmailAndPassword = async (email, password, userData = {}) => {
 
     try {
@@ -65,7 +64,7 @@ export const createUserAsAdmin = async (email, password, userData = {}) => {
             email: email,
             createdAt: new Date().toISOString(),
             role: userData.role || 'customer',
-            createdBy: "lanceballicud",
+            createdBy: "Admin",
             ...userData
         });
 

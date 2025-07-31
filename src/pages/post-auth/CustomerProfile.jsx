@@ -60,7 +60,7 @@ const CustomerProfile = () => {
                 firstName: currentUserData.firstName || '',
                 lastName: currentUserData.lastName || '',
                 phone: currentUserData.phone || '',
-                image: currentUserData.image || "https://randomuser.me/api/portraits/men/44.jpg"
+                image: currentUserData.image
             });
         }
     }, [currentUserData]);
@@ -213,6 +213,8 @@ const CustomerProfile = () => {
             </div>
         );
     }
+
+    console.log(profileData.image, "Profile Image URL");
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed" style={{ background: "linear-gradient(135deg, black 80%, #ff6900 100%)" }}>
