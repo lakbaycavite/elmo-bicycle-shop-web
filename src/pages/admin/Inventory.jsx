@@ -30,6 +30,10 @@ const Inventory = () => {
     canEdit: true,
     canDelete: true
   });
+
+  // Added image preview state
+  const [imagePreview, setImagePreview] = useState(null);
+
   // Check permissions when user data is loaded
   useEffect(() => {
     if (currentUserData) {
@@ -58,9 +62,9 @@ const Inventory = () => {
   // State for modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false); // New state for details modal
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-  const [viewProduct, setViewProduct] = useState(null); // New state to store product for viewing
+  const [viewProduct, setViewProduct] = useState(null);
 
   // State for sorting
   const [sortMethod, setSortMethod] = useState('nameAsc');
@@ -135,13 +139,12 @@ const Inventory = () => {
         [name]: file
       }));
 
-      // Create a preview URL
-      // const reader = new FileReader();
-      // reader.onload = () => {
-      //     setPreviewUrl(reader.result);
-      // };
-      // reader.readAsDataURL(file);
-
+      // Create a preview URL for the selected image
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     } else {
       setFormData(prev => ({
         ...prev,
@@ -150,7 +153,6 @@ const Inventory = () => {
         ...(name === 'category' && { type: '' })
       }));
     }
-
   };
 
   // Pagination state
@@ -203,7 +205,6 @@ const Inventory = () => {
       return;
     }
 
-
     setEditProduct(product);
     setEditFormData({
       id: product.id,
@@ -243,14 +244,6 @@ const Inventory = () => {
         ...prev,
         [name]: file
       }));
-
-      // Create a preview URL
-      // const reader = new FileReader();
-      // reader.onload = () => {
-      //     setPreviewUrl(reader.result);
-      // };
-      // reader.readAsDataURL(file);
-
     } else {
       setEditFormData(prev => ({
         ...prev,
@@ -259,7 +252,6 @@ const Inventory = () => {
         ...(name === 'category' && { type: '' })
       }));
     }
-
   };
 
   // Categories and types for dropdowns
@@ -289,8 +281,6 @@ const Inventory = () => {
     'Chain Guard', 'Kickstand', 'Mudguards/Fenders'
   ];
 
-
-
   // Reset to first page when search term changes
   useEffect(() => {
     setCurrentPage(1);
@@ -304,6 +294,27 @@ const Inventory = () => {
     }
 
     setShowAddModal(true);
+  };
+
+  // Function to reset form and image preview
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      image: '',
+      category: '',
+      brand: '',
+      price: 0,
+      spec1: '',
+      spec1Label: '',
+      spec2: '',
+      spec2Label: '',
+      stock: 0,
+      type: '',
+      weight: '',
+      discount: 0,
+      discountLabel: '',
+    });
+    setImagePreview(null);
   };
 
   // Modified to check permissions before submitting
@@ -337,21 +348,7 @@ const Inventory = () => {
       await createProduct(productData);
       setShowAddModal(false);
       toast.success(`Product added ${productData.name} successfully`);
-
-      setFormData({
-        name: '',
-        image: '',
-        category: '',
-        brand: '',
-        price: 0,
-        // spec1: '',
-        // spec1Label: '',
-        // spec2: '',
-        // spec2Label: '',
-        stock: 0,
-        type: '',
-        weight: ''
-      });
+      resetForm(); // Reset form and image preview
     } catch (err) {
       console.error('Error creating product:', err);
       alert('Failed to create product. Please try again.');
@@ -412,26 +409,11 @@ const Inventory = () => {
     }
   };
 
-  // If user doesn't have view permission, show access denied
-  // if (!permissions.canView && currentUserData) {
-  //     return (
-  //         <div className="min-h-screen bg-white flex">
-  //             <Sidebar userType={"admin"} />
-  //             <div className="flex-1 p-8 flex items-center justify-center">
-  //                 <div className="text-center bg-red-50 p-8 rounded-lg max-w-md shadow-lg">
-  //                     <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-  //                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-  //                     <p className="text-gray-600 mb-4">
-  //                         You don't have permission to view the inventory.
-  //                     </p>
-  //                     <p className="text-sm text-gray-500">
-  //                         Please contact an administrator if you believe this is an error.
-  //                     </p>
-  //                 </div>
-  //             </div>
-  //         </div>
-  //     );
-  // }
+  // Handle modal close with form reset
+  const handleAddModalClose = () => {
+    setShowAddModal(false);
+    resetForm();
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row">
@@ -708,7 +690,8 @@ const Inventory = () => {
               </nav>
             </div>
           )}
-          {/* Add Product Modal - ENHANCED */}
+
+          {/* Add Product Modal - ENHANCED WITH IMAGE PREVIEW */}
           {showAddModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
               <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -717,7 +700,7 @@ const Inventory = () => {
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Add Product</h2>
                     <button
                       className="text-gray-500 hover:text-gray-700"
-                      onClick={() => setShowAddModal(false)}
+                      onClick={handleAddModalClose}
                     >
                       <X size={20} />
                     </button>
@@ -839,27 +822,66 @@ const Inventory = () => {
                       </div>
                     </div>
 
-                    {/* Product Image */}
+                    {/* Product Image with Preview */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Product Image
                       </label>
-                      <div className="flex items-center justify-center px-6 py-6 border-2 border-gray-300 border-dashed rounded-md">
-                        <div className="space-y-1 text-center">
-                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                          <div className="flex text-sm text-gray-600">
-                            <label className="relative cursor-pointer bg-white rounded-md font-medium text-[#ff6900] hover:text-[#e55e00]">
-                              <span>Upload a file</span>
-                              <input type="file" className="sr-only"
-                                name='image'
-                                onChange={handleChange}
-                              />
-                            </label>
-                            <p className="pl-1">or drag and drop</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Image Upload Area */}
+                        <div className="flex items-center justify-center px-6 py-6 border-2 border-gray-300 border-dashed rounded-md">
+                          <div className="space-y-1 text-center">
+                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                            <div className="flex text-sm text-gray-600">
+                              <label className="relative cursor-pointer bg-white rounded-md font-medium text-[#ff6900] hover:text-[#e55e00]">
+                                <span>Upload a file</span>
+                                <input
+                                  type="file"
+                                  className="sr-only"
+                                  name='image'
+                                  accept="image/*"
+                                  onChange={handleChange}
+                                />
+                              </label>
+                              <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, GIF up to 10MB
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-500">
-                            PNG, JPG, GIF up to 10MB
-                          </p>
+                        </div>
+
+                        {/* Image Preview Area */}
+                        <div className="flex items-center justify-center px-6 py-6 border-2 border-gray-200 rounded-md bg-gray-50">
+                          {imagePreview ? (
+                            <div className="text-center">
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                className="max-h-32 max-w-full object-contain rounded-md shadow-sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-2">Image Preview</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setImagePreview(null);
+                                  setFormData(prev => ({ ...prev, image: '' }));
+                                }}
+                                className="mt-2 text-xs text-red-600 hover:text-red-800"
+                              >
+                                Remove Image
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-center text-gray-400">
+                              <div className="mx-auto h-12 w-12 text-gray-300">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </div>
+                              <p className="text-sm">No image selected</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -869,7 +891,7 @@ const Inventory = () => {
                       <button
                         type="button"
                         className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                        onClick={() => setShowAddModal(false)}
+                        onClick={handleAddModalClose}
                       >
                         Cancel
                       </button>
@@ -1107,7 +1129,6 @@ const Inventory = () => {
           )}
 
           {/* Product Details Modal - NEW */}
-
           <ProductDetailsModal
             viewProduct={viewProduct}
             showDetailsModal={showDetailsModal}
