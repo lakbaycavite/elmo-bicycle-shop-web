@@ -33,6 +33,8 @@ const Inventory = () => {
 
   // Added image preview state
   const [imagePreview, setImagePreview] = useState(null);
+  // Added edit image preview state
+  const [editImagePreview, setEditImagePreview] = useState(null);
 
   // Check permissions when user data is loaded
   useEffect(() => {
@@ -221,6 +223,8 @@ const Inventory = () => {
       discount: product.discount || 0,
       discountLabel: product.discountLabel || '',
     });
+    // Reset edit image preview when opening modal
+    setEditImagePreview(null);
     setShowEditModal(true);
   };
 
@@ -244,6 +248,13 @@ const Inventory = () => {
         ...prev,
         [name]: file
       }));
+
+      // Create a preview URL for the selected image in edit modal
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     } else {
       setEditFormData(prev => ({
         ...prev,
@@ -413,6 +424,12 @@ const Inventory = () => {
   const handleAddModalClose = () => {
     setShowAddModal(false);
     resetForm();
+  };
+
+  // Handle edit modal close with image preview reset
+  const handleEditModalClose = () => {
+    setShowEditModal(false);
+    setEditImagePreview(null);
   };
 
   return (
@@ -915,7 +932,7 @@ const Inventory = () => {
             </div>
           )}
 
-          {/* Edit Product Modal - ENHANCED */}
+          {/* Edit Product Modal - ENHANCED WITH IMAGE PREVIEW */}
           {showEditModal && editProduct && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -924,7 +941,7 @@ const Inventory = () => {
                     <h2 className="text-2xl font-bold text-gray-900">Edit Product</h2>
                     <button
                       className="text-gray-500 hover:text-gray-700"
-                      onClick={() => setShowEditModal(false)}
+                      onClick={handleEditModalClose}
                     >
                       <X size={24} />
                     </button>
@@ -1072,29 +1089,65 @@ const Inventory = () => {
                       </div>
                     </div>
 
-                    {/* Product Image */}
+                    {/* Product Image with Enhanced Preview */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Product Image
                       </label>
-                      <div className="flex items-center space-x-4">
-                        <img
-                          src={editProduct.image ? editProduct.image : '/images/logos/elmo.png'}
-                          alt={editProduct?.name}
-                          className="h-20 w-20 rounded-md object-cover border border-gray-300"
-                        />
-                        <div className="flex-1 flex items-center justify-center px-6 py-4 border-2 border-gray-300 border-dashed rounded-md">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Image Upload Area */}
+                        <div className="flex items-center justify-center px-6 py-6 border-2 border-gray-300 border-dashed rounded-md">
                           <div className="space-y-1 text-center">
+                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
                             <div className="flex text-sm text-gray-600">
                               <label className="relative cursor-pointer bg-white rounded-md font-medium text-[#ff6900] hover:text-[#e55e00]">
                                 <span>Upload a new image</span>
-                                <input type="file" className="sr-only"
+                                <input
+                                  type="file"
+                                  className="sr-only"
                                   name="image"
+                                  accept="image/*"
                                   onChange={handleEditChange}
                                 />
                               </label>
                             </div>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, GIF up to 10MB
+                            </p>
                           </div>
+                        </div>
+
+                        {/* Image Preview Area */}
+                        <div className="flex items-center justify-center px-6 py-6 border-2 border-gray-200 rounded-md bg-gray-50">
+                          {editImagePreview ? (
+                            <div className="text-center">
+                              <img
+                                src={editImagePreview}
+                                alt="New Preview"
+                                className="max-h-32 max-w-full object-contain rounded-md shadow-sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-2">New Image Preview</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditImagePreview(null);
+                                  setEditFormData(prev => ({ ...prev, image: editProduct.image }));
+                                }}
+                                className="mt-2 text-xs text-red-600 hover:text-red-800"
+                              >
+                                Remove New Image
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <img
+                                src={editProduct.image || '/images/logos/elmo.png'}
+                                alt={editProduct?.name}
+                                className="max-h-32 max-w-full object-contain rounded-md shadow-sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-2">Current Image</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1104,7 +1157,7 @@ const Inventory = () => {
                       <button
                         type="button"
                         className="px-3 sm:px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 text-sm sm:text-base"
-                        onClick={() => setShowEditModal(false)}
+                        onClick={handleEditModalClose}
                       >
                         Cancel
                       </button>
