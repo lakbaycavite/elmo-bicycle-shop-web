@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable';
 import elmoLogo from '/images/logos/elmo.png';
 import { toast } from 'sonner';
 import { useDiscount } from '../../hooks/useDiscount';
+import { deleteOrder } from '../../services/orderSerivce';
 
 function OrdersOverview() {
   const { adminOrders, updateOrderStatus } = useOrder();
@@ -425,6 +426,19 @@ function OrdersOverview() {
     return subtotal.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
   };
 
+  const handleDelete = async (orderId) => {
+    // Implement delete functionality here
+    await deleteOrder(orderId)
+      .then(() => {
+        toast.success('Order deleted successfully!');
+        // Optionally, refresh the order list or update the UI
+      })
+      .catch((error) => {
+        console.log('Error deleting order:', error);
+        toast.error('Failed to delete order.');
+      });
+  };
+
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gray-50 p-4">
@@ -534,12 +548,19 @@ function OrdersOverview() {
                           {order.status?.toUpperCase()}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 gap-">
                         <button
                           className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                          style={{ marginRight: '8px' }}
                           onClick={() => handleViewOrder(order)}
                         >
                           View
+                        </button>
+                        <button
+                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
+                          onClick={() => handleDelete(order.id)}
+                        >
+                          Delete
                         </button>
                       </td>
                     </tr>

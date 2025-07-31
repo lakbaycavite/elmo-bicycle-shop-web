@@ -1,4 +1,4 @@
-import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "firebase/database";
+import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo, remove } from "firebase/database";
 import { auth } from "../firebase/firebase";
 import { clearCart, getCartItems } from "./cartService";
 import { addSpinAttempts } from "./discountService";
@@ -203,6 +203,23 @@ export const updateOrderStatus = async (orderId, updates) => {
         };
     } catch (error) {
         console.error("Error updating order status:", error);
+        throw error;
+    }
+};
+
+export const deleteOrder = async (orderId) => {
+    try {
+        const db = getDatabase();
+        const orderRef = ref(db, `orders/${orderId}`);
+
+        await remove(orderRef);
+
+        return {
+            success: true,
+            message: `Order ${orderId} deleted successfully`
+        };
+    } catch (error) {
+        console.error("Error deleting order:", error);
         throw error;
     }
 };
