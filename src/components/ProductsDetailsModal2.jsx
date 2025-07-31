@@ -204,7 +204,7 @@ const ProductDetailsModal2 = ({ showDetailsModal, viewProduct, setShowDetailsMod
                         </div>
 
                         {/* Specifications */}
-                        <div className="border-t border-gray-200 pt-4 mb-6">
+                        {/* <div className="border-t border-gray-200 pt-4 mb-6">
                             <h4 className="text-lg font-semibold text-gray-900 mb-3" style={{ color: '#111827' }}>Specifications</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {viewProduct.spec1Label && viewProduct.spec1 && (
@@ -237,7 +237,7 @@ const ProductDetailsModal2 = ({ showDetailsModal, viewProduct, setShowDetailsMod
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Customer Reviews Section */}
                         <div className="border-t border-gray-200 pt-4">

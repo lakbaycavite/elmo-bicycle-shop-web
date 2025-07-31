@@ -269,7 +269,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="notes" style={{ display: 'block', marginBottom: '8px', color: '#333' }}>
+                                    {/* <label htmlFor="notes" style={{ display: 'block', marginBottom: '8px', color: '#333' }}>
                                         Order Notes (Optional)
                                     </label>
                                     <textarea
@@ -287,7 +287,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                             borderRadius: '4px',
                                             resize: 'vertical'
                                         }}
-                                    />
+                                    /> */}
                                 </div>
                             </div>
 

@@ -217,7 +217,7 @@ const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModa
                         </div>
 
                         {/* Specifications */}
-                        <div className="border-t border-gray-200 pt-4 mb-6">
+                        {/* <div className="border-t border-gray-200 pt-4 mb-6">
                             <h4 className="text-lg font-semibold mb-3">Specifications</h4>
                             <table className="min-w-full divide-y divide-gray-200">
                                 <tbody className="divide-y divide-gray-200">
@@ -252,7 +252,7 @@ const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModa
                                     )}
                                 </tbody>
                             </table>
-                        </div>
+                        </div> */}
 
                         {/* Customer Reviews Section */}
                         <div className="border-t border-gray-200 pt-4">
