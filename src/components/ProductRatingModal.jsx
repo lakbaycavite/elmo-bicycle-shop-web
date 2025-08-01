@@ -29,6 +29,9 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings, isSubmi
     const currentProduct = cartItems && cartItems.length > currentProductIndex ? cartItems[currentProductIndex] : null;
     const progress = cartItems && cartItems.length > 0 ? ((currentProductIndex + 1) / cartItems.length) * 100 : 0;
 
+    // Check if current product has been rated
+    const currentProductRated = ratings[currentProductIndex]?.rating > 0;
+
     // Safety check - if no current product, don't render
     if (!show || !currentProduct) return null;
 
@@ -130,7 +133,7 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings, isSubmi
 
                     {/* Rating stars */}
                     <div className="mb-4">
-                        <p className="font-medium mb-2">How would you rate this product?</p>
+                        <p className="font-medium mb-2">How would you rate this product? <span className="text-red-500">*</span></p>
                         <div className="flex space-x-2">
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <button
@@ -149,6 +152,9 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings, isSubmi
                                 </button>
                             ))}
                         </div>
+                        {!currentProductRated && (
+                            <p className="text-sm text-red-500 mt-1">Please select a rating to continue</p>
+                        )}
                     </div>
 
                     {/* Comment */}
@@ -175,10 +181,18 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings, isSubmi
                         </button>
                         <button
                             onClick={handleNext}
-                            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            disabled={isSubmitting}
+                            className={`px-6 py-2 text-white rounded-lg font-medium ${currentProductRated
+                                ? 'bg-orange-500 hover:bg-orange-600'
+                                : 'bg-gray-400 cursor-not-allowed'
+                                }`}
+                            disabled={isSubmitting || !currentProductRated}
                         >
-                            {isSubmitting ? 'Submitting...' : currentProductIndex < cartItems.length - 1 ? 'Next' : 'Submit'}
+                            {isSubmitting
+                                ? 'Submitting...'
+                                : currentProductIndex < cartItems.length - 1
+                                    ? 'Next'
+                                    : 'Submit'
+                            }
                         </button>
                     </div>
                 </div>
