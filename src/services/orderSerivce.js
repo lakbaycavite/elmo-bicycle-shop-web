@@ -48,6 +48,7 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
             paymentMethod: orderDetails.paymentMethod || "Walk-in",
             createdAt: orderDetails.orderDate || getCurrentFormattedTime(),
             notes,
+            isRated: false, // Track if the order has been rated
         };
 
         // Add to database
@@ -64,6 +65,28 @@ export const createOrder = async (notes = "", orderDetails = {}) => {
         };
     } catch (error) {
         console.error("Error creating order:", error);
+        throw error;
+    }
+};
+
+// Update order rated status
+export const updateOrderRatedStatus = async (orderId, isRated = true) => {
+    try {
+        const db = getDatabase();
+        const orderRef = ref(db, `orders/${orderId}`);
+
+        // Update only the isRated field
+        await update(orderRef, {
+            isRated,
+            ratedAt: getCurrentFormattedTime()
+        });
+
+        return {
+            success: true,
+            message: "Order rating status updated"
+        };
+    } catch (error) {
+        console.error("Error updating order rating status:", error);
         throw error;
     }
 };

@@ -5,7 +5,9 @@ import {
     getUserOrders as getUserOrdersService,
     getOrderById as getOrderByIdService,
     getAllOrders as getAllOrdersService,
-    updateOrderStatus as updateOrderStatusService
+    updateOrderStatus as updateOrderStatusService,
+    updateOrderRatedStatus as updateOrderRatedStatusService
+
 } from '../services/orderSerivce'
 import { get, getDatabase, ref, onValue, off, query, orderByChild, equalTo } from 'firebase/database';
 
@@ -277,6 +279,25 @@ export function useOrder() {
         }
     }, [isAdmin]);
 
+    const updateOrderRatedStatus = useCallback(async (orderId, isRated = true) => {
+        if (!auth.currentUser) {
+            throw new Error("You must be logged in to update an order");
+        }
+
+        try {
+            setLoading(true);
+            setError(null);
+            const result = await updateOrderRatedStatusService(orderId, isRated);
+            return result;
+        } catch (err) {
+            console.error('Error updating order rating status:', err);
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     // Format date as "YYYY-MM-DD HH:MM:SS"
     const formatTimestamp = useCallback(() => {
         const now = new Date();
@@ -319,6 +340,8 @@ export function useOrder() {
         loadOrderById,
         createOrder,
         updateOrderStatus, // This function is now more flexible
+        updateOrderRatedStatus, // New function
+
         formatTimestamp,
         getOrderStats,
         subscribeToOrder // New function for subscribing to specific order updates

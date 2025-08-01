@@ -31,6 +31,7 @@ import { useAuth } from './context/authContext/createAuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './middleware/ProtectedRoute';
 import SpinTheWheel from './pages/post-auth/SpinTheWheel';
+import OrderHistory from './components/OrderHistory';
 
 function App() {
   const { userLoggedIn } = useAuth();
@@ -89,6 +90,11 @@ function App() {
           <Route path="/customer/cart" element={
             <ProtectedRoute requiredRoles={['customer']}>
               <Cart />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/orders" element={
+            <ProtectedRoute requiredRoles={['customer']}>
+              <OrderHistory />
             </ProtectedRoute>
           } />
           <Route path="/customer/spin-wheel" element={
