@@ -1,11 +1,10 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, CreditCard, DiamondPlus, Minus, Plus, RefreshCw, Search, ShoppingCart, Trash2, Clock } from "lucide-react"
+import { ArrowLeft, CreditCard, DiamondPlus, Minus, Plus, Search, ShoppingCart, Trash2, Clock } from "lucide-react"
 import CartCard from "../../components/CartCard";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../hooks/useCart";
 import { useProducts } from "../../hooks/useProduct";
 import elmoLogo from '/images/logos/elmo.png'
 import OrderDetailsModal from "../../components/OrderDetailsModal";
-import ProductRatingModal from "../../components/ProductRatingModal";
 import { useState, useEffect } from "react";
 import ProductDetailsModal from "../../components/ProductsDetailsModal";
 import { toast } from "sonner";
@@ -13,9 +12,7 @@ import { useOrder } from "../../hooks/useOrder";
 
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
-    const [showRatingModal, setShowRatingModal] = useState(false);
     const [orderCompleted, setOrderCompleted] = useState(false);
-    const [completedCartItems, setCompletedCartItems] = useState([]);
     const [viewProduct, setViewProduct] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [searchFilter, setSearchFilter] = useState("");
@@ -52,29 +49,33 @@ const Cart = () => {
 
         const currentOrder = userOrders.find(order => order.id === currentOrderId);
 
-        if (currentOrder && currentOrder.status === 'paid' && !showRatingModal) {
-            // Order has been paid, show rating modal
-            setShowRatingModal(true);
+        if (currentOrder && currentOrder.status === 'paid') {
+            // Order has been paid, notify the user to view/rate from Order History
             setCurrentOrderId(null); // Reset to prevent multiple triggers
 
-            toast.success('Your order has been confirmed! Please rate your products.');
+            toast.success('Your order has been confirmed!', {
+                action: {
+                    label: 'View Order',
+                    onClick: () => navigate('/customer/orders')
+                },
+                description: 'You can view details and rate products in My Orders'
+            });
         }
-    }, [userOrders, currentOrderId, showRatingModal]);
+    }, [userOrders, currentOrderId, navigate]);
 
-    // Handle checkout completion - modified to not show rating modal immediately
+    // Handle checkout completion
     const handleCheckoutComplete = (orderId) => {
-        setCompletedCartItems([...cart]);
-        setShowOrderModal(false);
         setOrderCompleted(true);
+        setShowOrderModal(false);
 
         // Store the order ID to monitor its status
         setCurrentOrderId(orderId);
 
         // Show success message
-        toast.success('Order placed successfully! You can rate your products once payment is confirmed.');
+        toast.success('Order placed successfully! We will notify you when payment is confirmed.');
 
         // Also inform the user they can view their orders
-        toast.info('You can view your order history and rate your products anytime from "My Orders"', {
+        toast.info('You can view your order history in "My Orders"', {
             duration: 6000,
             action: {
                 label: 'View Orders',
@@ -98,17 +99,6 @@ const Cart = () => {
                 toast.error(`Failed to load product details`);
             });
     }
-
-    // Handle rating submission
-    const handleRatingSubmit = async (ratings) => {
-        try {
-            // After successful submission, redirect to order history
-            clearCart();
-            navigate("/customer/orders");
-        } catch (error) {
-            console.error("Error submitting ratings:", error);
-        }
-    };
 
     const handleUpdateQuantity = async (id, newQuantity) => {
         if (newQuantity < 1) return; // Prevent negative quantities
@@ -261,20 +251,59 @@ const Cart = () => {
                 </div>
             </div>
 
-            {/* Rest of component remains the same */}
-            {/* ... */}
+            {/* Add More Products Section */}
+            <div className="w-full max-w-screen-lg bg-[#2E2E2E] rounded-xl flex flex-col">
+                <div className="w-full h-auto rounded-t-xl flex flex-col sm:flex-row items-center justify-between px-3 py-4">
+                    <div className="flex flex-row items-center mb-4 sm:mb-0">
+                        <DiamondPlus className="text-white" />
+                        <label className="text-white font-bold text-lg sm:text-xl ml-3">Add more product?</label>
+                    </div>
+
+                    <div className="relative w-full sm:w-72">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <Search className="text-white" size={18} />
+                        </span>
+                        <input
+                            className="w-full h-8 bg-[#444444] rounded-full pl-10 text-white placeholder-white"
+                            placeholder="Search..."
+                            type="text"
+                            onChange={(e) => setSearchFilter(e.target.value)}
+                            value={searchFilter}
+                        />
+                    </div>
+                </div>
+                <div className="w-full px-3 flex flex-wrap gap-4 justify-center mb-2">
+                    {filteredProducts.slice(0, 9).map((product, idx) => (
+                        <div key={idx} className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                            <CartCard
+                                productDetails={product}
+                                title={product.name}
+                                handleShowDetailsModal={handleShowDetailsModal}
+                                productId={product.id}
+                                description1={product.spec1}
+                                rating={product.rating}
+                                image={product.image ? product.image : elmoLogo}
+                                addToCart={addToCart}
+                            />
+                        </div>
+                    ))}
+                </div>
+                <div className="w-full h-16 bg-[#2E2E2E] rounded-b-xl flex items-center justify-center">
+                    <button
+                        className="w-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition-colors"
+                        style={{ borderRadius: "10px" }}
+                        onClick={() => navigate("/customer/products")}
+                    >
+                        Show More
+                    </button>
+                </div>
+            </div>
 
             {/* Modals */}
             <OrderDetailsModal
                 show={showOrderModal}
                 onClose={() => setShowOrderModal(false)}
                 onComplete={handleCheckoutComplete}
-            />
-            <ProductRatingModal
-                show={showRatingModal}
-                onClose={() => setShowRatingModal(false)}
-                cartItems={orderCompleted ? completedCartItems : []}
-                onSubmitRatings={handleRatingSubmit}
             />
             <ProductDetailsModal
                 viewProduct={viewProduct}
