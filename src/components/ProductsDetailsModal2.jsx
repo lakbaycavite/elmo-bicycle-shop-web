@@ -99,7 +99,7 @@ const ProductDetailsModal2 = ({ showDetailsModal, viewProduct, setShowDetailsMod
                         <div className="flex flex-col md:flex-row mb-6 gap-4">
                             <div className="w-full md:w-1/3">
                                 <img
-                                    src={viewProduct.image || 'https://via.placeholder.com/300'}
+                                    src={viewProduct.image || '/images/logos/elmo.png'}
                                     alt={viewProduct.name}
                                     className="w-full h-auto rounded-lg object-cover shadow-md"
                                 />
