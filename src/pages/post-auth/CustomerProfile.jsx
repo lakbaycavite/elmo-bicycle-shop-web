@@ -3,20 +3,21 @@ import {
     User,
     Mail,
     Phone,
-    MapPin,
-    Calendar,
-    DollarSign,
-    FileText,
-    Clock,
+    ShoppingBag,
+    Star,
+    ChevronDown,
+    ChevronUp,
+    ArrowLeft,
+    CheckCircle,
+    ChevronRight,
+    ChevronLeft,
     Lock,
     LogOut,
-    ArrowLeft,
     X,
     Loader2,
     Edit2,
     Save,
     Camera,
-    Check,
     CircleUser
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -24,26 +25,21 @@ import { useUsers } from '../../hooks/useUser';
 import { useOrder } from '../../hooks/useOrder';
 import { doPasswordChange, doSignOut } from '../../firebase/auth';
 import { toast } from 'sonner';
+import ProductRatingModal from '../../components/ProductRatingModal';
 
 const CustomerProfile = () => {
     const { currentUserData, editUser, loading: userLoading } = useUsers();
+    const { userOrders, loading: ordersLoading, error: ordersError, updateOrderRatedStatus } = useOrder();
     const navigate = useNavigate();
-    const { userOrders, loadUserOrders } = useOrder();
 
-    useEffect(() => {
-        loadUserOrders();
-    }, [loadUserOrders]);
-
+    // Profile states
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
-
     const [loading, setLoading] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-
-    // Edit profile states
     const [isEditing, setIsEditing] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
     const [profileData, setProfileData] = useState({
@@ -52,6 +48,23 @@ const CustomerProfile = () => {
         phone: '',
         image: ''
     });
+
+    // Order history states
+    const [expandedOrder, setExpandedOrder] = useState(null);
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [currentOrderItems, setCurrentOrderItems] = useState([]);
+    const [currentRatingOrderId, setCurrentRatingOrderId] = useState(null);
+    const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+
+    // Calculate pagination
+    const indexOfLastOrder = currentPage * itemsPerPage;
+    const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
+    const currentOrders = userOrders ? userOrders.slice(indexOfFirstOrder, indexOfLastOrder) : [];
+    const totalPages = userOrders ? Math.ceil(userOrders.length / itemsPerPage) : 0;
 
     // Initialize profile data when currentUserData changes
     useEffect(() => {
@@ -65,24 +78,21 @@ const CustomerProfile = () => {
         }
     }, [currentUserData]);
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    // Reset to first page when total orders changes
+    useEffect(() => {
+        if (userOrders) {
+            setCurrentPage(1);
+        }
+    }, [userOrders?.length]);
 
-    const indexOfLastTransaction = currentPage * itemsPerPage;
-    const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage;
-    const currentTransactions = userOrders.slice(indexOfFirstTransaction, indexOfLastTransaction);
-
-    const totalPages = Math.ceil(userOrders.length / itemsPerPage);
-
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-    const fullName = currentUserData ?
-        `${currentUserData.firstName || ''} ${currentUserData.lastName || ''}`.trim() :
-        "User";
+    const fullName = currentUserData
+        ? `${currentUserData.firstName || ''} ${currentUserData.lastName || ''}`.trim()
+        : "User";
 
     const email = currentUserData?.email || "Not available";
     const phone = currentUserData?.phone || "Not available";
 
+    // Profile handlers
     const handleLogout = async () => {
         await doSignOut()
             .then(() => {
@@ -105,7 +115,6 @@ const CustomerProfile = () => {
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
-        setIsChangePasswordModalOpen(true);
         setLoading(true);
 
         if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -133,7 +142,6 @@ const CustomerProfile = () => {
         }
     };
 
-    // Edit profile handlers
     const handleEditToggle = () => {
         if (isEditing) {
             // Reset to original data if canceling
@@ -141,7 +149,7 @@ const CustomerProfile = () => {
                 firstName: currentUserData.firstName || '',
                 lastName: currentUserData.lastName || '',
                 phone: currentUserData.phone || '',
-                image: currentUserData.image || "https://randomuser.me/api/portraits/men/44.jpg"
+                image: currentUserData.image
             });
         }
         setIsEditing(!isEditing);
@@ -158,8 +166,6 @@ const CustomerProfile = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // For demo purposes, we'll use a file reader to convert to base64
-            // In a real app, you'd upload to a service like Firebase Storage
             const reader = new FileReader();
             reader.onloadend = () => {
                 setProfileData(prev => ({
@@ -187,12 +193,80 @@ const CustomerProfile = () => {
             });
 
             setIsEditing(false);
-            // toast.success("Profile updated successfully");
         } catch (error) {
             toast.error("Failed to update profile");
             console.error("Profile update error:", error);
         } finally {
             setEditLoading(false);
+        }
+    };
+
+    // Order history handlers
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const nextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const prevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'pending':
+                return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">Pending</span>;
+            case 'paid':
+                return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Paid</span>;
+            case 'completed':
+                return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Completed</span>;
+            case 'cancelled':
+                return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Cancelled</span>;
+            default:
+                return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">{status}</span>;
+        }
+    };
+
+    const formatPrice = (price) => {
+        return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+    };
+
+    const needsRating = (order) => {
+        return order.status === 'paid' && !order.isRated;
+    };
+
+    const handleRateOrder = (order) => {
+        const orderItems = order.items.map(item => ({
+            id: item.productId,
+            name: item.name,
+            image: item.image,
+            quantity: item.quantity,
+            price: item.price
+        }));
+
+        setCurrentOrderItems(orderItems);
+        setCurrentRatingOrderId(order.id);
+        setShowRatingModal(true);
+    };
+
+    const handleRatingSubmit = async (ratings) => {
+        if (!currentRatingOrderId) return;
+
+        try {
+            setIsSubmittingRating(true);
+            await updateOrderRatedStatus(currentRatingOrderId, true);
+            toast.success('Thank you for rating your products!');
+            setShowRatingModal(false);
+            setCurrentRatingOrderId(null);
+        } catch (error) {
+            console.error("Error submitting ratings:", error);
+            toast.error("Failed to submit ratings. Please try again.");
+        } finally {
+            setIsSubmittingRating(false);
         }
     };
 
@@ -214,12 +288,10 @@ const CustomerProfile = () => {
         );
     }
 
-    console.log(profileData.image, "Profile Image URL");
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#ff6900] bg-no-repeat bg-fixed" style={{ background: "linear-gradient(135deg, black 80%, #ff6900 100%)" }}>
-            {/* Back Button - Top Right */}
             <div className="container mx-auto px-4 py-4 relative">
+                {/* Back Button - Top Right */}
                 <button className="absolute top-4 right-4 bg-[#ff6900] hover:bg-[#e55e00] text-white font-bold py-2 px-4 rounded-full flex items-center"
                     onClick={() => navigate('/customer/home')}
                 >
@@ -227,23 +299,21 @@ const CustomerProfile = () => {
                     Back
                 </button>
 
-                {/* Top section with profile image and account details */}
+                {/* Profile Section */}
                 <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800 mt-16">
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                         {/* Profile Image */}
                         <div className="flex flex-col items-center">
                             <div className="relative">
-                                {
-                                    profileData.image ? (
-                                        <img
-                                            src={profileData.image}
-                                            alt="Profile"
-                                            className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
-                                        />
-                                    ) : (
-                                        <CircleUser className="h-32 w-32 text-orange-600 bg-gray-200 rounded-full p-2" />
-                                    )
-                                }
+                                {profileData.image ? (
+                                    <img
+                                        src={profileData.image}
+                                        alt="Profile"
+                                        className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
+                                    />
+                                ) : (
+                                    <CircleUser className="h-32 w-32 text-orange-600 bg-gray-200 rounded-full p-2" />
+                                )}
                                 {isEditing && (
                                     <label className="absolute bottom-0 right-0 bg-[#ff6900] hover:bg-[#e55e00] rounded-full p-2 cursor-pointer">
                                         <Camera size={16} className="text-white" />
@@ -357,152 +427,248 @@ const CustomerProfile = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Account Action Buttons */}
+                            <div className="flex flex-wrap gap-3 mt-6">
+                                <button
+                                    className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-md border border-[#ff6900]"
+                                    onClick={() => setIsChangePasswordModalOpen(true)}
+                                >
+                                    <Lock size={16} className="text-[#ff6900]" />
+                                    <span>Change Password</span>
+                                </button>
+
+                                <button
+                                    className="flex items-center justify-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white font-semibold py-2 px-4 rounded-md"
+                                    onClick={handleLogout}
+                                >
+                                    <LogOut size={16} />
+                                    <span>Logout</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Order History Section */}
                 <div className="bg-gray-900 text-white rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
-                    <h2 className="text-2xl font-bold mb-4 text-[#ff6900] border-b border-gray-700 pb-2 flex items-center">
-                        <FileText className="text-[#ff6900] mr-2" size={24} />
-                        Transaction History
-                    </h2>
+                    <div className="flex items-center mb-6">
+                        <ShoppingBag className="text-[#ff6900] mr-2" />
+                        <h2 className="text-2xl font-bold text-[#ff6900] border-b border-gray-700 pb-2">My Orders</h2>
+                    </div>
 
-                    {/* Format date helper function */}
-                    {(() => {
-                        const formatDate = (dateString) => {
-                            if (!dateString) return "N/A";
-                            const date = new Date(dateString);
-                            if (isNaN(date.getTime())) return dateString;
-                            return date.toLocaleString('en-US', {
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true
-                            });
-                        };
+                    {ordersLoading && (
+                        <div className="text-center py-8">
+                            <div className="animate-spin w-8 h-8 border-4 border-[#ff6900] border-t-transparent rounded-full mx-auto mb-4"></div>
+                            <p className="text-gray-400">Loading your orders...</p>
+                        </div>
+                    )}
 
-                        return (
-                            <div className="overflow-x-auto">
-                                <table className="table-auto w-full">
-                                    <thead className="bg-gray-800">
-                                        <tr>
-                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">#</th>
-                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                                <div className="flex items-center">
-                                                    <Calendar size={16} className="mr-1" />
-                                                    Date
-                                                </div>
-                                            </th>
-                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                                <div className="flex items-center">
-                                                    <FileText size={16} className="mr-1" />
-                                                    Payment Method
-                                                </div>
-                                            </th>
-                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                                <div className="flex items-center">
-                                                    <DollarSign size={16} className="mr-1" />
-                                                    Amount
-                                                </div>
-                                            </th>
-                                            <th scope="col" className="py-3 px-4 text-left text-[#ff6900]">
-                                                <div className="flex items-center">
-                                                    <Clock size={16} className="mr-1" />
-                                                    Status
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {currentTransactions.map((transaction) => (
-                                            <tr key={transaction.id} className="border-b border-gray-800 hover:bg-gray-800">
-                                                <td className="py-3 px-4">{transaction.id}</td>
-                                                <td className="py-3 px-4">{formatDate(transaction.createdAt)}</td>
-                                                <td className="py-3 px-4">{transaction.paymentMethod}</td>
-                                                <td className="py-3 px-4 font-medium">{`₱${transaction.totalAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</td>
-                                                <td className="py-3 px-4">
-                                                    <span className="px-2 py-1 bg-green-900 text-green-300 rounded-full text-xs">
-                                                        {transaction.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        );
-                    })()}
+                    {ordersError && (
+                        <div className="bg-red-900 text-red-200 p-4 rounded-lg mb-6">
+                            {ordersError}
+                        </div>
+                    )}
 
-                    {/* Pagination */}
-                    <nav className="mt-6 flex justify-center">
-                        <ul className="flex space-x-2">
-                            <li>
-                                <button
-                                    className={`px-3 py-1 rounded ${currentPage === 1
-                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gray-700 text-white hover:bg-gray-600'}`}
-                                    onClick={() => paginate(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                >
-                                    Previous
-                                </button>
-                            </li>
+                    {!ordersLoading && (!userOrders || userOrders.length === 0) && (
+                        <div className="text-center py-8 bg-gray-800 rounded-lg">
+                            <ShoppingBag className="mx-auto text-gray-500 mb-4" size={48} />
+                            <h2 className="text-xl font-semibold text-gray-300 mb-2">No Orders Yet</h2>
+                            <p className="text-gray-400 mb-6">You haven't placed any orders yet.</p>
+                            <button
+                                onClick={() => navigate('/customer/products')}
+                                className="bg-[#ff6900] hover:bg-[#e55e00] text-white px-6 py-2 rounded-lg transition-colors"
+                            >
+                                Browse Products
+                            </button>
+                        </div>
+                    )}
 
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                                <li key={number}>
-                                    <button
-                                        onClick={() => paginate(number)}
-                                        className={`px-3 py-1 rounded ${currentPage === number
-                                            ? 'bg-[#ff6900] text-white'
-                                            : 'bg-gray-700 text-white hover:bg-gray-600'
-                                            }`}
+                    {!ordersLoading && userOrders && userOrders.length > 0 && (
+                        <>
+                            <div className="space-y-4 mb-6">
+                                {currentOrders.map((order) => (
+                                    <div
+                                        key={order.id}
+                                        className="border border-gray-700 rounded-lg overflow-hidden bg-gray-800 shadow-sm"
                                     >
-                                        {number}
-                                    </button>
-                                </li>
-                            ))}
+                                        {/* Order header */}
+                                        <div className="flex justify-between items-center p-4 bg-gray-700 border-b border-gray-600">
+                                            <div>
+                                                <div className="text-sm text-gray-300">Order #{order.id.slice(-6)}</div>
+                                                <div className="text-sm text-gray-300">{order.createdAt}</div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {getStatusBadge(order.status)}
+                                                {needsRating(order) && (
+                                                    <button
+                                                        onClick={() => handleRateOrder(order)}
+                                                        disabled={isSubmittingRating && currentRatingOrderId === order.id}
+                                                        className="flex items-center text-sm bg-orange-900 text-orange-100 px-3 py-1 rounded-full hover:bg-orange-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <Star size={14} className="mr-1" />
+                                                        Rate Items
+                                                    </button>
+                                                )}
+                                                {order.isRated && (
+                                                    <span className="flex items-center text-sm bg-green-900 text-green-100 px-3 py-1 rounded-full">
+                                                        <CheckCircle size={14} className="mr-1" />
+                                                        Rated
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
 
-                            <li>
-                                <button
-                                    className={`px-3 py-1 rounded ${currentPage === totalPages
-                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gray-700 text-white hover:bg-gray-600'}`}
-                                    onClick={() => paginate(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Next
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                                        {/* Order summary (always visible) */}
+                                        <div className="p-4 flex justify-between items-center">
+                                            <div>
+                                                <div className="font-medium text-gray-200">{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</div>
+                                                <div className="text-sm text-gray-400">Payment: {order.paymentMethod}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-lg text-[#ff6900]">{formatPrice(order.totalAmount)}</div>
+                                                <button
+                                                    onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                                    className="text-[#ff6900] text-sm flex items-center hover:text-orange-400"
+                                                >
+                                                    {expandedOrder === order.id ? (
+                                                        <>
+                                                            <ChevronUp size={16} className="mr-1" />
+                                                            Hide Details
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ChevronDown size={16} className="mr-1" />
+                                                            View Details
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col md:flex-row gap-4 justify-center pb-10">
-                    <button className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md border border-[#ff6900]"
-                        onClick={
-                            () => setIsChangePasswordModalOpen(true)
-                        }>
-                        <Lock size={18} className="text-[#ff6900]" />
-                        <span>Change Password</span>
-                    </button>
+                                        {/* Expanded order details */}
+                                        {expandedOrder === order.id && (
+                                            <div className="border-t border-gray-700 p-4 bg-gray-750">
+                                                <h3 className="font-medium mb-3 text-gray-200">Order Items</h3>
+                                                <div className="space-y-3">
+                                                    {order.items.map((item, index) => (
+                                                        <div key={index} className="flex items-center gap-3">
+                                                            <img
+                                                                src={item.image || "/images/logos/elmo.png"}
+                                                                alt={item.name}
+                                                                className="w-12 h-12 object-cover rounded-md border border-gray-600"
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-200">{item.name}</div>
+                                                                <div className="text-sm text-gray-400">
+                                                                    Qty: {item.quantity} × {formatPrice(item.price)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="font-medium text-gray-200">
+                                                                {formatPrice(item.price * item.quantity)}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
 
-                    <button className="flex items-center justify-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white font-semibold py-3 px-6 rounded-md" onClick={handleLogout}>
-                        <LogOut size={18} />
-                        <span>Logout</span>
-                    </button>
+                                                <div className="mt-4 pt-4 border-t border-gray-700">
+                                                    <div className="flex justify-between text-sm mb-1 text-gray-300">
+                                                        <span>Subtotal:</span>
+                                                        <span>{formatPrice(order.subtotal || order.totalAmount)}</span>
+                                                    </div>
+                                                    {order.discount > 0 && (
+                                                        <div className="flex justify-between text-sm mb-1">
+                                                            <span className="text-gray-300">Discount:</span>
+                                                            <span className="text-red-400">-{formatPrice(order.discount)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between font-bold mt-2 text-gray-200">
+                                                        <span>Total:</span>
+                                                        <span className="text-[#ff6900]">{formatPrice(order.totalAmount)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center mt-8">
+                                    <nav className="flex items-center space-x-1">
+                                        <button
+                                            onClick={prevPage}
+                                            disabled={currentPage === 1}
+                                            className={`px-3 py-2 rounded-md ${currentPage === 1
+                                                ? 'text-gray-600 cursor-not-allowed'
+                                                : 'text-gray-300 hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            <ChevronLeft size={16} />
+                                        </button>
+
+                                        {/* Generate page numbers */}
+                                        {[...Array(totalPages)].map((_, i) => {
+                                            const pageNum = i + 1;
+                                            if (
+                                                pageNum === 1 ||
+                                                pageNum === totalPages ||
+                                                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                                            ) {
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => paginate(pageNum)}
+                                                        className={`px-3 py-2 rounded-md ${currentPage === pageNum
+                                                            ? 'bg-[#ff6900] text-white font-medium'
+                                                            : 'text-gray-300 hover:bg-gray-800'
+                                                            }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            } else if (
+                                                (pageNum === 2 && currentPage > 3) ||
+                                                (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+                                            ) {
+                                                return <span key={pageNum} className="px-3 py-2 text-gray-500">...</span>;
+                                            }
+                                            return null;
+                                        })}
+
+                                        <button
+                                            onClick={nextPage}
+                                            disabled={currentPage === totalPages}
+                                            className={`px-3 py-2 rounded-md ${currentPage === totalPages
+                                                ? 'text-gray-600 cursor-not-allowed'
+                                                : 'text-gray-300 hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </nav>
+                                </div>
+                            )}
+
+                            {/* Order count summary */}
+                            <div className="text-center mt-2 text-sm text-gray-400">
+                                Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, userOrders.length)} of {userOrders.length} orders
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
+
+            {/* Change Password Modal */}
             {isChangePasswordModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 text-white rounded-lg p-6 w-full max-w-md border border-gray-700">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-orange-500">Change Password</h2>
+                            <h2 className="text-xl font-bold text-[#ff6900]">Change Password</h2>
                             <button
                                 onClick={() => setIsChangePasswordModalOpen(false)}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-gray-400 hover:text-gray-200"
                             >
                                 <X className="h-6 w-6" />
                             </button>
@@ -510,37 +676,37 @@ const CustomerProfile = () => {
 
                         <form onSubmit={handleChangePassword}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 mb-2">Current Password</label>
+                                <label className="block text-gray-300 mb-2">Current Password</label>
                                 <input
                                     type="password"
                                     name="currentPassword"
                                     value={passwordData.currentPassword}
                                     onChange={handlePasswordInputChange}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
                                     required
                                 />
                             </div>
 
                             <div className="mb-4">
-                                <label className="block text-gray-700 mb-2">New Password</label>
+                                <label className="block text-gray-300 mb-2">New Password</label>
                                 <input
                                     type="password"
                                     name="newPassword"
                                     value={passwordData.newPassword}
                                     onChange={handlePasswordInputChange}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
                                     required
                                 />
                             </div>
 
                             <div className="mb-6">
-                                <label className="block text-gray-700 mb-2">Confirm New Password</label>
+                                <label className="block text-gray-300 mb-2">Confirm New Password</label>
                                 <input
                                     type="password"
                                     name="confirmPassword"
                                     value={passwordData.confirmPassword}
                                     onChange={handlePasswordInputChange}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
                                     required
                                 />
                             </div>
@@ -549,19 +715,17 @@ const CustomerProfile = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsChangePasswordModalOpen(false)}
-                                    className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+                                    className="px-4 py-2 border border-gray-600 rounded text-gray-300 hover:bg-gray-700"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+                                    className="px-4 py-2 bg-[#ff6900] text-white rounded hover:bg-[#e55e00] flex items-center justify-center"
                                     disabled={loading}
                                 >
                                     {loading ? (
-                                        <>
-                                            <Loader2 className='animate-spin' />
-                                        </>
+                                        <Loader2 className="animate-spin h-5 w-5" />
                                     ) : "Save Password"}
                                 </button>
                             </div>
@@ -569,6 +733,18 @@ const CustomerProfile = () => {
                     </div>
                 </div>
             )}
+
+            {/* Rating Modal */}
+            <ProductRatingModal
+                show={showRatingModal}
+                onClose={() => {
+                    setShowRatingModal(false);
+                    setCurrentRatingOrderId(null);
+                }}
+                cartItems={currentOrderItems}
+                onSubmitRatings={handleRatingSubmit}
+                isSubmitting={isSubmittingRating}
+            />
         </div>
     );
 };
