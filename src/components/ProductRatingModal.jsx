@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Star, X } from 'lucide-react';
-// import { ref, push, serverTimestamp } from 'firebase/database';
-// import { database } from '../firebase/firebase';
 import { useAuth } from '../context/authContext/createAuthContext';
 import { useRatings } from '../hooks/useRating';
 
-
-const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
+const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings, isSubmitting = false }) => {
     const [currentProductIndex, setCurrentProductIndex] = useState(0);
     const [ratings, setRatings] = useState([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const { currentUser } = useAuth();
     const { rateMultipleProducts } = useRatings();
@@ -60,7 +56,6 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
         } else {
             // Submit all ratings when we've gone through all products
             try {
-                setIsSubmitting(true);
                 setError(null);
 
                 // Only submit ratings where user actually rated (star value > 0)
@@ -74,11 +69,9 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
 
                 await rateMultipleProducts(ratingsToSubmit);
                 onSubmitRatings(ratings);
-                onClose();
             } catch (err) {
                 console.error('Error submitting ratings:', err);
                 setError(err.message || "Failed to submit ratings. You can try again or skip.");
-                setIsSubmitting(false);
             }
         }
     };
@@ -98,7 +91,11 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
                 {/* Header */}
                 <div className="bg-[#2E2E2E] text-white p-4 rounded-t-xl flex justify-between items-center">
                     <h2 className="text-lg font-bold">Rate Your Purchase</h2>
-                    <button onClick={onClose} className="text-gray-300 hover:text-white">
+                    <button
+                        onClick={onClose}
+                        className="text-gray-300 hover:text-white"
+                        disabled={isSubmitting}
+                    >
                         <X size={20} />
                     </button>
                 </div>
@@ -117,7 +114,6 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
                             {error}
                         </div>
                     )}
-
 
                     {/* Product info */}
                     <div className="flex items-center mb-6">
@@ -140,6 +136,7 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
                                 <button
                                     key={star}
                                     onClick={() => handleRatingChange(star)}
+                                    disabled={isSubmitting}
                                     className={`p-1 rounded-full transition-all ${ratings[currentProductIndex]?.rating >= star
                                         ? 'text-yellow-400 scale-110'
                                         : 'text-gray-300 hover:text-yellow-300'
@@ -163,6 +160,7 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
                             placeholder="What did you like or dislike about this product?"
                             value={ratings[currentProductIndex]?.comment || ''}
                             onChange={(e) => handleCommentChange(e.target.value)}
+                            disabled={isSubmitting}
                         ></textarea>
                     </div>
 
@@ -170,14 +168,14 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings }) => {
                     <div className="flex justify-between">
                         <button
                             onClick={handleSkip}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                            className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
                             disabled={isSubmitting}
                         >
                             Skip
                         </button>
                         <button
                             onClick={handleNext}
-                            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium disabled:bg-gray-400"
+                            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Submitting...' : currentProductIndex < cartItems.length - 1 ? 'Next' : 'Submit'}

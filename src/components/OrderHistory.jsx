@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
 import { ShoppingBag, Star, ChevronDown, ChevronUp, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import ProductRatingModal from './ProductRatingModal'
+import ProductRatingModal from '../components/ProductRatingModal';
 
 const OrderHistory = () => {
-    const { userOrders, loading, error } = useOrder();
+    const { userOrders, loading, error, updateOrderRatedStatus } = useOrder();
     const [expandedOrder, setExpandedOrder] = useState(null);
     const [showRatingModal, setShowRatingModal] = useState(false);
     const [currentOrderItems, setCurrentOrderItems] = useState([]);
+    const [currentRatingOrderId, setCurrentRatingOrderId] = useState(null);
+    const [isSubmittingRating, setIsSubmittingRating] = useState(false);
     const navigate = useNavigate();
 
     // Format order status
@@ -50,22 +52,31 @@ const OrderHistory = () => {
         }));
 
         setCurrentOrderItems(orderItems);
+        setCurrentRatingOrderId(order.id); // Store the order ID we're rating
         setShowRatingModal(true);
     };
 
     // Handle rating submission
     const handleRatingSubmit = async (ratings) => {
+        if (!currentRatingOrderId) return;
+
         try {
-            if (expandedOrder) {
-                // Mark the order as rated
-                // This would be implemented in the orderService
-                // await updateOrderRatedStatus(expandedOrder.id, true);
-                toast.success('Thank you for rating your products!');
-            }
+            setIsSubmittingRating(true);
+
+            // Call the API to update the order's rated status
+            await updateOrderRatedStatus(currentRatingOrderId, true);
+
+            toast.success('Thank you for rating your products!');
+
+            // Close the modal and reset state
             setShowRatingModal(false);
+            setCurrentRatingOrderId(null);
+
         } catch (error) {
             console.error("Error submitting ratings:", error);
             toast.error("Failed to submit ratings. Please try again.");
+        } finally {
+            setIsSubmittingRating(false);
         }
     };
 
@@ -132,11 +143,18 @@ const OrderHistory = () => {
                                         {needsRating(order) && (
                                             <button
                                                 onClick={() => handleRateOrder(order)}
-                                                className="flex items-center text-sm bg-orange-100 text-orange-700 px-3 py-1 rounded-full hover:bg-orange-200 transition-colors"
+                                                disabled={isSubmittingRating && currentRatingOrderId === order.id}
+                                                className="flex items-center text-sm bg-orange-100 text-orange-700 px-3 py-1 rounded-full hover:bg-orange-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 <Star size={14} className="mr-1" />
                                                 Rate Items
                                             </button>
+                                        )}
+                                        {order.isRated && (
+                                            <span className="flex items-center text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                                                <CheckCircle size={14} className="mr-1" />
+                                                Rated
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -220,9 +238,13 @@ const OrderHistory = () => {
             {/* Rating Modal */}
             <ProductRatingModal
                 show={showRatingModal}
-                onClose={() => setShowRatingModal(false)}
+                onClose={() => {
+                    setShowRatingModal(false);
+                    setCurrentRatingOrderId(null);
+                }}
                 cartItems={currentOrderItems}
                 onSubmitRatings={handleRatingSubmit}
+                isSubmitting={isSubmittingRating}
             />
         </>
     );
