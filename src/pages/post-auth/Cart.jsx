@@ -58,7 +58,7 @@ const Cart = () => {
                     label: 'View Order',
                     onClick: () => navigate('/customer/profile')
                 },
-                description: 'You can view details and rate products in your Account Details'
+                description: 'You can view details and rate products in "My Orders" in your Account Details'
             });
         }
     }, [userOrders, currentOrderId, navigate]);
@@ -75,7 +75,7 @@ const Cart = () => {
         // toast.success('Order placed successfully! We will notify you when payment is confirmed.');
 
         // Also inform the user they can view their orders
-        toast.info('You can view your order history in your Account Details', {
+        toast.info('You can view your order history in "My Orders" in your Account Details', {
             duration: 6000,
             action: {
                 label: 'View Orders',
