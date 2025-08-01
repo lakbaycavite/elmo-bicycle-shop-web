@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
-import { ShoppingBag, Star, ChevronDown, ChevronUp, ArrowLeft, CheckCircle } from 'lucide-react';
+import { ShoppingBag, Star, ChevronDown, ChevronUp, ArrowLeft, CheckCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductRatingModal from '../components/ProductRatingModal';
 
@@ -12,7 +12,35 @@ const OrderHistory = () => {
     const [currentOrderItems, setCurrentOrderItems] = useState([]);
     const [currentRatingOrderId, setCurrentRatingOrderId] = useState(null);
     const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+
     const navigate = useNavigate();
+
+    // Calculate pagination
+    const indexOfLastOrder = currentPage * itemsPerPage;
+    const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
+    const currentOrders = userOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+    const totalPages = Math.ceil(userOrders.length / itemsPerPage);
+
+    // Change page
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    // Go to next page
+    const nextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    // Go to previous page
+    const prevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
 
     // Format order status
     const getStatusBadge = (status) => {
@@ -80,6 +108,11 @@ const OrderHistory = () => {
         }
     };
 
+    // Reset to first page when total orders changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [userOrders.length]);
+
     return (
         <>
             <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -126,112 +159,179 @@ const OrderHistory = () => {
                 )}
 
                 {!loading && userOrders.length > 0 && (
-                    <div className="space-y-4">
-                        {userOrders.map((order) => (
-                            <div
-                                key={order.id}
-                                className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm"
-                            >
-                                {/* Order header */}
-                                <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
-                                    <div>
-                                        <div className="text-sm text-gray-500">Order #{order.id.slice(-6)}</div>
-                                        <div className="text-sm text-gray-500">{order.createdAt}</div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {getStatusBadge(order.status)}
-                                        {needsRating(order) && (
-                                            <button
-                                                onClick={() => handleRateOrder(order)}
-                                                disabled={isSubmittingRating && currentRatingOrderId === order.id}
-                                                className="flex items-center text-sm bg-orange-100 text-orange-700 px-3 py-1 rounded-full hover:bg-orange-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                <Star size={14} className="mr-1" />
-                                                Rate Items
-                                            </button>
-                                        )}
-                                        {order.isRated && (
-                                            <span className="flex items-center text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                                                <CheckCircle size={14} className="mr-1" />
-                                                Rated
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Order summary (always visible) */}
-                                <div className="p-4 flex justify-between items-center">
-                                    <div>
-                                        <div className="font-medium">{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</div>
-                                        <div className="text-sm text-gray-500">Payment: {order.paymentMethod}</div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="font-bold text-lg text-orange-500">{formatPrice(order.totalAmount)}</div>
-                                        <button
-                                            onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                                            className="text-blue-500 text-sm flex items-center hover:text-blue-700"
-                                        >
-                                            {expandedOrder === order.id ? (
-                                                <>
-                                                    <ChevronUp size={16} className="mr-1" />
-                                                    Hide Details
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ChevronDown size={16} className="mr-1" />
-                                                    View Details
-                                                </>
+                    <>
+                        <div className="space-y-4 mb-6">
+                            {currentOrders.map((order) => (
+                                <div
+                                    key={order.id}
+                                    className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm"
+                                >
+                                    {/* Order header */}
+                                    <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+                                        <div>
+                                            <div className="text-sm text-gray-500">Order #{order.id.slice(-6)}</div>
+                                            <div className="text-sm text-gray-500">{order.createdAt}</div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {getStatusBadge(order.status)}
+                                            {needsRating(order) && (
+                                                <button
+                                                    onClick={() => handleRateOrder(order)}
+                                                    disabled={isSubmittingRating && currentRatingOrderId === order.id}
+                                                    className="flex items-center text-sm bg-orange-100 text-orange-700 px-3 py-1 rounded-full hover:bg-orange-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <Star size={14} className="mr-1" />
+                                                    Rate Items
+                                                </button>
                                             )}
-                                        </button>
+                                            {order.isRated && (
+                                                <span className="flex items-center text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                                                    <CheckCircle size={14} className="mr-1" />
+                                                    Rated
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Expanded order details */}
-                                {expandedOrder === order.id && (
-                                    <div className="border-t border-gray-200 p-4 bg-gray-50">
-                                        <h3 className="font-medium mb-3">Order Items</h3>
-                                        <div className="space-y-3">
-                                            {order.items.map((item, index) => (
-                                                <div key={index} className="flex items-center gap-3">
-                                                    <img
-                                                        src={item.image || "/images/logos/elmo.png"}
-                                                        alt={item.name}
-                                                        className="w-12 h-12 object-cover rounded-md border border-gray-200"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="font-medium">{item.name}</div>
-                                                        <div className="text-sm text-gray-500">
-                                                            Qty: {item.quantity} × {formatPrice(item.price)}
+                                    {/* Order summary (always visible) */}
+                                    <div className="p-4 flex justify-between items-center">
+                                        <div>
+                                            <div className="font-medium">{order.items.length} {order.items.length === 1 ? 'item' : 'items'}</div>
+                                            <div className="text-sm text-gray-500">Payment: {order.paymentMethod}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-lg text-orange-500">{formatPrice(order.totalAmount)}</div>
+                                            <button
+                                                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                                className="text-blue-500 text-sm flex items-center hover:text-blue-700"
+                                            >
+                                                {expandedOrder === order.id ? (
+                                                    <>
+                                                        <ChevronUp size={16} className="mr-1" />
+                                                        Hide Details
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ChevronDown size={16} className="mr-1" />
+                                                        View Details
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Expanded order details */}
+                                    {expandedOrder === order.id && (
+                                        <div className="border-t border-gray-200 p-4 bg-gray-50">
+                                            <h3 className="font-medium mb-3">Order Items</h3>
+                                            <div className="space-y-3">
+                                                {order.items.map((item, index) => (
+                                                    <div key={index} className="flex items-center gap-3">
+                                                        <img
+                                                            src={item.image || "/images/logos/elmo.png"}
+                                                            alt={item.name}
+                                                            className="w-12 h-12 object-cover rounded-md border border-gray-200"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <div className="font-medium">{item.name}</div>
+                                                            <div className="text-sm text-gray-500">
+                                                                Qty: {item.quantity} × {formatPrice(item.price)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="font-medium">
+                                                            {formatPrice(item.price * item.quantity)}
                                                         </div>
                                                     </div>
-                                                    <div className="font-medium">
-                                                        {formatPrice(item.price * item.quantity)}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                                ))}
+                                            </div>
 
-                                        <div className="mt-4 pt-4 border-t border-gray-200">
-                                            <div className="flex justify-between text-sm mb-1">
-                                                <span>Subtotal:</span>
-                                                <span>{formatPrice(order.subtotal || order.totalAmount)}</span>
-                                            </div>
-                                            {order.discount > 0 && (
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
                                                 <div className="flex justify-between text-sm mb-1">
-                                                    <span>Discount:</span>
-                                                    <span className="text-red-500">-{formatPrice(order.discount)}</span>
+                                                    <span>Subtotal:</span>
+                                                    <span>{formatPrice(order.subtotal || order.totalAmount)}</span>
                                                 </div>
-                                            )}
-                                            <div className="flex justify-between font-bold mt-2">
-                                                <span>Total:</span>
-                                                <span>{formatPrice(order.totalAmount)}</span>
+                                                {order.discount > 0 && (
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span>Discount:</span>
+                                                        <span className="text-red-500">-{formatPrice(order.discount)}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between font-bold mt-2">
+                                                    <span>Total:</span>
+                                                    <span>{formatPrice(order.totalAmount)}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center mt-8">
+                                <nav className="flex items-center space-x-1">
+                                    <button
+                                        onClick={prevPage}
+                                        disabled={currentPage === 1}
+                                        className={`px-3 py-2 rounded-md ${currentPage === 1
+                                            ? 'text-gray-400 cursor-not-allowed'
+                                            : 'text-gray-700 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+
+                                    {/* Generate page numbers */}
+                                    {[...Array(totalPages)].map((_, i) => {
+                                        const pageNum = i + 1;
+                                        // Show first page, last page, current page, and one page before and after current
+                                        if (
+                                            pageNum === 1 ||
+                                            pageNum === totalPages ||
+                                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                                        ) {
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    onClick={() => paginate(pageNum)}
+                                                    className={`px-3 py-2 rounded-md ${currentPage === pageNum
+                                                        ? 'bg-orange-500 text-white font-medium'
+                                                        : 'text-gray-700 hover:bg-gray-100'
+                                                        }`}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            );
+                                        } else if (
+                                            (pageNum === 2 && currentPage > 3) ||
+                                            (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+                                        ) {
+                                            // Show ellipsis for skipped pages
+                                            return <span key={pageNum} className="px-3 py-2">...</span>;
+                                        }
+                                        return null;
+                                    })}
+
+                                    <button
+                                        onClick={nextPage}
+                                        disabled={currentPage === totalPages}
+                                        className={`px-3 py-2 rounded-md ${currentPage === totalPages
+                                            ? 'text-gray-400 cursor-not-allowed'
+                                            : 'text-gray-700 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </nav>
                             </div>
-                        ))}
-                    </div>
+                        )}
+
+                        {/* Order count summary */}
+                        <div className="text-center mt-2 text-sm text-gray-500">
+                            Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, userOrders.length)} of {userOrders.length} orders
+                        </div>
+                    </>
                 )}
             </div>
 
