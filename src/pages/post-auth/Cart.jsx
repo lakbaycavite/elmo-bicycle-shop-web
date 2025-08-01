@@ -56,9 +56,9 @@ const Cart = () => {
             toast.success('Your order has been confirmed!', {
                 action: {
                     label: 'View Order',
-                    onClick: () => navigate('/customer/orders')
+                    onClick: () => navigate('/customer/profile')
                 },
-                description: 'You can view details and rate products in My Orders'
+                description: 'You can view details and rate products in your Account Details'
             });
         }
     }, [userOrders, currentOrderId, navigate]);
@@ -75,11 +75,11 @@ const Cart = () => {
         // toast.success('Order placed successfully! We will notify you when payment is confirmed.');
 
         // Also inform the user they can view their orders
-        toast.info('You can view your order history in "My Orders"', {
+        toast.info('You can view your order history in your Account Details', {
             duration: 6000,
             action: {
                 label: 'View Orders',
-                onClick: () => navigate('/customer/orders')
+                onClick: () => navigate('/customer/profile')
             }
         });
     };
@@ -129,7 +129,7 @@ const Cart = () => {
                         <label className="text-orange-500 font-bold text-lg ml-3">SHOPPING CART</label>
                     </div>
                     <button
-                        onClick={() => navigate('/customer/orders')}
+                        onClick={() => navigate('/customer/profile')}
                         className="flex items-center text-white hover:text-orange-300 transition-colors"
                     >
                         <Clock size={16} className="mr-1" />
