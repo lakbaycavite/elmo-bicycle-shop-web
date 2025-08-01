@@ -72,7 +72,7 @@ const Cart = () => {
         setCurrentOrderId(orderId);
 
         // Show success message
-        toast.success('Order placed successfully! We will notify you when payment is confirmed.');
+        // toast.success('Order placed successfully! We will notify you when payment is confirmed.');
 
         // Also inform the user they can view their orders
         toast.info('You can view your order history in "My Orders"', {
