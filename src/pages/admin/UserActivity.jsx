@@ -9,24 +9,34 @@ function UserActivity() {
   const [selectedRole, setSelectedRole] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
   // Filter users to only show customers and staff
-  const filteredAccounts = users.filter(user => {
-    const isValidRole = !selectedRole || selectedRole === 'all'
-      ? (user.role === 'customer' || user.role === 'staff')
-      : user.role === selectedRole;
+ const filteredAccounts = users.filter(user => {
+  const isValidRole = !selectedRole || selectedRole === 'all'
+    ? (user.role === 'customer' || user.role === 'staff')
+    : user.role === selectedRole;
 
-    if (!isValidRole) return false;
+  if (!isValidRole) return false;
 
-    if (!searchTerm) return true;
+const matchesStatus =
+  selectedStatus === 'all' ||
+  (selectedStatus === 'active' && user.accountStatus !== 'disabled') ||
+  user.accountStatus === selectedStatus;
 
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (user.firstName && user.firstName.toLowerCase().includes(searchLower)) ||
-      (user.lastName && user.lastName.toLowerCase().includes(searchLower)) ||
-      (user.email && user.email.toLowerCase().includes(searchLower))
-    );
-  });
+if (!matchesStatus) return false;
+
+
+  if (!searchTerm) return true;
+
+  const searchLower = searchTerm.toLowerCase();
+  return (
+    (user.firstName && user.firstName.toLowerCase().includes(searchLower)) ||
+    (user.lastName && user.lastName.toLowerCase().includes(searchLower)) ||
+    (user.email && user.email.toLowerCase().includes(searchLower))
+  );
+});
+
 
   // Helper function to format user name
   const formatUserName = (user) => {
@@ -86,30 +96,44 @@ function UserActivity() {
               </div>
             </div>
 
-            <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6'>
-              <input
-                type='text'
-                placeholder='Search by name or email...'
-                className="border border-gray-300 w-full sm:w-[300px] h-10 rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-              <select
-                className='p-2 border border-gray-300 rounded-lg h-10 focus:ring-2 focus:ring-orange-500 focus:border-transparent'
-                value={selectedRole}
-                onChange={(e) => {
-                  setSelectedRole(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">All Roles</option>
-                <option value="customer">Customer</option>
-                <option value="staff">Staff</option>
-              </select>
-            </div>
+           <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6'>
+  <input
+    type='text'
+    placeholder='Search by name or email...'
+    className="border border-gray-300 w-full sm:w-[300px] h-10 rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      setCurrentPage(1);
+    }}
+  />
+  <select
+    className='p-2 border border-gray-300 rounded-lg h-10 focus:ring-2 focus:ring-orange-500 focus:border-transparent'
+    value={selectedRole}
+    onChange={(e) => {
+      setSelectedRole(e.target.value);
+      setCurrentPage(1);
+    }}
+  >
+    <option value="all">All Roles</option>
+    <option value="customer">Customer</option>
+    <option value="staff">Staff</option>
+  </select>
+  <select
+    id="statusFilter"
+    className="p-2 border border-gray-300 rounded-lg h-10 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+    value={selectedStatus}
+    onChange={(e) => {
+      setSelectedStatus(e.target.value);
+      setCurrentPage(1);
+    }}
+  >
+    <option value="all">All</option>
+    <option value="active">Active</option>
+    <option value="disabled">Disabled</option>
+  </select>
+</div>
+
 
             {/* Responsive Table */}
             <div className="overflow-x-auto mb-4">
@@ -121,6 +145,7 @@ function UserActivity() {
                       <th className="py-3 px-2 sm:px-4 font-semibold text-left">Name</th>
                       <th className="py-3 px-2 sm:px-4 font-semibold text-left">Role</th>
                       <th className="py-3 px-2 sm:px-4 font-semibold text-left">Email</th>
+                      <th className="py-3 px-2 sm:px-4 font-semibold text-left">Phone No#</th>
                       <th className="py-3 px-2 sm:px-4 font-semibold text-left">Status</th>
                     </tr>
                   </thead>
@@ -133,6 +158,7 @@ function UserActivity() {
                             {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Customer'}
                           </td>
                           <td className="py-3 px-2 sm:px-4">{user.email}</td>
+                          <td className="py-3 px-2 sm:px-4">{user.phone || user.phoneNumber || ''}</td>
                           <td className={`py-3 px-2 sm:px-4 ${user.accountStatus === 'disabled' ? 'text-red-500' : 'text-green-500'}`}>
                             {user.accountStatus === 'disabled' ? 'Disabled' : 'Active'}
                           </td>
@@ -140,13 +166,14 @@ function UserActivity() {
                       ))
                     ) : (
                       <tr className="bg-gray-800 text-white">
-                        <td colSpan="4" className="py-4 px-4 text-center">
+                        <td colSpan="100%" className="text-center py-6 text-gray-400 text-sm bg-gray-100 rounded-md">
                           No users found matching your filters.
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
+                
 
                 {/* Mobile Cards */}
                 <div className="sm:hidden space-y-2">

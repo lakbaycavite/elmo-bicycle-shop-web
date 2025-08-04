@@ -3,7 +3,7 @@ import BikesCategory from './post-auth/Bikes-category';
 import { useAuth } from '../context/authContext/createAuthContext';
 import { useEffect, useState } from 'react';
 import { database } from '../firebase/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart'; // Import your useCart hook
@@ -11,11 +11,14 @@ import { useWishlist } from '../hooks/useWishlist'; // Import your useWishlist h
 import { toast } from 'sonner'; // For showing notifications
 import { Flame, Heart } from 'lucide-react'; // Import Heart icon for wishlist
 import ProductDetailsModal2 from '../components/ProductsDetailsModal2';
+
+
 function HomePage() {
 
   const { userLoggedIn } = useAuth();
   const [latestBikes, setLatestBikes] = useState([]);
   const [gears, setGears] = useState([]);
+  const [parts, setParts] = useState([]);
   const [accessories, setAccessories] = useState([]);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
@@ -46,10 +49,14 @@ function HomePage() {
         const accessoryProducts = allProducts.filter(product => product.category === 'Accessories');
         setAccessories(accessoryProducts.slice(0, 8));
 
+        const partProducts = allProducts.filter(product => product.category === 'Parts');
+        setParts(partProducts.slice(0, 8));
+
       } else {
         setLatestBikes([]);
         setGears([]);
         setAccessories([]);
+        setParts([]);
       }
     });
   }, []);
@@ -279,7 +286,7 @@ function HomePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 px-4">
           {/* Feature 1 */}
           <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/icons/Job.png" alt="Spin The Wheel" className="w-14 h-14 mb-4" />
+            <img src="/images/icons/lottery.png" alt="Spin The Wheel" className="w-14 h-14 mb-4" />
             <h3 className="text-white font-semibold text-base mb-2 text-center">Spin The Wheel</h3>
             <p className="text-gray-300 text-sm text-center">Try your luck and win exclusive discounts</p>
           </div>
@@ -297,7 +304,7 @@ function HomePage() {
           </div>
           {/* Feature 4 */}
           <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
-            <img src="/images/icons/lottery.png" alt="Maintenance" className="w-14 h-14 mb-4" />
+            <img src="/images/icons/Job.png" alt="Maintenance" className="w-14 h-14 mb-4" />
             <h3 className="text-white font-semibold text-base mb-2 text-center">Maintenance</h3>
             <p className="text-gray-300 text-sm text-center">Got a defective product? No worries — we'll handle it for you.</p>
           </div>
@@ -381,8 +388,8 @@ function HomePage() {
           Load up and head out. Explore the route less travelled or accelerate your daily routine with one of these rugged, versatile e-bikes.
         </p>
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4">
-          {[...gears, ...accessories].length > 0 ? (
-            [...gears, ...accessories].slice(0, 8).map((item) => (
+          {[...gears, ...accessories, ...parts].length > 0 ? (
+            [...gears, ...accessories, ...parts].slice(0, 8).map((item) => (
               <ProductCard key={item.id} product={item} isLatestBike={false} />
             ))
           ) : (

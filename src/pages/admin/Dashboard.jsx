@@ -48,8 +48,9 @@ function Dashboard() {
         return orderDateStr === dateStr;
       });
 
-      const onlineRevenue = dayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-      const offlineRevenue = Math.floor(onlineRevenue * 0.3); // Mock offline as 30% of online
+     const onlineRevenue = dayOrders.filter(order => order.status === 'paid').length;
+const offlineRevenue = Math.floor(onlineRevenue * 0.1); // if you want to simulate it
+ // offline revenue is just static value
       
       weeklyData.push({
         day: dayLabels[date.getDay() === 0 ? 6 : date.getDay() - 1], // Adjust for Monday start
@@ -66,19 +67,17 @@ function Dashboard() {
 
   // Calculate sales status distribution
   const getSalesData = () => {
-    const completedOrders = adminOrders.filter(order => order.status === 'completed').length;
     const pendingOrders = adminOrders.filter(order => order.status === 'pending').length;
     const totalOrders = adminOrders.length || 1; // Avoid division by zero
     
     // Mock cancelled and on schedule for now
-    const cancelledOrders = Math.floor(totalOrders * 0.1); // 10% cancelled
-    const onScheduleOrders = Math.floor(totalOrders * 0.15); // 15% on schedule
+    const cancelledOrders = adminOrders.filter(order => order.status === 'cancelled').length;
+    const paidOrders = adminOrders.filter(order => order.status === 'paid').length;
     
     return [
-      { label: 'Sold', value: Math.round((completedOrders / totalOrders) * 100), color: '#ef4444' },
-      { label: 'Cancelled', value: Math.round((cancelledOrders / totalOrders) * 100), color: '#f59e0b' },
-      { label: 'On Schedule', value: Math.round((onScheduleOrders / totalOrders) * 100), color: '#3b82f6' },
-      { label: 'Pending', value: Math.round((pendingOrders / totalOrders) * 100), color: '#a855f7' }
+      { label: 'Cancelled', value: Math.round((cancelledOrders / totalOrders) * 100), color: '#f00a0aff' },
+      { label: 'Paid', value: Math.round((paidOrders / totalOrders) * 100), color: '#3b82f6' },
+      { label: 'Pending', value: Math.round((pendingOrders / totalOrders) * 100), color: '#17f40cff' }
     ];
   };
 
@@ -146,10 +145,16 @@ function Dashboard() {
                   <div key={index} className="flex flex-col items-center flex-1 px-1">
                     <div className="flex items-end justify-center w-full h-40 sm:h-48 mb-2">
                       {/* Online Sales Bar */}
-                      <div 
-                        className="bg-blue-400 w-4 sm:w-6 mr-1 rounded-t"
-                        style={{ height: `${Math.max((data.online / maxRevenue) * 180, 2)}px` }}
-                      ></div>
+                      <div className="relative group">
+  <div 
+    className="bg-blue-400 w-4 sm:w-6 mr-1 rounded-t"
+    style={{ height: `${Math.max((data.online / maxRevenue) * 50,2 )}px` }}
+  ></div>
+  <div className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded">
+    {data.online} Paid
+  </div>
+</div>
+
                       {/* Offline Sales Bar */}
                       <div 
                         className="bg-green-400 w-4 sm:w-6 rounded-t"

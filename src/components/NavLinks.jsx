@@ -1,12 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function NavLinks({ className = '', isLoggedIn = false }) {
+function NavLinks({ className = '', isLoggedIn = false, onNavigate }) {
   const navigate = useNavigate();
 
   const handleNavigation = (route) => {
+    if (onNavigate) onNavigate(); // Close drawer first if needed
+
     if (isLoggedIn) {
-      // For logged-in users, navigate to customer routes
       switch (route) {
         case 'home':
           navigate('/customer/home');
@@ -20,10 +21,8 @@ function NavLinks({ className = '', isLoggedIn = false }) {
         case 'contact':
           navigate('/customer/home');
           setTimeout(() => {
-            const contactSection = document.getElementById('contact-section');
-            if (contactSection) {
-              contactSection.scrollIntoView({ behavior: 'smooth' });
-            }
+            const section = document.getElementById('contact-section');
+            section?.scrollIntoView({ behavior: 'smooth' });
           }, 100);
           break;
         case 'spin-wheel':
@@ -33,7 +32,6 @@ function NavLinks({ className = '', isLoggedIn = false }) {
           navigate('/customer/home');
       }
     } else {
-      // For logged-out users, navigate to pre-auth routes
       switch (route) {
         case 'home':
           navigate('/customer/home');
@@ -47,10 +45,8 @@ function NavLinks({ className = '', isLoggedIn = false }) {
         case 'contact':
           navigate('/customer/home');
           setTimeout(() => {
-            const contactSection = document.getElementById('contact-section');
-            if (contactSection) {
-              contactSection.scrollIntoView({ behavior: 'smooth' });
-            }
+            const section = document.getElementById('contact-section');
+            section?.scrollIntoView({ behavior: 'smooth' });
           }, 100);
           break;
         default:
@@ -61,38 +57,14 @@ function NavLinks({ className = '', isLoggedIn = false }) {
 
   return (
     <div className={`flex flex-col md:flex-row gap-6 ${className}`}>
-      <button
-        className="text-white hover:text-orange-500 font-normal"
-        onClick={() => handleNavigation('home')}
-      >
-        Home
-      </button>
-      <button
-        className="text-white hover:text-orange-500 font-normal"
-        onClick={() => handleNavigation('shop')}
-      >
-        Shop
-      </button>
-      <button
-        className="text-white hover:text-orange-500 font-normal"
-        onClick={() => handleNavigation('about')}
-      >
-        About
-      </button>
-      <button
-        className="text-white hover:text-orange-500 font-normal"
-        onClick={() => handleNavigation('contact')}
-      >
-        Contact
-      </button>
-      <button
-        className="text-white hover:text-orange-500 font-normal"
-        onClick={() => handleNavigation('spin-wheel')}
-      >
-        Spin
-      </button>
+      <button onClick={() => handleNavigation('home')}>Home</button>
+      <button onClick={() => handleNavigation('shop')}>Shop</button>
+      <button onClick={() => handleNavigation('about')}>About</button>
+      <button onClick={() => handleNavigation('contact')}>Contact</button>
+      <button onClick={() => handleNavigation('spin-wheel')}>Spin</button>
     </div>
   );
 }
+
 
 export default NavLinks; 

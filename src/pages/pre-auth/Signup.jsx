@@ -75,8 +75,8 @@ function Signup() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-900 to-orange-500 flex items-center justify-center px-4">
       <div className="flex flex-col lg:flex-row items-center justify-between w-full max-w-7xl gap-8 py-12">
-        {/* Left Side */}
-        <div className="lg:w-1/2 text-center lg:text-left text-white flex flex-col items-center lg:items-start">
+        {/* Center top */}
+        <div className="hidden lg:flex w-full text-center text-white flex-col items-center justify-center">
           <h1 className="text-lg sm:text-xl font-light uppercase mb-2 tracking-wide">Welcome back to</h1>
           <div className="flex flex-row gap-3 mb-3">
             <label className="text-amber-500">
@@ -86,7 +86,7 @@ function Signup() {
           </div>
           <img src="/images/logos/login-bike.png" alt="Elmo Bicycle Shop" className="max-h-[500px] w-auto" />
         </div>
-
+    
         {/* Right Side */}
         <div className="bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl rounded-2xl p-10 w-full max-w-md text-white">
           <div className="flex justify-center mb-6">

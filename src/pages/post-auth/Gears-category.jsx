@@ -192,7 +192,7 @@ const GearListings = ({ gears, searchTerm, onSearchChange, onAddToCart, onToggle
                         style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}
                         onClick={() => navigate('/customer/wishlist')}
                     >
-                        <i class="bi bi-heart-fill"></i>My Wishlist
+                        <i className="bi bi-heart-fill"></i>My Wishlist
                     </button>
                     <button className="btn btn-secondary me-2" type="button" onClick={() => navigate('/customer/accessories-category')}><i className="bi bi-tools"></i>
                         Accessories

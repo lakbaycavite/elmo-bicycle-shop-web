@@ -157,12 +157,12 @@ const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCar
             style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}
             onClick={() => navigate('/customer/wishlist')}
           >
-            <i class="bi bi-heart-fill"></i>My Wishlist
+            <i className="bi bi-heart-fill"></i>My Wishlist
           </button>
           <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/bikes-category')}><i className="bi bi-bicycle"></i>
             Bikes
           </button>
-          <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/gears-parts-category')}><i class="bi bi-gear"></i>
+          <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/gears-parts-category')}><i className="bi bi-gear"></i>
             Gears & Parts
           </button>
         </div>

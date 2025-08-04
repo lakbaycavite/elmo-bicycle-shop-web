@@ -158,8 +158,8 @@ function Login() {
     <>
       <div className="min-h-screen bg-gradient-to-b from-stone-900 to-orange-500 flex items-center justify-center px-4">
         <div className="flex flex-col lg:flex-row items-center justify-between w-full max-w-7xl gap-8 py-12">
-          {/* Left Side */}
-          <div className="lg:w-1/2 text-center lg:text-left text-white flex flex-col items-center lg:items-start">
+          {/* Center Top */}
+          <div className="w-full text-center text-white flex flex-col items-center justify-center">
             <h1 className="text-lg sm:text-xl font-light uppercase mb-2 tracking-wide">
               Welcome back to
             </h1>
@@ -210,7 +210,7 @@ function Login() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter Password"
                   className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.password ? 'border-red-500' : 'border-transparent'
                     } focus:ring-2 focus:ring-orange-500 focus:outline-none pr-10`}
                 />
