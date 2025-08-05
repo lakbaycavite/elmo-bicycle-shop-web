@@ -556,7 +556,6 @@ function AccountManage() {
                 value={roleFilter}
               >
                 <option value="all">All Roles</option>
-                <option value="customer">Customer</option>
                 <option value="staff">Staff</option>
                 {/* <option value="admin">Admin</option> */}
               </select>

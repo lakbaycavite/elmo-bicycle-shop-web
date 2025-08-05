@@ -13,7 +13,7 @@ function Sidebar() {
   const menuItems = [
     { label: 'DASHBOARD', route: '/admin/dashboard' },
     { label: 'INVENTORY', route: '/admin/inventory' },
-    { label: 'USER ACTIVITY', route: '/admin/user-activity' },
+    { label: 'USER INFO', route: '/admin/user-activity' },
     { label: 'ORDERS OVERVIEW', route: '/admin/orders-overview' },
     { label: 'STAFF MANAGEMENT', route: '/admin/staff-management' },
     { label: 'ACCOUNT MANAGE', route: '/admin/account-manage' },
