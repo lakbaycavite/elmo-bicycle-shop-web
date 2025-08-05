@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
+import { toast } from 'sonner';
 
 function Signup() {
   const navigate = useNavigate();
@@ -63,9 +64,15 @@ function Signup() {
           navigate('/login');
         })
         .catch((error) => {
-          console.error("Signup failed", error);
-          setLoading(false);
-        });
+  console.error("Signup failed", error);
+  setLoading(false);
+
+  if (error.code === 'auth/email-already-in-use') {
+    toast.error('Email is already taken.');
+  } else {
+    toast.error('Signup failed. Please try again.');
+  }
+});
     } else {
       console.log("Validation failed", errors); // 🛑 Catch silent fail
     }
@@ -132,29 +139,36 @@ function Signup() {
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.email}</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-1">Phone Number</label>
-             <input
-  type="tel"
-  name="phone"
-  value={newAccount.phone}
-  onChange={(e) => {
-    const onlyDigits = e.target.value.replace(/\D/g, ''); // strip non-digits
-    if (onlyDigits.length <= 11) {
-      setNewAccount(prev => ({
-        ...prev,
-        phoneNumber: onlyDigits
-      }));
-    }
-  }}
-  className="w-full p-2 border rounded"
-  required
-  placeholder="+63"
-  maxLength={11} // prevents user from typing beyond 11
-/>
-              <p className="text-sm text-red-300 mt-1 mb-0">{errors.phone}</p>
-            </div>
-
+            <div className="mb-4">
+  <label className="block text-gray-700 mb-1">Phone Number</label>
+  <input
+    type="tel"
+    name="phoneNumber"
+    value={newAccount.phoneNumber}
+    onChange={(e) => {
+      const onlyDigits = e.target.value.replace(/\D/g, '');
+      if (onlyDigits.length <= 11) {
+        setNewAccount(prev => ({
+          ...prev,
+          phoneNumber: onlyDigits
+        }));
+        // Check and set error
+        if (onlyDigits.length < 11 && onlyDigits.length > 0) {
+          setPhoneError('Phone number must be 11 digits.');
+        } else {
+          setPhoneError('');
+        }
+      }
+    }}
+    className={`w-full p-2 border rounded ${phoneError ? 'border-red-500' : ''}`}
+    required
+    placeholder="+63"
+    maxLength={11}
+  />
+  {phoneError && (
+    <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+  )}
+</div>
 
             <div className="relative">
               <label className="block text-sm font-semibold mb-1">Password</label>
