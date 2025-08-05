@@ -136,8 +136,8 @@ function Signup() {
               <label className="block text-sm font-semibold mb-1">Phone Number</label>
              <input
   type="tel"
-  name="phoneNumber"
-  value={newAccount.phoneNumber}
+  name="phone"
+  value={newAccount.phone}
   onChange={(e) => {
     const onlyDigits = e.target.value.replace(/\D/g, ''); // strip non-digits
     if (onlyDigits.length <= 11) {
