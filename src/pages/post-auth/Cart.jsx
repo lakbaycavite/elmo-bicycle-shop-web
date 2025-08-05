@@ -298,6 +298,7 @@ const Cart = () => {
                     </button>
                 </div>
             </div>
+<img src="/images/logos/elmo.png" alt="logo" />
 
             {/* Modals */}
             <OrderDetailsModal
