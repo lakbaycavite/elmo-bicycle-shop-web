@@ -139,35 +139,22 @@ function Signup() {
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.email}</p>
             </div>
 
-            <div className="mb-4">
-  <label className="block text-gray-700 mb-1">Phone Number</label>
-  <input
-    type="tel"
-    name="phoneNumber"
-    value={newAccount.phoneNumber}
-    onChange={(e) => {
-      const onlyDigits = e.target.value.replace(/\D/g, '');
-      if (onlyDigits.length <= 11) {
-        setNewAccount(prev => ({
-          ...prev,
-          phoneNumber: onlyDigits
-        }));
-        // Check and set error
-        if (onlyDigits.length < 11 && onlyDigits.length > 0) {
-          setPhoneError('Phone number must be 11 digits.');
-        } else {
-          setPhoneError('');
-        }
-      }
-    }}
-    className={`w-full p-2 border rounded ${phoneError ? 'border-red-500' : ''}`}
-    required
-    placeholder="+63"
-    maxLength={11}
-  />
-  {phoneError && (
-    <p className="text-red-500 text-sm mt-1">{phoneError}</p>
-  )}
+            <div>
+              <label className="block text-sm font-semibold mb-1">Phone Number</label>
+             <input
+  type="tel"
+  name="phone"
+  value={phone}
+  onChange={(e) => {
+    const onlyDigits = e.target.value.replace(/\D/g, '');
+    if (onlyDigits.length <= 11) {
+      setPhone(onlyDigits);
+    }
+  }}
+  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.phone ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
+  required
+  placeholder="+63XXXXXXXXXX"
+/>
 </div>
 
             <div className="relative">
