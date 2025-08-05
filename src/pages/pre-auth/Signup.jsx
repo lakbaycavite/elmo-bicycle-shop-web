@@ -102,27 +102,30 @@ function Signup() {
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-semibold mb-1">First Name</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Enter First Name"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-transparent'
-                  } focus:ring-2 focus:ring-orange-500`}
-              />
-              <p className="text-sm text-red-300 mt-1 mb-0">{errors.firstName}</p>
-            </div>
+   <input
+  type="text"
+  value={firstName}
+  onChange={(e) => {
+    const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+    setFirstName(value);
+  }}
+  placeholder="Enter First Name"
+  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-transparent'
+    } focus:ring-2 focus:ring-orange-500`}
+/>
 
-            <div>
-              <label className="block text-sm font-semibold mb-1">Last Name</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Enter Last Name"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-transparent'
-                  } focus:ring-2 focus:ring-orange-500`}
-              />
+<input
+  type="text"
+  value={lastName}
+  onChange={(e) => {
+    const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+    setLastName(value);
+  }}
+  placeholder="Enter Last Name"
+  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-transparent'
+    } focus:ring-2 focus:ring-orange-500`}
+/>
+
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.lastName}</p>
             </div>
 
