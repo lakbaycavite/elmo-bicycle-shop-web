@@ -555,7 +555,7 @@ function AccountManage() {
                 onChange={(e) => setRoleFilter(e.target.value)}
                 value={roleFilter}
               >
-                <option value="all">All Roles</option>
+
                 <option value="staff">Staff</option>
                 {/* <option value="admin">Admin</option> */}
               </select>

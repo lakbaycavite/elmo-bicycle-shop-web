@@ -28,7 +28,7 @@ function Signup() {
   const validate = () => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[0-9]{10,}$/;
+    const phoneRegex = /^[0-9]{11,}$/;
 
     if (!firstName.trim()) newErrors.firstName = 'First name is required.';
     if (!lastName.trim()) newErrors.lastName = 'Last name is required.';
@@ -134,14 +134,24 @@ function Signup() {
 
             <div>
               <label className="block text-sm font-semibold mb-1">Phone Number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter Phone Number"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.phone ? 'border-red-500' : 'border-transparent'
-                  } focus:ring-2 focus:ring-orange-500`}
-              />
+             <input
+  type="tel"
+  name="phoneNumber"
+  value={newAccount.phoneNumber}
+  onChange={(e) => {
+    const onlyDigits = e.target.value.replace(/\D/g, ''); // strip non-digits
+    if (onlyDigits.length <= 11) {
+      setNewAccount(prev => ({
+        ...prev,
+        phoneNumber: onlyDigits
+      }));
+    }
+  }}
+  className="w-full p-2 border rounded"
+  required
+  placeholder="+63"
+  maxLength={11} // prevents user from typing beyond 11
+/>
               <p className="text-sm text-red-300 mt-1 mb-0">{errors.phone}</p>
             </div>
 
