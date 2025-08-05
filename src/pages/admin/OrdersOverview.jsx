@@ -686,7 +686,7 @@ function OrdersOverview() {
               </div>
 
               {/* Order Items */}
-              // Replace your Order Items table section in the modal with this fixed version:
+
 
               {/* Order Items */}
               <div className="mb-6">

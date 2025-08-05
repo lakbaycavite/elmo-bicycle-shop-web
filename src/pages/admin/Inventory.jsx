@@ -776,7 +776,7 @@ const Inventory = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Product Name *
+                          Product Name
                         </label>
                         <input
                           type="text"
@@ -794,7 +794,7 @@ const Inventory = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Brand *
+                          Brand
                         </label>
                         <input
                           type="text"
@@ -815,7 +815,7 @@ const Inventory = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Category *
+                          Category
                         </label>
                         <select
                           name="category"
@@ -855,7 +855,7 @@ const Inventory = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Price (₱) *
+                          Price (₱) 
                         </label>
                         <input
                           name='price'
@@ -873,7 +873,7 @@ const Inventory = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Stock *
+                          Stock 
                         </label>
                         <input
                           name='stock'

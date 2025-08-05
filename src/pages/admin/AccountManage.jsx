@@ -834,7 +834,6 @@ function AccountManage() {
                       onChange={handleAccountInputChange}
                       className="w-full p-2 border rounded"
                     >
-                      <option value="customer">Customer</option>
                       <option value="staff">Staff</option>
                       {/* <option value="admin">Admin</option> */}
                     </select>
@@ -856,7 +855,7 @@ function AccountManage() {
     }}
     className="w-full p-2 border rounded"
     required
-    placeholder="09XXXXXXXXX"
+    placeholder="+63"
   />
 </div>
 
