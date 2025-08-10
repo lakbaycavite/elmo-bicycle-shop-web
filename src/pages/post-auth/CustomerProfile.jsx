@@ -374,22 +374,29 @@ const CustomerProfile = () => {
                                         <span className="text-gray-400 font-medium">Name:</span>
                                         {isEditing ? (
                                             <div className="flex gap-2 mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="firstName"
-                                                    value={profileData.firstName}
-                                                    onChange={handleProfileInputChange}
-                                                    placeholder="First Name"
-                                                    className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    name="lastName"
-                                                    value={profileData.lastName}
-                                                    onChange={handleProfileInputChange}
-                                                    placeholder="Last Name"
-                                                    className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
-                                                />
+                                               <input
+  type="text"
+  name="firstName"
+  value={profileData.firstName}
+  onChange={(e) => {
+    const onlyLetters = e.target.value.replace(/[^A-Za-z\s]/g, '');
+    setProfileData((prev) => ({ ...prev, firstName: onlyLetters }));
+  }}
+  placeholder="First Name"
+  className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
+/>
+
+<input
+  type="text"
+  name="lastName"
+  value={profileData.lastName}
+  onChange={(e) => {
+    const onlyLetters = e.target.value.replace(/[^A-Za-z\s]/g, '');
+    setProfileData((prev) => ({ ...prev, lastName: onlyLetters }));
+  }}
+  placeholder="Last Name"
+  className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
+/>
                                             </div>
                                         ) : (
                                             <span className="ml-2 text-white">{fullName}</span>
@@ -413,14 +420,20 @@ const CustomerProfile = () => {
                                     <div className="flex-1">
                                         <span className="text-gray-400 font-medium">Phone:</span>
                                         {isEditing ? (
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={profileData.phone}
-                                                onChange={handleProfileInputChange}
-                                                placeholder="Phone Number"
-                                                className="ml-2 bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none"
-                                            />
+                                           
+<input
+  type="tel"
+  name="phone"
+  value={profileData.phone}
+  onChange={(e) => {
+    const onlyDigits = e.target.value.replace(/\D/g, '');
+    if (onlyDigits.length <= 11) {
+      setProfileData((prev) => ({ ...prev, phone: onlyDigits }));
+    }
+  }}
+  placeholder="Phone Number"
+  className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
+/>
                                         ) : (
                                             <span className="ml-2 text-white">{phone}</span>
                                         )}

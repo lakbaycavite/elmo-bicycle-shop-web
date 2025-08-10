@@ -884,7 +884,6 @@ function OrdersOverview() {
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-orange-500"
                 >
                   <option value="">Select a reason</option>
-                  <option value="Out of stock">Out of stock</option>
                   <option value="Pricing error">Pricing error</option>
                   <option value="Payment issues">Payment issues</option>
                 </select>

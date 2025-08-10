@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
 
-const Wishlist = () => {
+// Replace with your actual authentication logic
+const isLoggedIn = true;
 
+const Wishlist = () => {
     const { addToCart } = useCart();
     const { wishlist, loading, removeItem, clearItems, moveItemToCart } = useWishlist(addToCart);
     const navigate = useNavigate();
@@ -33,8 +35,23 @@ const Wishlist = () => {
         })
     }, [wishlist, searchFilter, categoryFilter, priceSort])
 
-
     const formatPrice = (price) => `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+
+    // If not logged in, show message and block wishlist
+    if (!isLoggedIn) {
+        return (
+            <div className="w-full min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-stone-900 via-stone-900 to-orange-500 p-4">
+                <HeartCrack className='text-orange-500' size={60} />
+                <p className='text-orange-500 text-3xl md:text-4xl lg:text-5xl mb-6'>Please log in to view your wishlist.</p>
+                <button
+                    onClick={() => navigate('/login')}
+                    className="bg-[#ff6900] hover:bg-[#e55e00] text-white py-2 px-6 rounded-full"
+                >
+                    Go to Login
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full min-h-screen flex justify-center items-center bg-gradient-to-b from-stone-900 via-stone-900 to-orange-500 flex-col p-4">
@@ -134,9 +151,8 @@ const Wishlist = () => {
                                                     >
                                                         <X size={16} className='text-white' />
                                                     </button>
-
                                                 </td>
-                                                <td className="p-2 flex justify-center items-center" style={{ background: "transparent", color: "white", border: "none" }}>
+                                                <td className="p-2 flex justify-center items-center" style={{ background: "transparent", color: "white", border: "none", position: "relative" }}>
                                                     <img
                                                         src={item.image || 'https://via.placeholder.com/300x200'}
                                                         alt={item.name}
@@ -146,10 +162,26 @@ const Wishlist = () => {
                                                             e.target.src = 'https://via.placeholder.com/300x200';
                                                         }}
                                                     />
+                                                    {/* Discount badge */}
+                                                    {Number(item.discount) > 0 && (
+                                                        <span style={{
+                                                            position: 'absolute',
+                                                            top: '8px',
+                                                            left: '8px',
+                                                            backgroundColor: '#ff6900',
+                                                            color: 'white',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '999px',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.85rem',
+                                                            zIndex: 2
+                                                        }}>
+                                                            {item.discount}% OFF
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="p-2" style={{ background: "transparent", color: "white", border: "none" }}>{item.name}</td>
                                                 <td className="p-2" style={{ background: "transparent", color: "white", border: "none" }}>
-
                                                     {
                                                         // Check if discount is 0, or if it's undefined/null/not a valid number,
                                                         // which effectively means no discount should be applied.

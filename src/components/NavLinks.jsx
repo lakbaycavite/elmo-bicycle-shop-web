@@ -7,51 +7,48 @@ function NavLinks({ className = '', isLoggedIn = false, onNavigate }) {
   const handleNavigation = (route) => {
     if (onNavigate) onNavigate(); // Close drawer first if needed
 
-    if (isLoggedIn) {
-      switch (route) {
-        case 'home':
-          navigate('/customer/home');
-          break;
-        case 'shop':
-          navigate('/customer/products');
-          break;
-        case 'about':
-          navigate('/customer/about');
-          break;
-        case 'contact':
-          navigate('/customer/home');
-          setTimeout(() => {
-            const section = document.getElementById('contact-section');
-            section?.scrollIntoView({ behavior: 'smooth' });
-          }, 100);
-          break;
-        case 'spin-wheel':
+    switch (route) {
+      case 'home':
+        navigate('/customer/home');
+        setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+        break;
+
+      // Shop - always accessible
+      case 'shop':
+        navigate('/customer/products');
+        break;
+
+      // About - always accessible
+    case 'about':
+  navigate('/customer/home');
+  setTimeout(() => {
+    const section = document.getElementById('features-section');
+    if (section) {
+      const yOffset = -100; // Adjust this value based on your header height
+      const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }, 300);
+  break;
+
+      case 'contact':
+        navigate('/customer/home');
+        setTimeout(() => {
+          const section = document.getElementById('contact-section');
+          section?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        break;
+
+      case 'spin-wheel':
+        if (isLoggedIn) {
           navigate('/customer/spin-wheel');
-          break;
-        default:
-          navigate('/customer/home');
-      }
-    } else {
-      switch (route) {
-        case 'home':
-          navigate('/customer/home');
-          break;
-        case 'shop':
+        } else {
           navigate('/login');
-          break;
-        case 'about':
-          navigate('/customer/about');
-          break;
-        case 'contact':
-          navigate('/customer/home');
-          setTimeout(() => {
-            const section = document.getElementById('contact-section');
-            section?.scrollIntoView({ behavior: 'smooth' });
-          }, 100);
-          break;
-        default:
-          navigate('/customer/home');
-      }
+        }
+        break;
+
+      default:
+        navigate('/customer/home');
     }
   };
 
@@ -66,5 +63,4 @@ function NavLinks({ className = '', isLoggedIn = false, onNavigate }) {
   );
 }
 
-
-export default NavLinks; 
+export default NavLinks;

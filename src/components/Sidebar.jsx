@@ -17,16 +17,14 @@ function Sidebar() {
     { label: 'ORDERS OVERVIEW', route: '/admin/orders-overview' },
     { label: 'STAFF MANAGEMENT', route: '/admin/staff-management' },
     { label: 'ACCOUNT MANAGE', route: '/admin/account-manage' },
+    { label: 'POS', route: '/admin/pos' },
   ];
 
   // Initialize state with localStorage values to prevent flickering
   const [visibleMenuItems, setVisibleMenuItems] = useState(() => {
     const saved = localStorage.getItem('elmo_menu_items');
     try {
-      return saved ? JSON.parse(saved) : (
-        // Default to all menu items - better to show all than none during loading
-        menuItems
-      );
+      return saved ? JSON.parse(saved) : menuItems;
     } catch (error) {
       console.error("Error parsing saved menu items:", error);
       return menuItems;
@@ -44,7 +42,7 @@ function Sidebar() {
   // Close drawer when screen size becomes large
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) { // lg breakpoint
+      if (window.innerWidth >= 1024) {
         setDrawerOpen(false);
       }
     };
@@ -53,10 +51,9 @@ function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Use useLayoutEffect to update menu before browser paint to prevent flickering
+  // Update menu items based on user role
   useLayoutEffect(() => {
     if (currentUserData) {
-      // Update role and email
       setUserRole(currentUserData.role);
       localStorage.setItem('elmo_user_role', currentUserData.role);
 
@@ -65,20 +62,21 @@ function Sidebar() {
         localStorage.setItem('elmo_user_email', currentUserData.email);
       }
 
-      // Calculate visible menu items
       let items = [];
-
-      if (currentUserData.role === "admin") {
-        items = menuItems;
-      } else if (currentUserData.role === "staff" && currentUserData.pageAccess) {
+      if (currentUserData.role === "staff" && currentUserData.pageAccess) {
         if (currentUserData.pageAccess === "inventory") {
-          items = menuItems.filter(item => item.label === 'INVENTORY');
+          items = menuItems.filter(item =>
+            item.label === 'INVENTORY' || item.label === 'POS'
+          );
         } else if (currentUserData.pageAccess === "orders") {
-          items = menuItems.filter(item => item.label === 'ORDERS OVERVIEW');
+          items = menuItems.filter(item =>
+            item.label === 'ORDERS OVERVIEW' || item.label === 'POS'
+          );
         }
+      } else if (currentUserData.role === "admin") {
+        items = menuItems.filter(item => item.route.startsWith('/admin'));
       }
 
-      // Only update if different to avoid unnecessary renders
       if (JSON.stringify(items) !== JSON.stringify(visibleMenuItems)) {
         setVisibleMenuItems(items);
         localStorage.setItem('elmo_menu_items', JSON.stringify(items));
@@ -97,11 +95,9 @@ function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      // Clear localStorage on logout
       localStorage.removeItem('elmo_menu_items');
       localStorage.removeItem('elmo_user_role');
       localStorage.removeItem('elmo_user_email');
-
       await doSignOut();
       navigate('/login');
     } catch (error) {
@@ -111,44 +107,52 @@ function Sidebar() {
 
   const handleMenuClick = (route) => {
     navigate(route);
-    setDrawerOpen(false); // Close drawer on mobile after navigation
+    setDrawerOpen(false);
   };
 
-  // Mobile Drawer Component
-  const MobileDrawer = () => {
-    if (!drawerOpen) return null;
+  return (
+    <>
+      {/* Hamburger Menu Button - Always visible with black color */}
+      <div className="fixed top-4 left-4 z-40">
+        <button
+          className="text-black focus:outline-none"  // Changed to black
+          onClick={() => setDrawerOpen(!drawerOpen)}
+          aria-label="Toggle menu"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
 
-    return (
-      <div className="fixed inset-0 z-50 flex lg:hidden">
-        {/* Overlay */}
-        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setDrawerOpen(false)}></div>
-        {/* Drawer panel */}
-        <div className="w-64 h-full bg-gray-800 shadow-lg p-4 flex flex-col animate-slide-in-left relative">
-          {/* Close button */}
-          <button
-            className="absolute top-4 right-4 text-white hover:text-orange-500 text-2xl font-bold focus:outline-none z-10"
+      {/* Sidebar/Drawer - Only visible when drawerOpen is true */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-30">
+          
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
             onClick={() => setDrawerOpen(false)}
-            aria-label="Close drawer"
-          >
-            ×
-          </button>
-
-          {/* Content with top margin to avoid close button */}
-          <div className="mt-8 flex flex-col h-full">
-            <div className="mb-8">
+          />
+          
+          {/* Sidebar Content */}
+          <div className="fixed left-0 top-0 bottom-0 w-64 bg-gray-800 text-white p-4 flex flex-col animate-slide-in-left">
+            {/* Centered Logo */}
+            <div className="flex justify-center mb-8">
               <img
                 src="/images/logos/elmo.png"
                 alt="Elmo Bicycle Shop"
-                className="h-10 w-auto mb-2"
+                className="h-10 w-auto"
               />
-              {/* User info */}
-              <div className="text-xs text-gray-400 mt-2">
-                <div>{userEmail}</div>
-                <div className="text-orange-400 font-semibold">{userRole}</div>
-              </div>
             </div>
 
-            <nav className="space-y-2 flex-1">
+            {/* User info below centered logo */}
+            <div className="text-xs text-gray-400 text-center mb-8">
+              <div className="truncate px-4">{userEmail}</div>
+              <div className="text-orange-400 font-semibold">{userRole}</div>
+            </div>
+
+            <nav className="space-y-2 flex-1 overflow-y-auto">
               {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.route;
                 return (
@@ -174,75 +178,17 @@ function Sidebar() {
             </div>
           </div>
         </div>
-        <style>{`
-          @keyframes slide-in-left {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
-          }
-          .animate-slide-in-left {
-            animation: slide-in-left 0.25s cubic-bezier(0.4,0,0.2,1);
-          }
-        `}</style>
-      </div>
-    );
-  };
+      )}
 
-  return (
-    <>
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden lg:block w-64 bg-gray-800 text-white p-4">
-        <div className="mb-8">
-          <img
-            src="/images/logos/elmo.png"
-            alt="Elmo Bicycle Shop"
-            className="h-10 w-auto mb-2"
-          />
-          {/* User info and timestamp */}
-          <div className="text-xs text-gray-400 mt-2">
-            <div>{userEmail}</div>
-            <div className="text-orange-400 font-semibold">{userRole}</div>
-          </div>
-        </div>
-        <nav className="space-y-2">
-          {/* Always show menu items - never conditional render the whole list */}
-          {visibleMenuItems.map((item) => {
-            const isActive = location.pathname === item.route;
-            return (
-              <button
-                key={item.route}
-                className={`w-full text-left px-3 py-2 rounded hover:bg-gray-700 uppercase font-bold ${isActive ? 'text-orange-400' : 'text-white'}`}
-                onClick={() => navigate(item.route)}
-                style={isActive ? { fontWeight: 'bold' } : {}}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-        <div className="mt-8 pt-8 border-t border-gray-700">
-          <button
-            onClick={handleLogout}
-            className="w-full text-left px-3 py-2 rounded hover:bg-gray-700 text-red-300"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Hamburger Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-40">
-        <button
-          className="text-gray-800 hover:text-orange-500 focus:outline-none"
-          onClick={() => setDrawerOpen(true)}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Mobile Drawer */}
-      <MobileDrawer />
+      <style>{`
+        @keyframes slide-in-left {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-left {
+          animation: slide-in-left 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+      `}</style>
     </>
   )
 }

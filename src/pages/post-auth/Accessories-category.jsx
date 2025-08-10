@@ -20,85 +20,127 @@ const theme = {
   borderColor: '#444444',
 };
 
-const BikeIcon = () => (
+const AccessoryIcon = () => (
   <i className="bi bi-tools"></i>
 );
 
 const ThemeStyles = () => (
   <style>{`
-        :root {
-            --primary-accent: ${theme.primaryAccent};
-            --secondary-button: ${theme.secondaryButton};
-            --background-main: ${theme.backgroundMain};
-            --background-sidebar: ${theme.backgroundSidebar};
-            --card-background: ${theme.cardBackground};
-            --text-primary: ${theme.textPrimary};
-            --text-secondary: ${theme.textSecondary};
-            --border-color: ${theme.borderColor};
-        }
-        .filter-btn { color: var(--primary-accent); border-color: var(--primary-accent); }
-        .filter-btn:hover { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
-        .btn-check:checked + .filter-btn { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
-        .btn-add-to-cart { background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-primary); }
-        .btn-details { background-color: var(--secondary-button); border-color: var(--secondary-button); color: var(--text-primary); }
-        .wishlist-heart { cursor: pointer; transition: all 0.2s ease; }
-        .wishlist-heart:hover { transform: scale(1.1); }
-        .wishlist-heart.active { color: var(--primary-accent); opacity: 1; }
-    `}</style>
+    :root {
+      --primary-accent: ${theme.primaryAccent};
+      --secondary-button: ${theme.secondaryButton};
+      --background-main: ${theme.backgroundMain};
+      --background-sidebar: ${theme.backgroundSidebar};
+      --card-background: ${theme.cardBackground};
+      --text-primary: ${theme.textPrimary};
+      --text-secondary: ${theme.textSecondary};
+      --border-color: ${theme.borderColor};
+    }
+    .filter-btn { color: var(--primary-accent); border-color: var(--primary-accent); }
+    .filter-btn:hover { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
+    .btn-check:checked + .filter-btn { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
+    .btn-add-to-cart { background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-primary); }
+    .btn-details { background-color: var(--secondary-button); border-color: var(--secondary-button); color: var(--text-primary); }
+    .wishlist-heart { cursor: pointer; transition: all 0.2s ease; }
+    .wishlist-heart:hover { transform: scale(1.1); }
+    .wishlist-heart.active { color: var(--primary-accent); opacity: 1; }
+    .discount-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: var(--primary-accent);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+  `}</style>
 );
 
-const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings, handleShowDetailsModal }) => (
-  <div className="col">
-    <div className="card h-100 shadow-sm" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
-      <img src={accessory.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={accessory.name} />
-      <div className="card-body p-3">
-        <div className="d-flex justify-content-between align-items-start">
-          <h5 className="card-title mb-1" style={{ color: 'var(--primary-accent)' }}>{accessory.name}</h5>
-          <span
-            className={`wishlist-heart ${isInWishlist ? 'active' : ''}`}
-            style={{ color: isInWishlist ? 'var(--primary-accent)' : 'var(--text-secondary)', opacity: isInWishlist ? 1 : 0.5 }}
-            onClick={() => onToggleWishlist(accessory)}
-          >
-            <Heart fill={isInWishlist ? "currentColor" : "none"} />
-          </span>
-        </div>
-        <p className="fw-bold mb-2">{accessory.brand}</p>
-        <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {accessory.type}</p>
+const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings, handleShowDetailsModal, isAddingToCart }) => {
+  const hasDiscount = Number(accessory.discount) > 0;
+  const discountedPrice = hasDiscount ? 
+    Number(accessory.price) * (1 - (Number(accessory.discount) / 100)) : 
+    Number(accessory.price);
 
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <span className="badge" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}>{accessory.category}</span>
+  return (
+    <div className="col">
+      <div className="card h-100 shadow-sm position-relative" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
+        {/* Discount badge */}
+        {hasDiscount && (
+          <div className="discount-badge">
+            {accessory.discount}% OFF
           </div>
-          <p className="fs-5 fw-bold mb-0" style={{ color: 'var(--primary-accent)' }}>
-            {
-              Number(accessory.discount) > 0
-                ? <>
-                  <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(accessory.price)}`}</span>
-                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(accessory.discountedFinalPrice))}`}</span>
-                </>
-                : `₱${new Intl.NumberFormat().format(accessory.price)}`
-            }
-          </p>
-        </div>
-
-        {/* Ratings display */}
-        {averageRating && totalRatings > 0 ? (
-          <div className="mb-2">
-            <span style={{ color: 'gold' }}>★ {averageRating}</span>
-            <small className="ms-1" style={{ color: 'var(--text-secondary)' }}>({totalRatings} rating{totalRatings !== 1 ? 's' : ''})</small>
-          </div>
-        ) : (
-          <div className="mb-2" style={{ color: 'var(--text-secondary)' }}>No ratings yet</div>
         )}
+        
+        <img src={accessory.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={accessory.name} />
+        <div className="card-body p-3">
+          <div className="d-flex justify-content-between align-items-start">
+            <h5 className="card-title mb-1" style={{ color: 'var(--primary-accent)' }}>{accessory.name}</h5>
+            <span
+              className={`wishlist-heart ${isInWishlist ? 'active' : ''}`}
+              style={{ color: isInWishlist ? 'var(--primary-accent)' : 'var(--text-secondary)', opacity: isInWishlist ? 1 : 0.5 }}
+              onClick={() => onToggleWishlist(accessory)}
+            >
+              <Heart fill={isInWishlist ? "currentColor" : "none"} />
+            </span>
+          </div>
+          <p className="fw-bold mb-2">{accessory.brand}</p>
+          <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {accessory.type}</p>
 
-        <div className="d-flex gap-2">
-          <button className="btn btn-add-to-cart w-100" onClick={() => onAddToCart(accessory)}>Add to Cart</button>
-          <button className="btn btn-details w-100" onClick={() => handleShowDetailsModal(accessory)}>Details</button>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <span className="badge" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}>{accessory.category}</span>
+            </div>
+            <div className="text-end">
+              {hasDiscount ? (
+                <>
+                  <span className="text-decoration-line-through me-2" style={{ color: 'var(--text-secondary)' }}>
+                    ₱{new Intl.NumberFormat().format(accessory.price)}
+                  </span>
+                  <span className="fs-5 fw-bold" style={{ color: 'var(--primary-accent)' }}>
+                    ₱{new Intl.NumberFormat().format(discountedPrice)}
+                  </span>
+                </>
+              ) : (
+                <span className="fs-5 fw-bold" style={{ color: 'var(--primary-accent)' }}>
+                  ₱{new Intl.NumberFormat().format(accessory.price)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Ratings display */}
+          {averageRating && totalRatings > 0 ? (
+            <div className="mb-2">
+              <span style={{ color: 'gold' }}>★ {averageRating}</span>
+              <small className="ms-1" style={{ color: 'var(--text-secondary)' }}>({totalRatings} rating{totalRatings !== 1 ? 's' : ''})</small>
+            </div>
+          ) : (
+            <div className="mb-2" style={{ color: 'var(--text-secondary)' }}>No ratings yet</div>
+          )}
+
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-add-to-cart w-100" 
+              onClick={() => onAddToCart(accessory)}
+              disabled={isAddingToCart}
+            >
+              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+            </button>
+            <button 
+              className="btn btn-details w-100" 
+              onClick={() => handleShowDetailsModal(accessory)}
+            >
+              Details
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   const id = `btn-check-${category.replace(/\s+/g, '-')}`;
@@ -106,14 +148,26 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
     <div>
       <input type="checkbox" className="btn-check" id={id} checked={isSelected} onChange={() => onToggle(category)} autoComplete="off" />
       <label className="btn btn-sm d-flex align-items-center filter-btn" htmlFor={id}>
-        <BikeIcon />
+        <AccessoryIcon />
         <span>{category}</span>
       </label>
     </div>
   );
 };
 
-const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter, handleShowDetailsModal }) => {
+const AccessoryListings = ({ 
+  accessories, 
+  searchTerm, 
+  onSearchChange, 
+  onAddToCart, 
+  wishlistItems, 
+  onToggleWishlist, 
+  ratingsMap, 
+  selectedRatingFilter, 
+  setSelectedRatingFilter, 
+  handleShowDetailsModal,
+  isAddingToCart 
+}) => {
   const navigate = useNavigate();
 
   const isInWishlist = (accessoryId) => {
@@ -132,7 +186,7 @@ const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCar
           Back to Home
         </button>
       </div>
-      <h1 style={{ color: 'var(--primary-accent)' }}>Accessories Listings</h1>
+      <h1 style={{ color: 'var(--primary-accent)' }}>Accessory Listings</h1>
       <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality accessories</p>
       <hr style={{ borderColor: 'var(--border-color)' }} />
       <div className="row mb-4 align-items-center">
@@ -159,10 +213,10 @@ const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCar
           >
             <i className="bi bi-heart-fill"></i>My Wishlist
           </button>
-          <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/bikes-category')}><i className="bi bi-bicycle"></i>
+          <button className="btn btn-secondary me-2" type="button" onClick={() => navigate('/customer/bikes-category')}><i className="bi bi-bicycle"></i>
             Bikes
           </button>
-          <button className="btn btn-secondary  me-2" type="button" onClick={() => navigate('/customer/gears-parts-category')}><i className="bi bi-gear"></i>
+          <button className="btn btn-secondary me-2" type="button" onClick={() => navigate('/customer/gears-parts-category')}><i className="bi bi-gear"></i>
             Gears & Parts
           </button>
         </div>
@@ -230,6 +284,7 @@ const AccessoryListings = ({ accessories, searchTerm, onSearchChange, onAddToCar
                 isInWishlist={isInWishlist(accessory.id)}
                 onToggleWishlist={onToggleWishlist}
                 handleShowDetailsModal={handleShowDetailsModal}
+                isAddingToCart={isAddingToCart}
               />
             );
           })
@@ -251,22 +306,12 @@ const AccessoriesCategory = () => {
   const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const location = useLocation();
 
-  const { products } = useProducts();
+  const { products, getProduct } = useProducts();
   const { addToCart } = useCart();
-  const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
-  const { getProduct } = useProducts();
-
-  useEffect(() => {
-    if (location.state && location.state.handleShowDetailsModal && products) {
-      // Find the product with matching ID
-      const product = products.find(p => p.id === location.state.handleShowDetailsModal);
-      if (product) {
-        handleShowDetailsModal(product);
-      }
-    }
-  }, [location.state, products]);
+  const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist();
 
   const handleShowDetailsModal = async (product) => {
     if (!product) {
@@ -282,7 +327,22 @@ const AccessoriesCategory = () => {
         console.error("Error fetching product details:", error);
         toast.error(`Failed to load product details`);
       });
-  }
+  };
+
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.ratingFilter) {
+        setSelectedRatingFilter(location.state.ratingFilter);
+      }
+
+      if (location.state.handleShowDetailsModal && products) {
+        const product = products.find(p => p.id === location.state.handleShowDetailsModal);
+        if (product) {
+          handleShowDetailsModal(product);
+        }
+      }
+    }
+  }, [location.state, products]);
 
   const accessories = useMemo(() => {
     if (!products) return [];
@@ -291,7 +351,6 @@ const AccessoriesCategory = () => {
     );
   }, [products]);
 
-  // Load ratings data - FIXED to match your Firebase structure
   useEffect(() => {
     const ratingsRef = ref(database, 'ratings');
 
@@ -299,7 +358,6 @@ const AccessoriesCategory = () => {
       const data = snapshot.val();
 
       if (data) {
-        // Data structure: ratings/{productId}/{ratingId}
         const processedRatings = {};
 
         Object.keys(data).forEach(productId => {
@@ -353,7 +411,6 @@ const AccessoriesCategory = () => {
         (accessory.name && accessory.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (accessory.brand && accessory.brand.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Rating filter logic
       let ratingMatch = true;
       if (selectedRatingFilter !== 'all') {
         const accessoryRatings = ratingsMap[accessory.id] || {};
@@ -367,16 +424,12 @@ const AccessoriesCategory = () => {
           if (validRatings.length > 0) {
             const sum = validRatings.reduce((total, rating) => total + Number(rating.rating), 0);
             const averageRating = sum / validRatings.length;
-
-            // Filter based on rating range
             const filterValue = parseInt(selectedRatingFilter);
             ratingMatch = Math.floor(averageRating) >= filterValue;
           } else {
-            // No valid ratings - only show if "all" is selected
             ratingMatch = false;
           }
         } else {
-          // No ratings at all - only show if "all" is selected
           ratingMatch = false;
         }
       }
@@ -385,15 +438,22 @@ const AccessoriesCategory = () => {
     });
   }, [accessories, selectedTypes, searchTerm, selectedRatingFilter, ratingsMap]);
 
-  const handleAddToCart = async (accessory) => {
-    try {
-      await addToCart(accessory.id, 1, {
-        ...accessory,
-      })
-    } catch (error) {
-      toast.error(`Error adding to cart: ${error.message}`);
-    }
-  };
+ const handleAddToCart = async (accessory) => {
+  if (isAddingToCart) return;
+  
+  setIsAddingToCart(true);
+  try {
+    await addToCart(accessory.id, 1, {  // Explicitly set quantity to 1
+      ...accessory,
+      quantity: 1,  // Ensure quantity is always 1 for new additions
+    });
+    toast.success(`${accessory.name} added to cart!`);
+  } catch (error) {
+    toast.error(`Error adding to cart: ${error.message}`);
+  } finally {
+    setIsAddingToCart(false);
+  }
+};
 
   const handleToggleWishlist = async (accessory) => {
     try {
@@ -426,16 +486,14 @@ const AccessoriesCategory = () => {
       refreshWishlist();
     } catch (error) {
       console.error("Error updating wishlist:", error);
-      window.alert(`Error updating wishlist: ${error.message}`);
+      toast.error(`Error updating wishlist: ${error.message}`);
     }
   };
 
   return (
     <>
       <ThemeStyles />
-
       <div style={{ backgroundColor: 'var(--background-main)' }} className="min-vh-100">
-
         <div
           className={`d-flex flex-column flex-shrink-0 p-3 vh-100 position-fixed ${isSidebarCollapsed ? 'collapsed-sidebar' : ''}`}
           style={{
@@ -504,6 +562,7 @@ const AccessoriesCategory = () => {
             selectedRatingFilter={selectedRatingFilter}
             setSelectedRatingFilter={setSelectedRatingFilter}
             handleShowDetailsModal={handleShowDetailsModal}
+            isAddingToCart={isAddingToCart}
           />
         </div>
       </div>

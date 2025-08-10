@@ -9,8 +9,6 @@ import { onValue, ref } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ProductDetailsModal from '../../components/ProductsDetailsModal';
 
-
-
 const theme = {
   primaryAccent: '#ff8c00',
   secondaryButton: '#6c757d',
@@ -28,79 +26,121 @@ const BikeIcon = () => (
 
 const ThemeStyles = () => (
   <style>{`
-        :root {
-            --primary-accent: ${theme.primaryAccent};
-            --secondary-button: ${theme.secondaryButton};
-            --background-main: ${theme.backgroundMain};
-            --background-sidebar: ${theme.backgroundSidebar};
-            --card-background: ${theme.cardBackground};
-            --text-primary: ${theme.textPrimary};
-            --text-secondary: ${theme.textSecondary};
-            --border-color: ${theme.borderColor};
-        }
-        .filter-btn { color: var(--primary-accent); border-color: var(--primary-accent); }
-        .filter-btn:hover { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
-        .btn-check:checked + .filter-btn { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
-        .btn-add-to-cart { background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-primary); }
-        .btn-details { background-color: var(--secondary-button); border-color: var(--secondary-button); color: var(--text-primary); }
-        .wishlist-heart { cursor: pointer; transition: all 0.2s ease; }
-        .wishlist-heart:hover { transform: scale(1.1); }
-        .wishlist-heart.active { color: var(--primary-accent); opacity: 1; }
-    `}</style>
+    :root {
+      --primary-accent: ${theme.primaryAccent};
+      --secondary-button: ${theme.secondaryButton};
+      --background-main: ${theme.backgroundMain};
+      --background-sidebar: ${theme.backgroundSidebar};
+      --card-background: ${theme.cardBackground};
+      --text-primary: ${theme.textPrimary};
+      --text-secondary: ${theme.textSecondary};
+      --border-color: ${theme.borderColor};
+    }
+    .filter-btn { color: var(--primary-accent); border-color: var(--primary-accent); }
+    .filter-btn:hover { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
+    .btn-check:checked + .filter-btn { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
+    .btn-add-to-cart { background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-primary); }
+    .btn-details { background-color: var(--secondary-button); border-color: var(--secondary-button); color: var(--text-primary); }
+    .wishlist-heart { cursor: pointer; transition: all 0.2s ease; }
+    .wishlist-heart:hover { transform: scale(1.1); }
+    .wishlist-heart.active { color: var(--primary-accent); opacity: 1; }
+    .discount-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: var(--primary-accent);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+  `}</style>
 );
 
-const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings, handleShowDetailsModal }) => (
-  <div className="col">
-    <div className="card h-100 shadow-sm" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
-      <img src={bike.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={bike.name} />
-      <div className="card-body p-3">
-        <div className="d-flex justify-content-between align-items-start">
-          <h5 className="card-title mb-1" style={{ color: 'var(--primary-accent)' }}>{bike.name}</h5>
-          <span
-            className={`wishlist-heart ${isInWishlist ? 'active' : ''}`}
-            style={{ color: isInWishlist ? 'var(--primary-accent)' : 'var(--text-secondary)', opacity: isInWishlist ? 1 : 0.5 }}
-            onClick={() => onToggleWishlist(bike)}
-          >
-            <Heart fill={isInWishlist ? "currentColor" : "none"} />
-          </span>
-        </div>
-        <p className="fw-bold mb-2">{bike.brand}</p>
-        <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {bike.type}</p>
+const BikeCard = ({ bike, onAddToCart, isInWishlist, onToggleWishlist, averageRating, totalRatings, handleShowDetailsModal, isAddingToCart }) => {
+  const hasDiscount = Number(bike.discount) > 0;
+  const discountedPrice = hasDiscount ? 
+    Number(bike.price) * (1 - (Number(bike.discount) / 100)) : 
+    Number(bike.price);
 
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <span className="badge" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}>{bike.category}</span>
+  return (
+    <div className="col">
+      <div className="card h-100 shadow-sm position-relative" style={{ backgroundColor: 'var(--card-background)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}>
+        {/* Discount badge */}
+        {hasDiscount && (
+          <div className="discount-badge">
+            {bike.discount}% OFF
           </div>
-          <p className="fs-5 fw-bold mb-0" style={{ color: 'var(--primary-accent)' }}>
-            {
-              Number(bike.discount) > 0
-                ? <>
-                  <span className="text-decoration-line-through">{`₱${new Intl.NumberFormat().format(bike.price)}`}</span>
-                  <span className="ms-2">{`₱${new Intl.NumberFormat().format(Number(bike.discountedFinalPrice))}`}</span>
-                </>
-                : `₱${new Intl.NumberFormat().format(bike.price)}`
-            }
-          </p>
-        </div>
-
-        {/* Ratings display */}
-        {averageRating && totalRatings > 0 ? (
-          <div className="mb-2">
-            <span style={{ color: 'gold' }}>★ {averageRating}</span>
-            <small className="ms-1" style={{ color: 'var(--text-secondary)' }}>({totalRatings} rating{totalRatings !== 1 ? 's' : ''})</small>
-          </div>
-        ) : (
-          <div className="mb-2" style={{ color: 'var(--text-secondary)' }}>No ratings yet</div>
         )}
+        
+        <img src={bike.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={bike.name} />
+        <div className="card-body p-3">
+          <div className="d-flex justify-content-between align-items-start">
+            <h5 className="card-title mb-1" style={{ color: 'var(--primary-accent)' }}>{bike.name}</h5>
+            <span
+              className={`wishlist-heart ${isInWishlist ? 'active' : ''}`}
+              style={{ color: isInWishlist ? 'var(--primary-accent)' : 'var(--text-secondary)', opacity: isInWishlist ? 1 : 0.5 }}
+              onClick={() => onToggleWishlist(bike)}
+            >
+              <Heart fill={isInWishlist ? "currentColor" : "none"} />
+            </span>
+          </div>
+          <p className="fw-bold mb-2">{bike.brand}</p>
+          <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {bike.type}</p>
 
-        <div className="d-flex gap-2">
-          <button className="btn btn-add-to-cart w-100" onClick={() => onAddToCart(bike)}>Add to Cart</button>
-          <button className="btn btn-details w-100" onClick={() => handleShowDetailsModal(bike)}>Details</button>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <span className="badge" style={{ backgroundColor: 'var(--primary-accent)', color: 'var(--text-primary)' }}>{bike.category}</span>
+            </div>
+            <div className="text-end">
+              {hasDiscount ? (
+                <>
+                  <span className="text-decoration-line-through me-2" style={{ color: 'var(--text-secondary)' }}>
+                    ₱{new Intl.NumberFormat().format(bike.price)}
+                  </span>
+                  <span className="fs-5 fw-bold" style={{ color: 'var(--primary-accent)' }}>
+                    ₱{new Intl.NumberFormat().format(discountedPrice)}
+                  </span>
+                </>
+              ) : (
+                <span className="fs-5 fw-bold" style={{ color: 'var(--primary-accent)' }}>
+                  ₱{new Intl.NumberFormat().format(bike.price)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Ratings display */}
+          {averageRating && totalRatings > 0 ? (
+            <div className="mb-2">
+              <span style={{ color: 'gold' }}>★ {averageRating}</span>
+              <small className="ms-1" style={{ color: 'var(--text-secondary)' }}>({totalRatings} rating{totalRatings !== 1 ? 's' : ''})</small>
+            </div>
+          ) : (
+            <div className="mb-2" style={{ color: 'var(--text-secondary)' }}>No ratings yet</div>
+          )}
+
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-add-to-cart w-100" 
+              onClick={() => onAddToCart(bike)}
+              disabled={isAddingToCart}
+            >
+              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+            </button>
+            <button 
+              className="btn btn-details w-100" 
+              onClick={() => handleShowDetailsModal(bike)}
+            >
+              Details
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   const id = `btn-check-${category.replace(/\s+/g, '-')}`;
@@ -115,7 +155,19 @@ const FilterCheckbox = ({ category, isSelected, onToggle }) => {
   );
 };
 
-const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlistItems, onToggleWishlist, ratingsMap, selectedRatingFilter, setSelectedRatingFilter, handleShowDetailsModal }) => {
+const BikeListings = ({ 
+  bikes, 
+  searchTerm, 
+  onSearchChange, 
+  onAddToCart, 
+  wishlistItems, 
+  onToggleWishlist, 
+  ratingsMap, 
+  selectedRatingFilter, 
+  setSelectedRatingFilter, 
+  handleShowDetailsModal,
+  isAddingToCart 
+}) => {
   const navigate = useNavigate();
 
   const isInWishlist = (bikeId) => {
@@ -232,6 +284,7 @@ const BikeListings = ({ bikes, searchTerm, onSearchChange, onAddToCart, wishlist
                 isInWishlist={isInWishlist(bike.id)}
                 onToggleWishlist={onToggleWishlist}
                 handleShowDetailsModal={handleShowDetailsModal}
+                isAddingToCart={isAddingToCart}
               />
             );
           })
@@ -253,12 +306,12 @@ const BikesCategory = () => {
   const [selectedRatingFilter, setSelectedRatingFilter] = useState('all');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const location = useLocation();
 
-  const { products } = useProducts();
+  const { products, getProduct } = useProducts();
   const { addToCart } = useCart();
-  const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist(addToCart);
-  const { getProduct } = useProducts();
+  const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist();
 
   const handleShowDetailsModal = async (product) => {
     if (!product) {
@@ -282,9 +335,7 @@ const BikesCategory = () => {
         setSelectedRatingFilter(location.state.ratingFilter);
       }
 
-      // Check if handleShowDetailsModal ID is passed in state
       if (location.state.handleShowDetailsModal && products) {
-        // Find the product with matching ID
         const product = products.find(p => p.id === location.state.handleShowDetailsModal);
         if (product) {
           handleShowDetailsModal(product);
@@ -300,7 +351,6 @@ const BikesCategory = () => {
     );
   }, [products]);
 
-  // Load ratings data - FIXED to match your Firebase structure
   useEffect(() => {
     const ratingsRef = ref(database, 'ratings');
 
@@ -308,7 +358,6 @@ const BikesCategory = () => {
       const data = snapshot.val();
 
       if (data) {
-        // Data structure: ratings/{productId}/{ratingId}
         const processedRatings = {};
 
         Object.keys(data).forEach(productId => {
@@ -362,7 +411,6 @@ const BikesCategory = () => {
         (bike.name && bike.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (bike.brand && bike.brand.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Rating filter logic
       let ratingMatch = true;
       if (selectedRatingFilter !== 'all') {
         const bikeRatings = ratingsMap[bike.id] || {};
@@ -376,16 +424,12 @@ const BikesCategory = () => {
           if (validRatings.length > 0) {
             const sum = validRatings.reduce((total, rating) => total + Number(rating.rating), 0);
             const averageRating = sum / validRatings.length;
-
-            // Filter based on rating range
             const filterValue = parseInt(selectedRatingFilter);
             ratingMatch = Math.floor(averageRating) >= filterValue;
           } else {
-            // No valid ratings - only show if "all" is selected
             ratingMatch = false;
           }
         } else {
-          // No ratings at all - only show if "all" is selected
           ratingMatch = false;
         }
       }
@@ -394,15 +438,22 @@ const BikesCategory = () => {
     });
   }, [bikes, selectedTypes, searchTerm, selectedRatingFilter, ratingsMap]);
 
-  const handleAddToCart = async (bike) => {
-    try {
-      await addToCart(bike.id, 1, {
-        ...bike,
-      })
-    } catch (error) {
-      toast.error(`Error adding to cart: ${error.message}`);
-    }
-  };
+ const handleAddToCart = async (bike) => {
+  if (isAddingToCart) return;
+  
+  setIsAddingToCart(true);
+  try {
+    await addToCart(bike.id, 1, {  // Explicitly set quantity to 1
+      ...bike,
+      quantity: 1,  // Ensure quantity is always 1 for new additions
+    });
+    toast.success(`${bike.name} added to cart!`);
+  } catch (error) {
+    toast.error(`Error adding to cart: ${error.message}`);
+  } finally {
+    setIsAddingToCart(false);
+  }
+};
 
   const handleToggleWishlist = async (bike) => {
     try {
@@ -435,7 +486,7 @@ const BikesCategory = () => {
       refreshWishlist();
     } catch (error) {
       console.error("Error updating wishlist:", error);
-      window.alert(`Error updating wishlist: ${error.message}`);
+      toast.error(`Error updating wishlist: ${error.message}`);
     }
   };
 
@@ -511,6 +562,7 @@ const BikesCategory = () => {
             selectedRatingFilter={selectedRatingFilter}
             setSelectedRatingFilter={setSelectedRatingFilter}
             handleShowDetailsModal={handleShowDetailsModal}
+            isAddingToCart={isAddingToCart}
           />
         </div>
       </div>
@@ -518,7 +570,7 @@ const BikesCategory = () => {
         viewProduct={viewProduct}
         showDetailsModal={showDetailsModal}
         setShowDetailsModal={setShowDetailsModal}
-        formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`} // Example price formatting function
+        formatPrice={(price) => `₱${new Intl.NumberFormat().format(price)}`}
       />
     </>
   );

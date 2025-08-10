@@ -30,7 +30,7 @@ function AccountManage() {
     lastName: '',
     email: '',
    phoneNumber: '',
-    role: 'customer',
+    role: 'staff',
     password: ''
   });
   const [passwordData, setPasswordData] = useState({
@@ -253,7 +253,7 @@ function AccountManage() {
         firstName: '',
         lastName: '',
         email: '',
-        role: 'customer',
+        role: 'staff',
         password: ''
       });
       setIsAddAccountModalOpen(false);
@@ -557,6 +557,8 @@ function AccountManage() {
               >
 
                 <option value="staff">Staff</option>
+                <option value="customer">Customer</option>
+                <option value="all">All</option>
                 {/* <option value="admin">Admin</option> */}
               </select>
             </div>
@@ -792,26 +794,42 @@ function AccountManage() {
                 <form onSubmit={handleAddAccountSubmit}>
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">First Name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={newAccount.firstName}
-                      onChange={handleAccountInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
+                   <input
+  type="text"
+  name="firstName"
+  value={newAccount.firstName}
+  onChange={(e) => {
+    const lettersOnly = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+    setNewAccount({ ...newAccount, firstName: lettersOnly });
+  }}
+  required
+  className={`w-full p-2 border rounded ${newAccount.firstName && /[^a-zA-Z\s]/.test(newAccount.firstName) ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:border-indigo-500`}
+  placeholder="First Name"
+/>
+{newAccount.firstName && /[^a-zA-Z\s]/.test(newAccount.firstName) && (
+  <p className="text-red-500 text-sm mt-1">Only letters are allowed in First Name</p>
+)}
+
                   </div>
 
                   <div className="mb-4">
                     <label className="block text-gray-700 mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={newAccount.lastName}
-                      onChange={handleAccountInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
+<input
+  type="text"
+  name="lastName"
+  value={newAccount.lastName}
+  onChange={(e) => {
+    const lettersOnly = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+    setNewAccount({ ...newAccount, lastName: lettersOnly });
+  }}
+  required
+  className={`w-full p-2 border rounded ${newAccount.lastName && /[^a-zA-Z\s]/.test(newAccount.lastName) ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:border-indigo-500`}
+  placeholder="Last Name"
+/>
+{newAccount.lastName && /[^a-zA-Z\s]/.test(newAccount.lastName) && (
+  <p className="text-red-500 text-sm mt-1">Only letters are allowed in Last Name</p>
+)}
+
                   </div>
 
                   <div className="mb-4">
@@ -822,6 +840,7 @@ function AccountManage() {
                       value={newAccount.email}
                       onChange={handleAccountInputChange}
                       className="w-full p-2 border rounded"
+                      placeholder="Email Address"
                       required
                     />
                   </div>
@@ -835,6 +854,7 @@ function AccountManage() {
                       className="w-full p-2 border rounded"
                     >
                       <option value="staff">Staff</option>
+                      
                       {/* <option value="admin">Admin</option> */}
                     </select>
                   </div>
@@ -862,14 +882,20 @@ function AccountManage() {
 
                   <div className="mb-6">
                     <label className="block text-gray-700 mb-2">Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={newAccount.password}
-                      onChange={handleAccountInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
+                 <input
+  type="password"
+  name="password"
+  value={newAccount.password}
+  onChange={(e) => setNewAccount({ ...newAccount, password: e.target.value })}
+  required
+  minLength={8}
+  className={`w-full p-2 border rounded ${newAccount.password.length > 0 && newAccount.password.length < 8 ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:border-indigo-500`}
+  placeholder="Password"
+/>
+{newAccount.password.length > 0 && newAccount.password.length < 8 && (
+  <p className="text-red-500 text-sm mt-1">Password must be at least 8 characters long</p>
+)}
+
                   </div>
 
                   <div className="flex justify-end space-x-3">

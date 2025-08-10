@@ -6,3 +6,19 @@ body {
   font-family: "Poppins", sans-serif;
 }
 /* This can be imported if you need additional custom styling beyond Bootstrap and Tailwind */
+/* Hide number input spinners in Chrome, Safari, Edge, Opera */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide number input spinners in Firefox */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

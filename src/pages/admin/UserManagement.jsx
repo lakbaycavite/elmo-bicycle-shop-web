@@ -11,6 +11,16 @@ function UserManagement() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [selectedPageAccess, setSelectedPageAccess] = useState('orders');
+  const [editingFields, setEditingFields] = useState({
+    firstName: false,
+    lastName: false,
+    email: false
+  });
+  const [editedValues, setEditedValues] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
 
   // Inventory permissions state
   const [inventoryPermissions, setInventoryPermissions] = useState({
@@ -42,6 +52,16 @@ function UserManagement() {
     setSelectedAccount(account);
     const pageAccess = account.pageAccess || 'orders';
     setSelectedPageAccess(pageAccess);
+    setEditedValues({
+      firstName: account.firstName || '',
+      lastName: account.lastName || '',
+      email: account.email || ''
+    });
+    setEditingFields({
+      firstName: false,
+      lastName: false,
+      email: false
+    });
 
     if (account.inventoryPermissions) {
       setInventoryPermissions({
@@ -69,6 +89,20 @@ function UserManagement() {
     }));
   };
 
+  const toggleEditField = (field) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const handleFieldChange = (field, value) => {
+    setEditedValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   const handleEditSubmit = async () => {
     if (selectedAccount && selectedAccount.role === 'staff') {
       const updateData = {
@@ -76,6 +110,13 @@ function UserManagement() {
         accessUpdatedAt: new Date().toISOString(),
         accessUpdatedBy: currentUser?.email || 'Admin'
       };
+
+      // Only update personal info if it was edited
+      if (editingFields.firstName || editingFields.lastName || editingFields.email) {
+        updateData.firstName = editedValues.firstName;
+        updateData.lastName = editedValues.lastName;
+        updateData.email = editedValues.email;
+      }
 
       if (selectedPageAccess === 'inventory') {
         updateData.inventoryPermissions = inventoryPermissions;
@@ -115,7 +156,7 @@ function UserManagement() {
         <div className="flex-1 p-4 md:p-6">
           <div className="bg-white shadow-xl rounded-lg w-full p-4 md:p-6">
             <label className="text-orange-500 font-bold text-xl md:text-2xl mb-4">
-              <h1>Active Staff</h1>
+              <h1>Staff</h1>
             </label>
             <div className='flex flex-col sm:flex-row gap-4 mb-6'>
               <input
@@ -249,21 +290,115 @@ function UserManagement() {
         </div>
       </div>
 
-      {/* Responsive Edit Modal */}
+      {/* Edit Staff Access Modal */}
       {showEditModal && selectedAccount && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-orange-500">Edit Staff Access</h2>
 
-            <div className="mb-6">
-              <p className="text-gray-700 mb-2">
-                <span className="font-semibold">Staff:</span> {selectedAccount.firstName} {selectedAccount.lastName}
-              </p>
-              <p className="text-gray-700 mb-4">
-                <span className="font-semibold">Email:</span> {selectedAccount.email}
-              </p>
+            <div className="mb-6 space-y-4">
+              {/* Editable First Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name:</label>
+                <div className="flex items-center">
+                  {editingFields.firstName ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editedValues.firstName}
+                        onChange={(e) => handleFieldChange('firstName', e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        autoFocus
+                      />
+                      <button 
+                        onClick={() => toggleEditField('firstName')}
+                        className="ml-2 p-1 text-green-500 hover:text-green-700"
+                      >
+                        ✓
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-800">{editedValues.firstName}</p>
+                      <button 
+                        onClick={() => toggleEditField('firstName')}
+                        className="ml-2 p-1 text-gray-500 hover:text-orange-500"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
 
-              <div className="mb-4">
+              {/* Editable Last Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name:</label>
+                <div className="flex items-center">
+                  {editingFields.lastName ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editedValues.lastName}
+                        onChange={(e) => handleFieldChange('lastName', e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                      <button 
+                        onClick={() => toggleEditField('lastName')}
+                        className="ml-2 p-1 text-green-500 hover:text-green-700"
+                      >
+                        ✓
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-800">{editedValues.lastName}</p>
+                      <button 
+                        onClick={() => toggleEditField('lastName')}
+                        className="ml-2 p-1 text-gray-500 hover:text-orange-500"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Editable Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+                <div className="flex items-center">
+                  {editingFields.email ? (
+                    <>
+                      <input
+                        type="email"
+                        value={editedValues.email}
+                        onChange={(e) => handleFieldChange('email', e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                      <button 
+                        onClick={() => toggleEditField('email')}
+                        className="ml-2 p-1 text-green-500 hover:text-green-700"
+                      >
+                        ✓
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-800">{editedValues.email}</p>
+                      <button 
+                        onClick={() => toggleEditField('email')}
+                        className="ml-2 p-1 text-gray-500 hover:text-orange-500"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Page Access Selection */}
+              <div className="mt-4">
                 <label className="block text-gray-700 mb-2 font-semibold">Page Access:</label>
                 <select
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500"

@@ -6,16 +6,14 @@ import {
   Edit2,
   Trash2,
   X,
-  ArrowUp,
-  ArrowDown,
   Upload,
   Loader2,
   Eye,
-  AlertCircle // Added for permission alerts
+  AlertCircle
 } from 'lucide-react';
 import { useProducts } from '../../hooks/useProduct';
 import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
-import { useUsers } from '../../hooks/useUser'; // Added for user data
+import { useUsers } from '../../hooks/useUser';
 import { toast } from 'sonner';
 import ProductDetailsModal from '../../components/ProductsDetailsModal';
 
@@ -23,9 +21,13 @@ const Inventory = () => {
   // Added auth and permissions
   const { currentUserData } = useUsers();
 
+  // State for delete confirmation
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+
   // Permission state
   const [permissions, setPermissions] = useState({
-    canView: true, // Default to true for existing functionality
+    canView: true,
     canAdd: true,
     canEdit: true,
     canDelete: true
@@ -41,7 +43,6 @@ const Inventory = () => {
     if (currentUserData) {
       const isAdmin = currentUserData.role === 'admin';
 
-      // Admin has all permissions, staff permissions are based on inventory settings
       setPermissions({
         canView: isAdmin || (currentUserData.role === 'staff' &&
           currentUserData.pageAccess === 'inventory' &&
@@ -115,39 +116,55 @@ const Inventory = () => {
     name: '',
     category: '',
     brand: '',
-    price: 0,
-    stock: 0
+    price: '',
+    stock: ''
   });
 
   const validate = () => {
-    const newErrors = { ...errors };
+    const newErrors = {
+      name: '',
+      category: '',
+      brand: '',
+      price: '',
+      stock: ''
+    };
 
-    if (!formData.name) {
+    let isValid = true;
+
+    if (!formData.name.trim()) {
       newErrors.name = 'Name is required.';
+      isValid = false;
     }
 
     if (!formData.category) {
       newErrors.category = 'Category is required.';
+      isValid = false;
     }
 
-    if (!formData.brand) {
+    if (!formData.brand.trim()) {
       newErrors.brand = 'Brand is required.';
+      isValid = false;
     }
 
-    if (formData.price <= 0) {
+    if (isNaN(formData.price)) {
+      newErrors.price = 'Price must be a number.';
+      isValid = false;
+    } else if (formData.price <= 0) {
       newErrors.price = 'Price must be greater than 0.';
+      isValid = false;
     }
-    if (!formData.stock) {
-      newErrors.stock = 'Stock is required.';
+
+    if (isNaN(formData.stock)) {
+      newErrors.stock = 'Stock must be a number.';
+      isValid = false;
     } else if (formData.stock < 1) {
       newErrors.stock = 'Stock must be at least 1.';
+      isValid = false;
     }
 
     setErrors(newErrors);
-    return Object.values(newErrors).every((msg) => msg === '');
+    return isValid;
   };
-
-
 
   const formatPrice = (price) => {
     return `₱${price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
@@ -188,8 +205,7 @@ const Inventory = () => {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'price' || name === 'stock' ? Number(value) : value,
-        // Reset type when category changes
+        [name]: name === 'price' || name === 'stock' || name === 'weight' ? Number(value) : value,
         ...(name === 'category' && { type: '' })
       }));
     }
@@ -237,9 +253,7 @@ const Inventory = () => {
   // Calculate total pages
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
-  // Modified to check permissions before opening edit modal
   const handleEditClick = async (product) => {
-    // Check if user has edit permission
     if (!permissions.canEdit) {
       toast.error("You don't have permission to edit products");
       return;
@@ -261,16 +275,11 @@ const Inventory = () => {
       discount: product.discount || 0,
       discountLabel: product.discountLabel || '',
     });
-    // Reset edit image preview when opening modal
     setEditImagePreview(null);
     setShowEditModal(true);
   };
 
-
-
-  // Modified to check permissions before opening details modal
   const handleViewDetails = (product) => {
-    // Check if user has view permission
     if (!permissions.canView) {
       toast.error("You don't have permission to view product details");
       return;
@@ -289,7 +298,6 @@ const Inventory = () => {
         [name]: file
       }));
 
-      // Create a preview URL for the selected image in edit modal
       const reader = new FileReader();
       reader.onload = () => {
         setEditImagePreview(reader.result);
@@ -298,13 +306,11 @@ const Inventory = () => {
     } else {
       setEditFormData(prev => ({
         ...prev,
-        [name]: name === 'price' || name === 'stock' ? Number(value) : value,
-        // Reset type when category changes
+        [name]: name === 'price' || name === 'stock' || name === 'weight' ? Number(value) : value,
         ...(name === 'category' && { type: '' })
       }));
     }
   };
-
 
   // Categories and types for dropdowns
   const categories = ['Bikes', 'Gears', 'Parts', 'Accessories'];
@@ -333,12 +339,10 @@ const Inventory = () => {
     'Chain Guard', 'Kickstand', 'Mudguards/Fenders'
   ];
 
-  // Reset to first page when search term changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Modified to check permissions before opening add modal
   const handleAddButtonClick = () => {
     if (!permissions.canAdd) {
       toast.error("You don't have permission to add products");
@@ -348,7 +352,6 @@ const Inventory = () => {
     setShowAddModal(true);
   };
 
-  // Function to reset form and image preview
   const resetForm = () => {
     setFormData({
       name: '',
@@ -367,80 +370,81 @@ const Inventory = () => {
       discountLabel: '',
     });
     setImagePreview(null);
+    setErrors({
+      name: '',
+      category: '',
+      brand: '',
+      price: '',
+      stock: ''
+    });
   };
 
-  // Modified to check permissions before submitting
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Verify permission again as a security measure
     if (!permissions.canAdd) {
       toast.error("You don't have permission to add products");
       return;
     }
 
-    // if (!formData.name || !formData.category || !formData.price || formData.stock < 0) {
-    //   toast.error('Please fill in all required fields.');
-    //   return;
-    // }
-
-    if (validate()) {
-      let imageUrl = null;
-      if (formData.image instanceof File) {
-        imageUrl = await uploadImage(formData.image, 'products');
-      }
-
-      const productData = {
-        ...formData,
-        image: imageUrl || formData.image,
-        createdAt: '2025-07-26 10:55:20',
-        createdBy: currentUserData?.email
-      };
-
-      try {
-        await createProduct(productData);
-        setShowAddModal(false);
-        toast.success(`Product added ${productData.name} successfully`);
-        resetForm(); // Reset form and image preview
-      } catch (err) {
-        console.error('Error creating product:', err);
-        alert('Failed to create product. Please try again.');
-      }
-    }
-    else {
-      toast.error('Please fill in all required fields correctly.');
+    if (!validate()) {
+      return;
     }
 
+    let imageUrl = null;
+    if (formData.image instanceof File) {
+      imageUrl = await uploadImage(formData.image, 'products');
+    }
+
+    const productData = {
+      ...formData,
+      image: imageUrl || formData.image,
+      createdAt: '2025-07-26 10:55:20',
+      createdBy: currentUserData?.email
+    };
+
+    try {
+      await createProduct(productData);
+      setShowAddModal(false);
+      toast.success(`Product added ${productData.name} successfully`);
+      resetForm();
+    } catch (err) {
+      console.error('Error creating product:', err);
+      toast.error('Failed to create product. Please try again.');
+    }
   };
 
-  // Modified to check permissions before deleting
-  const handleDelete = async (id) => {
-    // Verify permission
+  const handleDeleteClick = (product) => {
     if (!permissions.canDelete) {
       toast.error("You don't have permission to delete products");
       return;
     }
+    setProductToDelete(product);
+    setShowDeleteConfirmation(true);
+  };
 
+  const handleDeleteConfirm = async () => {
     try {
-      await deleteProduct(id);
+      await deleteProduct(productToDelete.id);
+      toast.success(`Product ${productToDelete.name} deleted successfully`);
+      setShowDeleteConfirmation(false);
+      setProductToDelete(null);
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Failed to delete product. Please try again.');
+      toast.error('Failed to delete product. Please try again.');
     }
   };
 
-  // Modified to check permissions before submitting edit
   const handleEditSubmit = async (e) => {
     e.preventDefault();
 
-    // Verify permission again as a security measure
     if (!permissions.canEdit) {
       toast.error("You don't have permission to edit products");
       return;
     }
 
     if (!editFormData.name || !editFormData.category || !editFormData.price || editFormData.stock < 0) {
-      alert('Please fill in all required fields.');
+      toast.error('Please fill in all required fields.');
       return;
     }
 
@@ -454,7 +458,7 @@ const Inventory = () => {
         ...editFormData,
         image: imageUrl || editFormData.image,
         updatedAt: Date.now(),
-        updatedBy: currentUserData?.email || 'Admin',
+        updatedBy: currentUserData?.email || 'dmin',
         discountedFinalPrice: (editFormData.price * (1 - (Number(editFormData.discount) || 0) / 100)).toFixed(2) || 0
       };
 
@@ -463,18 +467,22 @@ const Inventory = () => {
       toast.success(`Product updated ${productData.name} successfully`);
     } catch (error) {
       console.error('Error updating product:', error);
-      alert('Failed to update product. Please try again.');
+      toast.error('Failed to update product. Please try again.');
     }
   };
 
-  // Handle modal close with form reset
   const handleAddModalClose = () => {
-    setErrors({})
+    setErrors({
+      name: '',
+      category: '',
+      brand: '',
+      price: '',
+      stock: ''
+    });
     setShowAddModal(false);
     resetForm();
   };
 
-  // Handle edit modal close with image preview reset
   const handleEditModalClose = () => {
     setShowEditModal(false);
     setEditImagePreview(null);
@@ -623,7 +631,7 @@ const Inventory = () => {
                         {permissions.canDelete && (
                           <button
                             className="text-red-500 hover:text-red-400 bg-gray-800 p-1 md:p-2 rounded-md"
-                            onClick={() => handleDelete(product.id)}
+                            onClick={() => handleDeleteClick(product)}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -686,7 +694,7 @@ const Inventory = () => {
                           {permissions.canDelete && (
                             <button
                               className="text-red-500 hover:text-red-400 bg-gray-700 p-2 rounded-md"
-                              onClick={() => handleDelete(product.id)}
+                              onClick={() => handleDeleteClick(product)}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -748,7 +756,7 @@ const Inventory = () => {
                     ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                     : 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700'
                     } text-sm`}
-                >
+                  >
                   <span className="sr-only">Next</span>
                   &raquo;
                 </button>
@@ -756,7 +764,7 @@ const Inventory = () => {
             </div>
           )}
 
-          {/* Add Product Modal - ENHANCED WITH IMAGE PREVIEW */}
+          {/* Add Product Modal */}
           {showAddModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
               <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -790,7 +798,6 @@ const Inventory = () => {
                         {errors.name && (
                           <p className="text-red-500 text-sm">{errors.name}</p>
                         )}
-
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -803,7 +810,6 @@ const Inventory = () => {
                           value={formData.brand}
                           onChange={handleChange}
                           placeholder="Enter brand name"
-
                         />
                         {errors.brand && (
                           <p className="text-red-500 text-sm">{errors.brand}</p>
@@ -855,17 +861,22 @@ const Inventory = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Price (₱) 
+                          Price (₱)
                         </label>
                         <input
                           name='price'
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base appearance-none"
                           placeholder="0.00"
                           value={formData.price}
                           onChange={handleChange}
+                          onKeyDown={(e) => {
+                            if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                         {errors.price && (
                           <p className="text-red-500 text-sm">{errors.price}</p>
@@ -873,16 +884,21 @@ const Inventory = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Stock 
+                          Stock
                         </label>
                         <input
                           name='stock'
                           type="number"
-                          min="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          min="1"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base appearance-none"
                           placeholder="0"
                           value={formData.stock}
                           onChange={handleChange}
+                          onKeyDown={(e) => {
+                            if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '.') {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                         {errors.stock && (
                           <p className="text-red-500 text-sm">{errors.stock}</p>
@@ -897,10 +913,15 @@ const Inventory = () => {
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] text-sm sm:text-base appearance-none"
                           placeholder="0.00"
                           value={formData.weight}
                           onChange={handleChange}
+                          onKeyDown={(e) => {
+                            if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </div>
                     </div>
@@ -998,7 +1019,7 @@ const Inventory = () => {
             </div>
           )}
 
-          {/* Edit Product Modal - ENHANCED WITH IMAGE PREVIEW */}
+          {/* Edit Product Modal */}
           {showEditModal && editProduct && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -1089,7 +1110,7 @@ const Inventory = () => {
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] appearance-none"
                           name='price'
                           value={editFormData.price}
                           onChange={handleEditChange}
@@ -1102,7 +1123,7 @@ const Inventory = () => {
                         <input
                           type="number"
                           min="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] appearance-none"
                           name='stock'
                           value={editFormData.stock}
                           onChange={handleEditChange}
@@ -1114,7 +1135,7 @@ const Inventory = () => {
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] appearance-none"
                           name='weight'
                           value={editFormData.weight}
                           onChange={handleEditChange}
@@ -1130,13 +1151,13 @@ const Inventory = () => {
                         </label>
                         <input
                           type="number"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#ff6900] focus:border-[#ff6900] appearance-none"
                           name='discount'
                           value={editFormData.discount}
                           onChange={(e) => {
                             const value = e.target.value;
-                            if (value.length <= 2) { // Allow up to 2 characters
-                              handleEditChange(e); // Only update state if length is 2 or less
+                            if (value.length <= 2) {
+                              handleEditChange(e);
                             }
                           }}
                         />
@@ -1247,14 +1268,55 @@ const Inventory = () => {
             </div>
           )}
 
-          {/* Product Details Modal - NEW */}
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirmation && productToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Confirm Deletion</h2>
+                  <button
+                    className="text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowDeleteConfirmation(false)}
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <p className="mb-6">
+                  Are you sure you want to delete <span className="font-semibold">{productToDelete.name}</span>? This action cannot be undone.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    onClick={() => setShowDeleteConfirmation(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
+                    onClick={handleDeleteConfirm}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2 inline" size={16} />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Product Details Modal */}
           <ProductDetailsModal
             viewProduct={viewProduct}
             showDetailsModal={showDetailsModal}
             setShowDetailsModal={setShowDetailsModal}
             formatPrice={formatPrice}
           />
-
         </div>
       </div>
     </div>

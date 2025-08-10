@@ -20,9 +20,10 @@ import AccountManage from './pages/admin/AccountManage'
 import OrdersOverview from './pages/admin/OrdersOverview';
 import UserManagement from './pages/admin/UserManagement';
 import UserActivity from './pages/admin/UserActivity';
+import POS from './pages/admin/POS'; 
 
 // Staff pages
-import StaffDashboard from './pages/staff/Dashboard'
+import StaffDashboard from './pages/staff/Dashboard';
 import Cart from './pages/post-auth/Cart'
 import Wishlist from './pages/post-auth/Wishlist';
 import CustomerProfile from './pages/post-auth/CustomerProfile';
@@ -31,7 +32,6 @@ import { useAuth } from './context/authContext/createAuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './middleware/ProtectedRoute';
 import SpinTheWheel from './pages/post-auth/SpinTheWheel';
-// import OrderHistory from './components/OrderHistory';
 
 function App() {
   const { userLoggedIn } = useAuth();
@@ -48,35 +48,20 @@ function App() {
           }
         }} />
         <Routes>
-          {/* Home routes - using unified HomePage component */}
-          {/* <Route path="/" element={<HomePage />} /> */}
+          {/* Public Routes */}
           <Route path="/customer/home" element={<HomePage />} />
+          <Route path="/customer/products" element={<Products />} /> {/* Shop is now public */}
 
           {/* Pre-auth routes */}
           <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
           <Route path="/signup" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Signup />} />
 
           {/* Customer-only routes */}
-          <Route path="/customer/products" element={
-            <ProtectedRoute requiredRoles={['customer']}>
-              <Products />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/bikes-category" element={
-            <ProtectedRoute requiredRoles={['customer']}>
-              <BikesCategory />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/accessories-category" element={
-            <ProtectedRoute requiredRoles={['customer']}>
-              <AccessoriesCategory />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/gears-parts-category" element={
-            <ProtectedRoute requiredRoles={['customer']}>
-              <GearsCategory />
-            </ProtectedRoute>
-          } />
+         <Route path="/customer/bikes-category" element={<BikesCategory />} />
+         
+          <Route path="/customer/accessories-category" element={<AccessoriesCategory />} />
+          
+          <Route path="/customer/gears-parts-category" element={<GearsCategory />} />
           <Route path="/customer/wishlist" element={
             <ProtectedRoute requiredRoles={['customer']}>
               <Wishlist />
@@ -92,18 +77,13 @@ function App() {
               <Cart />
             </ProtectedRoute>
           } />
-          {/* <Route path="/customer/orders" element={
-            <ProtectedRoute requiredRoles={['customer']}>
-              <OrderHistory />
-            </ProtectedRoute>
-          } /> */}
           <Route path="/customer/spin-wheel" element={
             <ProtectedRoute requiredRoles={['customer']}>
               <SpinTheWheel />
             </ProtectedRoute>
           } />
 
-          {/* Admin/Staff routes - accessible by both admin and staff */}
+          {/* Admin/Staff routes */}
           <Route path="/admin/dashboard" element={
             <ProtectedRoute requiredRoles={['admin', 'staff']}>
               <AdminDashboard />
@@ -134,24 +114,18 @@ function App() {
               <UserActivity />
             </ProtectedRoute>
           } />
-
-          {/* Admin-only routes (if you have any) */}
-          {/* Example:
-          <Route path="/admin/system-settings" element={
-            <ProtectedRoute requiredRoles={['admin']}>
-              <SystemSettings />
+          <Route path="/admin/pos" element={
+            <ProtectedRoute requiredRoles={['admin', 'staff']}>
+              <POS />
             </ProtectedRoute>
           } />
-          */}
 
-          {/* Staff routes (if you want separate staff-only routes) */}
-          {/* <Route path="/staff/dashboard" element={
-            <ProtectedRoute requiredRoles={['staff']}>
-              <StaffDashboard />
-            </ProtectedRoute>
-          } /> */}
+          {/* Category detail routes */}
+          <Route path="/customer/bikes-category/:id" element={<BikesCategory />} />
+          <Route path="/customer/accessories-category/:id" element={<AccessoriesCategory />} />
+          <Route path="/customer/gears-category/:id" element={<GearsCategory />} />
 
-          {/* Catch-all route */}
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/customer/home" />} />
         </Routes>
       </div>

@@ -6,8 +6,14 @@ import {
     updateCartItemQuantity as updateQuantityService,
     removeFromCart as removeItemService,
     clearCart as clearCartService
-} from '../services/cartService'
+} from '../services/cartService';
 import { toast } from 'sonner';
+
+// Helper: safe number parsing
+function safeNumber(value, fallback = 0) {
+    const num = parseFloat(value);
+    return isNaN(num) ? fallback : num;
+}
 
 export function useCart() {
     const [cart, setCart] = useState([]);
@@ -17,20 +23,6 @@ export function useCart() {
     const [totalPrice, setTotalPrice] = useState(0);
     const [totalDiscount, setTotalDiscount] = useState(0);
 
-    const calculateItemDiscountAmount = useCallback((item) => {
-        const originalPrice = parseFloat(item.originalPrice || 0);
-        const discountPercentage = parseFloat(item.discount || 0);
-        const quantity = parseFloat(item.quantity || 0); // Quantity should also be a number
-
-        if (isNaN(originalPrice) || isNaN(discountPercentage) || isNaN(quantity) || originalPrice <= 0 || discountPercentage <= 0) {
-            return 0; // No valid discount or price
-        }
-
-        const discountAmountPerItem = originalPrice * (discountPercentage / 100);
-        return discountAmountPerItem * quantity;
-    }, []);
-
-    // Subscribe to cart changes in real-time
     useEffect(() => {
         const user = auth.currentUser;
         if (!user) {
@@ -46,108 +38,99 @@ export function useCart() {
         const db = getDatabase();
         const cartRef = ref(db, `users/${user.uid}/cart`);
 
-        const unsubscribe = onValue(cartRef, (snapshot) => {
-            try {
-                if (!snapshot.exists()) {
-                    setCart([]);
-                    setItemCount(0);
-                    setTotalPrice(0);
-                    setTotalDiscount(0);
-                } else {
-                    const cartData = snapshot.val();
-                    const cartItems = Object.keys(cartData).map(key => ({
-                        ...cartData[key],
-                        productId: key,
-                    }));
+        const unsubscribe = onValue(
+            cartRef,
+            (snapshot) => {
+                try {
+                    if (!snapshot.exists()) {
+                        setCart([]);
+                        setItemCount(0);
+                        setTotalPrice(0);
+                        setTotalDiscount(0);
+                    } else {
+                        const cartData = snapshot.val();
+                        const cartItems = Object.keys(cartData).map((key) => ({
+                            ...cartData[key],
+                            productId: key,
+                        }));
 
-                    setCart(cartItems);
+                        setCart(cartItems);
 
-                    let currentItemCount = 0;
-                    let currentTotalPrice = 0;
-                    let currentTotalDiscount = 0;
+                        let currentItemCount = 0;
+                        let currentTotalPrice = 0;
+                        let currentTotalDiscount = 0;
 
-                    cartItems.forEach(item => {
-
-                        const quantity = parseFloat(item.quantity || 0);
-                        if (isNaN(quantity) || quantity <= 0) {
-                            console.warn(`Invalid quantity for item ${item.productId}: ${item.quantity}`);
-                            return;
-                        }
-
-                        currentItemCount += quantity;
-
-                        // Parse all price-related fields
-                        const originalPrice = parseFloat(item.originalPrice || 0);
-                        const discountedFinalPrice = parseFloat(item.discountedFinalPrice || 0);
-                        const discountAmount = parseFloat(item.discountAmount || 0);
-
-                        let itemSubtotal = 0;
-                        let itemDiscountTotal = 0;
-
-                        // Case 1: Item has a discounted final price
-                        if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
-                            itemSubtotal = discountedFinalPrice * quantity;
-
-                            // Calculate discount amount if not explicitly provided
-                            if (discountAmount > 0 && !isNaN(discountAmount)) {
-                                itemDiscountTotal = discountAmount * quantity;
-                            } else if (originalPrice > 0) {
-                                // Calculate discount based on price difference
-                                const discountPerItem = originalPrice - discountedFinalPrice;
-                                itemDiscountTotal = discountPerItem * quantity;
+                        cartItems.forEach((item) => {
+                            const quantity = safeNumber(item.quantity, 0);
+                            if (quantity <= 0) {
+                                console.warn(`Invalid quantity for item ${item.productId}: ${item.quantity}`);
+                                return;
                             }
-                        }
-                        // Case 2: Item has original price but no discount
-                        else if (originalPrice > 0 && !isNaN(originalPrice)) {
-                            itemSubtotal = originalPrice * quantity;
-                            itemDiscountTotal = 0;
-                        }
-                        // Case 3: Fallback to any available price field
-                        else {
-                            const fallbackPrice = parseFloat(item.price || 0);
-                            if (fallbackPrice > 0 && !isNaN(fallbackPrice)) {
-                                itemSubtotal = fallbackPrice * quantity;
+
+                            currentItemCount += quantity;
+
+                            const originalPrice = safeNumber(item.originalPrice);
+                            const discountedFinalPrice = safeNumber(item.discountedFinalPrice);
+                            const discountAmount = safeNumber(item.discountAmount);
+
+                            let itemSubtotal = 0;
+                            let itemDiscountTotal = 0;
+
+                            if (discountedFinalPrice > 0) {
+                                itemSubtotal = discountedFinalPrice * quantity;
+                                itemDiscountTotal =
+                                    discountAmount > 0
+                                        ? discountAmount * quantity
+                                        : originalPrice > 0
+                                        ? (originalPrice - discountedFinalPrice) * quantity
+                                        : 0;
+                            } else if (originalPrice > 0) {
+                                itemSubtotal = originalPrice * quantity;
                                 itemDiscountTotal = 0;
                             } else {
-                                console.warn(`No valid price found for item ${item.productId}`);
-                                itemSubtotal = 0;
+                                const fallbackPrice = safeNumber(item.price);
+                                if (fallbackPrice > 0) {
+                                    itemSubtotal = fallbackPrice * quantity;
+                                } else {
+                                    console.warn(`No valid price found for item ${item.productId}`);
+                                }
                                 itemDiscountTotal = 0;
                             }
-                        }
 
-                  
+                            currentTotalPrice += itemSubtotal;
+                            currentTotalDiscount += itemDiscountTotal;
+                        });
 
-                        currentTotalPrice += itemSubtotal;
-                        currentTotalDiscount += itemDiscountTotal;
-                    });
-
-
-                    setItemCount(currentItemCount);
-                    setTotalPrice(currentTotalPrice);
-                    setTotalDiscount(currentTotalDiscount);
+                        setItemCount(currentItemCount);
+                        setTotalPrice(currentTotalPrice);
+                        setTotalDiscount(currentTotalDiscount);
+                    }
+                    setError(null);
+                } catch (err) {
+                    console.error("Error processing cart snapshot:", err);
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
                 }
-                setError(null);
-            } catch (err) {
-                console.error("Error processing cart snapshot:", err);
+            },
+            (err) => {
+                console.error("Firebase onValue error:", err);
                 setError(err.message);
-            } finally {
                 setLoading(false);
             }
-        }, (err) => {
-            console.error("Firebase onValue error:", err);
-            setError(err.message);
-            setLoading(false);
-        });
+        );
 
         return () => unsubscribe();
-    }, []); // Remove calculateItemDiscountAmount dependency since we're not using it anymore
+    }, []);
 
-
-    // Add item to cart
     const addToCart = useCallback(async (productId, quantity, productDetails) => {
         try {
+            // Warn if missing key price info
+            if (!productDetails || (!productDetails.originalPrice && !productDetails.price)) {
+                console.warn(`Product ${productId} has missing price details:`, productDetails);
+            }
             setError(null);
-            toast.success(`Item ${productDetails.name} added to cart successfully!`);
+            toast.success(`Item ${productDetails?.name || "Unnamed"} added to cart successfully!`);
             return await addToCartService(productId, quantity, productDetails);
         } catch (err) {
             setError(err.message);
@@ -156,7 +139,6 @@ export function useCart() {
         }
     }, []);
 
-    // Update item quantity
     const updateQuantity = useCallback(async (productId, quantity) => {
         try {
             setError(null);
@@ -168,7 +150,6 @@ export function useCart() {
         }
     }, []);
 
-    // Remove item from cart
     const removeItem = useCallback(async (productId) => {
         try {
             setError(null);
@@ -181,7 +162,6 @@ export function useCart() {
         }
     }, []);
 
-    // Clear entire cart
     const clearCart = useCallback(async () => {
         try {
             setError(null);
@@ -193,7 +173,6 @@ export function useCart() {
         }
     }, []);
 
-    // Format the timestamp (kept as is)
     const formatTimestamp = useCallback(() => {
         const now = new Date();
         const year = now.getFullYear();
@@ -202,7 +181,6 @@ export function useCart() {
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
-
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }, []);
 

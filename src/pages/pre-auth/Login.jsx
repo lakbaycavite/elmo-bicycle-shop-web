@@ -58,12 +58,21 @@ function Login() {
               const userRecord = await getUserById(user.uid);
               const role = userRecord.role || 'customer';
 
+toast.success('Successfully logged in!', {
+  position: 'bottom-right',
+  duration: 3000,
+});
+
               // Redirect based on role
-              if (role === 'admin' || role === 'staff') {
-                navigate('/admin/dashboard');
-              } else {
-                navigate('/customer/home');
-              }
+              // Redirect based on role
+if (role === 'admin') {
+  navigate('/admin/dashboard');
+} else if (role === 'staff') {
+  navigate('/admin/pos');
+} else {
+  navigate('/customer/home');
+}
+
             } catch (error) {
               if (error.message === 'ACCOUNT_DISABLED') {
                 toast.error('Your account has been disabled. Please contact support.');
@@ -169,7 +178,7 @@ function Login() {
                   ELMO
                 </h2>
               </label>
-              <h2>Bicycle Shop</h2>
+              <h2>Bike Shop</h2>
             </div>
             {/* Added responsive classes here: hidden on small screens, block on large screens */}
             <img

@@ -3,19 +3,37 @@ import Navbar from '../../components/Navbar'
 import Slider from 'react-slick'
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { CircleArrowRight } from 'lucide-react';
+import { CircleArrowRight, Heart } from 'lucide-react';
 
 function Products() {
   const navigate = useNavigate()
 
-  const images = [
-    '/images/bike-pd-1.jpg',
-    '/images/bike-pd-1.jpg',
-    '/images/bike-pd-1.jpg',
-    '/images/bike-pd-1.jpg',
-    '/images/bike-pd-1.jpg',
-    '/images/bike-pd-1.jpg',
-    '/images/bike-pd-1.jpg',
+  // Replace with your actual authentication logic
+  const isLoggedIn = false
+
+  // Example product data with discount
+  const bikes = [
+    { image: '/images/bike-pd-1.jpg', discount: 15 },
+    { image: '/images/bike-pd-1.jpg', discount: 10 },
+    { image: '/images/bike-pd-1.jpg', discount: 20 },
+    { image: '/images/bike-pd-1.jpg', discount: 5 },
+    { image: '/images/bike-pd-1.jpg', discount: 0 },
+    { image: '/images/bike-pd-1.jpg', discount: 12 },
+    { image: '/images/bike-pd-1.jpg', discount: 8 },
+  ]
+
+  const accessories = [
+    { image: '/images/bikehelmet1.png', discount: 5 },
+    { image: '/images/bikehelmet1.png', discount: 0 },
+    { image: '/images/bikehelmet1.png', discount: 10 },
+    { image: '/images/bikehelmet1.png', discount: 7 },
+  ]
+
+  const gearsParts = [
+    { image: '/images/bikehelmet1.png', discount: 12 },
+    { image: '/images/bikehelmet1.png', discount: 0 },
+    { image: '/images/bikehelmet1.png', discount: 8 },
+    { image: '/images/bikehelmet1.png', discount: 15 },
   ]
 
   const sectionTitles = [
@@ -88,7 +106,7 @@ function Products() {
 
   return (
     <div className="h-full bg-[#181818] text-white">
-      <Navbar isLoggedIn={true} userType="customer" />
+      <Navbar isLoggedIn={isLoggedIn} userType="customer" />
 
       <div className='flex flex-col items-center justify-center h-full py-12'>
         {/* Hero Section */}
@@ -138,12 +156,24 @@ function Products() {
         {/* Product Slider */}
         <div className='w-full px-2 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 mt-8'>
           <Slider {...sliderSettings}>
-            {images.map((image, index) => (
+            {bikes.map((bike, index) => (
               <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
                 <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
+                  {/* Discount badge */}
+                  {bike.discount > 0 && (
+                    <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
+                      {bike.discount}% OFF
+                    </span>
+                  )}
+                  {/* Heart icon only if logged in */}
+                  {isLoggedIn && (
+                    <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
+                      <Heart className="text-orange-500" />
+                    </button>
+                  )}
                   <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
                     <img
-                      src={image}
+                      src={bike.image}
                       alt={`Bike ${index + 1}`}
                       className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
                     />
@@ -166,153 +196,89 @@ function Products() {
       {/* Accessories Section */}
       <div className='flex flex-col items-center justify-center h-full py-12  bg-gray-800'>
         <h1><span className="text-3xl font-bold text-orange-500 mb-2">Accessories</span></h1>
-        <div className='flex flex-row  gap-20 max-w-[90%] mt-8 h-[50%]  items-center'>
-          {/* Left Description */}
-          <div className=" bg-gray-900 rounded-xl p-6 shadow-lg w-[50%] h-[500px] ">
-            <div className="mb-6">
-              <h1 className='text-2xl font-bold text-orange-500 mb-3'>
-                <span className='text-orange-500'>Ride with Confidence!</span>
-              </h1>
-              <p className='text-gray-300 text-sm md:text-base'>
-                Discover premium bikes, gear, and expert services at Elmo Bicycle Shop.
-                We're committed to quality, transparency, and your cycling journey.
-              </p>
-            </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Quality Guaranteed
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Your satisfaction is our priority with 100% quality promise.
-                </p>
+        <div className='w-full px-2 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 mt-8'>
+          <Slider {...sliderSettings}>
+            {accessories.map((acc, index) => (
+              <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
+                <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
+                  {/* Discount badge */}
+                  {acc.discount > 0 && (
+                    <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
+                      {acc.discount}% OFF
+                    </span>
+                  )}
+                  {/* Heart icon only if logged in */}
+                  {isLoggedIn && (
+                    <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
+                      <Heart className="text-orange-500" />
+                    </button>
+                  )}
+                  <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
+                    <img
+                      src={acc.image}
+                      alt={`Accessory ${index + 1}`}
+                      className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
+                    />
+                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                      <button
+                        className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
+                        onClick={() => navigate(`/accessory/${index + 1}`)}
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Expert Advice
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Get personalized recommendations from our specialists.
-                </p>
-              </div>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Trusted Service
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Certified mechanics for tune-ups and custom builds.
-                </p>
-              </div>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Always Here
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Assistance online, by phone, or in-store.
-                </p>
-              </div>
-            </div>
-          </div>
-          {/*Right Side*/}
-          <div className='w-[50%] flex items-center justify-center flex-col rounded-2xl p-4 bg-gray-900'>
-            <h1><span className='text-orange-500'>Featured Accessory!</span></h1>
-            <img
-              src="/images/bikehelmet1.png"
-              alt="Elmo Bicycle Shop Accessories"
-              className="w-[300px] h-[300px] object-contain rounded-xl mt-4 "
-            />
-            <p className='bg-gray-700 p-3 rounded-lg'>Our certified mechanics provide precision tune-ups and repairs using top-tier tools and genuine parts,
-              ensuring your bike performs at its peak. Every service comes with a 100% satisfaction guarantee—because your ride should be flawless.
-              From beginners to pros, we listen to your needs and offer tailored advice—no pushy sales, just honest recommendations.
-              Plus, our after-purchase support ensures you’re never left stranded.</p>
-            <button
-              className='mt-8 px-8 py-3 bg-orange-500 text-white rounded-2l font-semibold hover:bg-orange-600 transition-colors shadow-lg w-auto flex gap-3'
-              onClick={() => navigate('/customer/accessories-category')}
-            >
-              View All Accessories  <CircleArrowRight />
-
-            </button>
-          </div>
+            ))}
+          </Slider>
         </div>
       </div>
 
-      {/* Accessories Section */}
-      <div className='flex flex-col items-center justify-center h-full py-12  '>
+      {/* Gears and Parts Section */}
+      <div className='flex flex-col items-center justify-center h-full py-12'>
         <h1><span className="text-3xl font-bold text-orange-500 mb-2">Gears and Parts</span></h1>
-        <div className='flex flex-row  gap-20 max-w-[90%] mt-8 h-[50%]  items-center'>
-          {/*Left Side*/}
-          <div className='w-[50%] flex items-center justify-center flex-col rounded-2xl p-4 bg-gray-900'>
-            <h1><span className='text-orange-500'>Featured Gear!</span></h1>
-            <img
-              src="/images/bikehelmet1.png"
-              alt="Elmo Bicycle Shop Accessories"
-              className="w-[300px] h-[300px] object-contain rounded-xl mt-4 "
-            />
-            <p className='bg-gray-700 p-3 rounded-lg'>Our certified mechanics provide precision tune-ups and repairs using top-tier tools and genuine parts,
-              ensuring your bike performs at its peak. Every service comes with a 100% satisfaction guarantee—because your ride should be flawless.
-              From beginners to pros, we listen to your needs and offer tailored advice—no pushy sales, just honest recommendations.
-              Plus, our after-purchase support ensures you’re never left stranded.</p>
-            <button
-              className='mt-8 px-8 py-3 bg-orange-500 text-white rounded-2l font-semibold hover:bg-orange-600 transition-colors shadow-lg w-auto flex gap-3'
-              onClick={() => navigate('/customer/gears-parts-category')}
-            >
-              View All Gears and Parts  <CircleArrowRight />
-
-            </button>
-          </div>
-          {/* Right Description */}
-          <div className=" bg-gray-900 rounded-xl p-6 shadow-lg w-[50%] h-[500px] ">
-            <div className="mb-6">
-              <h1 className='text-2xl font-bold text-orange-500 mb-3'>
-                <span className='text-orange-500'>Ride with Confidence!</span>
-              </h1>
-              <p className='text-gray-300 text-sm md:text-base'>
-                Discover premium bikes, gear, and expert services at Elmo Bicycle Shop.
-                We're committed to quality, transparency, and your cycling journey.
-              </p>
-            </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Quality Guaranteed
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Your satisfaction is our priority with 100% quality promise.
-                </p>
+        <div className='w-full px-2 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 mt-8'>
+          <Slider {...sliderSettings}>
+            {gearsParts.map((gear, index) => (
+              <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
+                <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
+                  {/* Discount badge */}
+                  {gear.discount > 0 && (
+                    <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
+                      {gear.discount}% OFF
+                    </span>
+                  )}
+                  {/* Heart icon only if logged in */}
+                  {isLoggedIn && (
+                    <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
+                      <Heart className="text-orange-500" />
+                    </button>
+                  )}
+                  <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
+                    <img
+                      src={gear.image}
+                      alt={`Gear ${index + 1}`}
+                      className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
+                    />
+                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                      <button
+                        className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
+                        onClick={() => navigate(`/gear/${index + 1}`)}
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Expert Advice
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Get personalized recommendations from our specialists.
-                </p>
-              </div>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Trusted Service
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Certified mechanics for tune-ups and custom builds.
-                </p>
-              </div>
-              <div className='bg-gray-700 p-3 rounded-lg'>
-                <h2 className='text-base font-bold text-orange-400 mb-1 text-[15px]'>
-                  Always Here
-                </h2>
-                <p className='text-gray-300 text-xs md:text-sm'>
-                  Assistance online, by phone, or in-store.
-                </p>
-              </div>
-            </div>
-          </div>
+            ))}
+          </Slider>
         </div>
       </div>
 
       {/* Custom CSS for the title carousel */}
-      <style jsx>{`
+      <style>{`
         .title-carousel .slick-track {
           display: flex;
           align-items: center;
