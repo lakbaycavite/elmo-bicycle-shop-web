@@ -114,33 +114,43 @@ const CustomerProfile = () => {
     };
 
     const handleChangePassword = async (e) => {
-        e.preventDefault();
-        setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error("New password and confirm password do not match.");
-            setLoading(false);
-            return;
-        } else {
-            await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
-                .then(() => {
-                    toast.success("Password changed successfully");
-                    setPasswordData({
-                        currentPassword: '',
-                        newPassword: '',
-                        confirmPassword: ''
-                    });
-                    setIsChangePasswordModalOpen(false);
-                })
-                .catch(() => {
-                    toast.error("New password and confirm password do not match or wrong current password");
-                })
-                .finally(() => {
-                    setLoading(false);
-                    setIsChangePasswordModalOpen(false);
-                })
-        }
-    };
+  // Check password length
+  if (passwordData.newPassword.length < 8) {
+    toast.error("Password must be at least 8 characters long.");
+    setLoading(false);
+    return;
+  }
+
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    toast.error("New password and confirm password do not match.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+      .then(() => {
+        toast.success("Password changed successfully");
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setIsChangePasswordModalOpen(false);
+      })
+      .catch((error) => {
+        toast.error(error.message || "Password change failed. Please check your current password.");
+      });
+  } catch (error) {
+    toast.error(`Error changing password: ${error.message}`);
+    console.error("Error changing password:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -673,80 +683,112 @@ const CustomerProfile = () => {
                 </div>
             </div>
 
-            {/* Change Password Modal */}
-            {isChangePasswordModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 text-white rounded-lg p-6 w-full max-w-md border border-gray-700">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-[#ff6900]">Change Password</h2>
-                            <button
-                                onClick={() => setIsChangePasswordModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-200"
-                            >
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
+{/* Change Password Modal */}
+{isChangePasswordModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="bg-gray-800 text-white rounded-lg p-6 w-full max-w-md border border-gray-700">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-[#ff6900]">Change Password</h2>
+        <button
+          onClick={() => setIsChangePasswordModalOpen(false)}
+          className="text-gray-400 hover:text-gray-200"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
 
-                        <form onSubmit={handleChangePassword}>
-                            <div className="mb-4">
-                                <label className="block text-gray-300 mb-2">Current Password</label>
-                                <input
-                                    type="password"
-                                    name="currentPassword"
-                                    value={passwordData.currentPassword}
-                                    onChange={handlePasswordInputChange}
-                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
-                                    required
-                                />
-                            </div>
+      <form onSubmit={handleChangePassword}>
+        <div className="mb-4">
+          <label className="block text-gray-300 mb-2">Current Password</label>
+          <input
+            type="password"
+            name="currentPassword"
+            value={passwordData.currentPassword}
+            onChange={handlePasswordInputChange}
+            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
+            required
+          />
+        </div>
 
-                            <div className="mb-4">
-                                <label className="block text-gray-300 mb-2">New Password</label>
-                                <input
-                                    type="password"
-                                    name="newPassword"
-                                    value={passwordData.newPassword}
-                                    onChange={handlePasswordInputChange}
-                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
-                                    required
-                                />
-                            </div>
+        <div className="mb-4">
+          <label className="block text-gray-300 mb-2">New Password</label>
+          <input
+            type="password"
+            name="newPassword"
+            value={passwordData.newPassword}
+            onChange={handlePasswordInputChange}
+            className={`w-full p-2 bg-gray-700 border ${
+              passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 
+                ? 'border-red-500' 
+                : 'border-gray-600'
+            } rounded text-white focus:border-[#ff6900] focus:outline-none`}
+            required
+            minLength={8}
+          />
+          {passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 && (
+            <p className="text-red-400 text-xs mt-1">Password must be at least 8 characters</p>
+          )}
+        </div>
 
-                            <div className="mb-6">
-                                <label className="block text-gray-300 mb-2">Confirm New Password</label>
-                                <input
-                                    type="password"
-                                    name="confirmPassword"
-                                    value={passwordData.confirmPassword}
-                                    onChange={handlePasswordInputChange}
-                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
-                                    required
-                                />
-                            </div>
+        <div className="mb-6">
+          <label className="block text-gray-300 mb-2">Confirm New Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={passwordData.confirmPassword}
+            onChange={handlePasswordInputChange}
+            className={`w-full p-2 bg-gray-700 border ${
+              passwordData.confirmPassword.length > 0 && 
+              (passwordData.confirmPassword !== passwordData.newPassword || 
+               passwordData.confirmPassword.length < 8)
+                ? 'border-red-500' 
+                : 'border-gray-600'
+            } rounded text-white focus:border-[#ff6900] focus:outline-none`}
+            required
+            minLength={8}
+          />
+          {passwordData.confirmPassword.length > 0 && 
+            passwordData.confirmPassword !== passwordData.newPassword && (
+            <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
+          )}
+          {passwordData.confirmPassword.length > 0 && 
+            passwordData.confirmPassword.length < 8 && (
+            <p className="text-red-400 text-xs mt-1">Password must be at least 8 characters</p>
+          )}
+        </div>
 
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsChangePasswordModalOpen(false)}
-                                    className="px-4 py-2 border border-gray-600 rounded text-gray-300 hover:bg-gray-700"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-[#ff6900] text-white rounded hover:bg-[#e55e00] flex items-center justify-center"
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <Loader2 className="animate-spin h-5 w-5" />
-                                    ) : "Save Password"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
+        <div className="flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={() => setIsChangePasswordModalOpen(false)}
+            className="px-4 py-2 border border-gray-600 rounded text-gray-300 hover:bg-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className={`px-4 py-2 rounded flex items-center justify-center ${
+              passwordData.newPassword.length >= 8 && 
+              passwordData.confirmPassword.length >= 8 &&
+              passwordData.newPassword === passwordData.confirmPassword
+                ? 'bg-[#ff6900] hover:bg-[#e55e00] text-white'
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            }`}
+            disabled={
+              passwordData.newPassword.length < 8 || 
+              passwordData.confirmPassword.length < 8 ||
+              passwordData.newPassword !== passwordData.confirmPassword
+            }
+          >
+            {loading ? (
+              <Loader2 className="animate-spin h-5 w-5" />
+            ) : "Save Password"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
             {/* Rating Modal */}
             <ProductRatingModal
                 show={showRatingModal}

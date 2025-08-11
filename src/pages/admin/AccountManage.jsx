@@ -346,28 +346,38 @@ function AccountManage() {
   );
 
   const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setIsChangePasswordModalOpen(true);
+  e.preventDefault();
+  
+  // Check password length
+  if (passwordData.newPassword.length < 8) {
+    toast.error("Password must be at least 8 characters long.");
+    return;
+  }
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("New password and confirm password do not match.");
-      return;
-    } else {
-      await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
-        .then(() => {
-          toast.success('Password changed successfully!');
-          setPasswordData({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-          });
-          setIsChangePasswordModalOpen(false);
-        })
-        .catch(() => {
-          toast.error(`New password and confirm password do not match or wrong current password`);
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    toast.error("New password and confirm password do not match.");
+    return;
+  }
+
+  try {
+    await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+      .then(() => {
+        toast.success('Password changed successfully!');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
         });
-    }
-  };
+        setIsChangePasswordModalOpen(false);
+      })
+      .catch((error) => {
+        toast.error(error.message || "Password change failed. Please check your current password.");
+      });
+  } catch (error) {
+    toast.error(`Error changing password: ${error.message}`);
+    console.error("Error changing password:", error);
+  }
+};
 
   const handleChangeEmail = async (e) => {
     e.preventDefault();
@@ -918,76 +928,110 @@ function AccountManage() {
             </div>
           )}
 
-          {/* Change Password Modal */}
-          {isChangePasswordModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-orange-500">Change Password</h2>
-                  <button
-                    onClick={() => setIsChangePasswordModalOpen(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
+{/* Change Password Modal */}
+{isChangePasswordModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-orange-500">Change Password</h2>
+        <button
+          onClick={() => setIsChangePasswordModalOpen(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
 
-                <form onSubmit={handleChangePassword}>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Current Password</label>
-                    <input
-                      type="password"
-                      name="currentPassword"
-                      value={passwordData.currentPassword}
-                      onChange={handlePasswordInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
+      <form onSubmit={handleChangePassword}>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Current Password</label>
+          <input
+            type="password"
+            name="currentPassword"
+            value={passwordData.currentPassword}
+            onChange={handlePasswordInputChange}
+            className="w-full p-2 border rounded"
+            required
+          />
+        </div>
 
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">New Password</label>
-                    <input
-                      type="password"
-                      name="newPassword"
-                      value={passwordData.newPassword}
-                      onChange={handlePasswordInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-gray-700 mb-2">Confirm New Password</label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={passwordData.confirmPassword}
-                      onChange={handlePasswordInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsChangePasswordModalOpen(false)}
-                      className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
-                    >
-                      Save Change
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">New Password</label>
+          <input
+            type="password"
+            name="newPassword"
+            value={passwordData.newPassword}
+            onChange={handlePasswordInputChange}
+            className={`w-full p-2 border rounded ${
+              passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 
+                ? 'border-red-500' 
+                : 'border-gray-300'
+            }`}
+            required
+            minLength={8}
+          />
+          {passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 && (
+            <p className="text-red-500 text-sm mt-1">Password must be at least 8 characters</p>
           )}
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-gray-700 mb-2">Confirm New Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={passwordData.confirmPassword}
+            onChange={handlePasswordInputChange}
+            className={`w-full p-2 border rounded ${
+              passwordData.confirmPassword.length > 0 && 
+              (passwordData.confirmPassword !== passwordData.newPassword || 
+               passwordData.confirmPassword.length < 8)
+                ? 'border-red-500' 
+                : 'border-gray-300'
+            }`}
+            required
+            minLength={8}
+          />
+          {passwordData.confirmPassword.length > 0 && 
+            passwordData.confirmPassword !== passwordData.newPassword && (
+            <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
+          )}
+          {passwordData.confirmPassword.length > 0 && 
+            passwordData.confirmPassword.length < 8 && (
+            <p className="text-red-500 text-sm mt-1">Password must be at least 8 characters</p>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={() => setIsChangePasswordModalOpen(false)}
+            className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className={`px-4 py-2 ${
+              passwordData.newPassword.length >= 8 && 
+              passwordData.confirmPassword.length >= 8 &&
+              passwordData.newPassword === passwordData.confirmPassword
+                ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            } rounded`}
+            disabled={
+              passwordData.newPassword.length < 8 || 
+              passwordData.confirmPassword.length < 8 ||
+              passwordData.newPassword !== passwordData.confirmPassword
+            }
+          >
+            Save Change
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
           {/* Change Email Modal */}
          {isChangeEmailModalOpen && (
