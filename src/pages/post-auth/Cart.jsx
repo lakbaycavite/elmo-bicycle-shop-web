@@ -13,7 +13,6 @@ import { database } from "../../firebase/firebase";
 import { ref, update, onValue, get } from "firebase/database";
 import { getAuth } from "firebase/auth";
 
-
 const Cart = () => {
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [orderCompleted, setOrderCompleted] = useState(false);
@@ -25,6 +24,9 @@ const Cart = () => {
     const [currentOrderId, setCurrentOrderId] = useState(null);
     const [isMobile, setIsMobile] = useState(false);
     const [productStocks, setProductStocks] = useState({});
+    const [appliedVoucherDiscount, setAppliedVoucherDiscount] = useState(0);
+    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState([]);
     const carouselRef = useRef(null);
     const auth = getAuth();
 
@@ -37,11 +39,19 @@ const Cart = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Fetch real-time stock data
+    // Fetch all products for search functionality
     useEffect(() => {
-        const stocksRef = ref(database, 'products');
-        const unsubscribe = onValue(stocksRef, (snapshot) => {
+        const productsRef = ref(database, 'products');
+        const unsubscribe = onValue(productsRef, (snapshot) => {
             if (snapshot.exists()) {
+                const data = snapshot.val();
+                const productsArray = Object.entries(data).map(([id, product]) => ({
+                    id,
+                    ...product
+                }));
+                setAllProducts(productsArray);
+                
+                // Also set product stocks
                 const stocks = {};
                 snapshot.forEach((childSnapshot) => {
                     stocks[childSnapshot.key] = childSnapshot.val().stock || 0;
@@ -51,6 +61,44 @@ const Cart = () => {
         });
         return () => unsubscribe();
     }, []);
+
+    // Search filter effect
+    useEffect(() => {
+        if (searchFilter.trim() === "") {
+            setFilteredProducts([]);
+            return;
+        }
+
+        const results = allProducts.filter((product) => {
+            const nameMatch = product.name?.toLowerCase().includes(searchFilter.toLowerCase());
+            const categoryMatch = product.category?.toLowerCase().includes(searchFilter.toLowerCase());
+            return nameMatch || categoryMatch;
+        });
+
+        setFilteredProducts(results);
+    }, [searchFilter, allProducts]);
+
+    const handleProductSelect = (product) => {
+        if (!product || !product.category) return;
+        
+        let categoryPath = "";
+        const category = product.category.toLowerCase();
+        
+        if (category === "bikes") {
+            categoryPath = "bikes-category";
+        } else if (category === "accessories") {
+            categoryPath = "accessories-category";
+        } else if (["gears", "parts"].includes(category)) {
+            categoryPath = "gears-category";
+        } else {
+            console.warn("Unknown category:", category);
+            return;
+        }
+        
+        navigate(`/customer/${categoryPath}/${product.id}`);
+        setSearchFilter("");
+        setFilteredProducts([]);
+    };
 
     const { cart, updateQuantity, removeItem, totalPrice, totalDiscount, addToCart, clearCart } = useCart();
     const { products, getProduct } = useProducts();
@@ -70,18 +118,8 @@ const Cart = () => {
         return shuffled.slice(0, 12);
     }, [availableProducts]);
 
-    const filteredProducts = useMemo(() => {
-        if (searchFilter) {
-            return availableProducts.filter(product =>
-                product.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                product.category.toLowerCase().includes(searchFilter.toLowerCase())
-            );
-        }
-        return randomProducts;
-    }, [availableProducts, searchFilter, randomProducts]);
-
     const scrollToCenter = (index) => {
-        if (carouselRef.current && filteredProducts.length > 0) {
+        if (carouselRef.current && randomProducts.length > 0) {
             const container = carouselRef.current;
             const item = container.children[index];
             if (item) {
@@ -132,50 +170,59 @@ const Cart = () => {
     }, []);
 
     useEffect(() => {
-        if (filteredProducts.length > 0) {
+        if (randomProducts.length > 0) {
             scrollToCenter(currentBatch);
         }
-    }, [currentBatch, filteredProducts]);
+    }, [currentBatch, randomProducts]);
 
- // Reduce product stock after checkout
-const updateProductStock = async (cart) => {
-     const auth = getAuth();
-  const updates = {};
-  for (const item of cart) {
-    const currentStock = productStocks[item.id] ?? 0;
-    const newStock = Math.max(currentStock - item.quantity, 0);
-    updates[`products/${item.id}/stock`] = newStock;
-  }
-console.log("User ID:", auth.currentUser?.uid);
-console.log("User role (read from DB):", await get(ref(database, `users/${auth.currentUser.uid}/role`)).then(snap => snap.val()));
-console.log("Updates payload:", updates);
-  try {
-    await update(ref(database), updates);
-    // no toast here, just return success
-    return true;
-  } catch (error) {
-    console.error("Error updating stock:", error);
-    toast.error("Failed to update product stocks");
-    return false;
-  }
-};
+    const validateStockBeforeCheckout = () => {
+        for (const item of cart) {
+            const availableStock = productStocks[item.id] || 0;
+            if (item.quantity > availableStock) {
+                toast.error(`Not enough stock for ${item.name}. Only ${availableStock} available`);
+                return false;
+            }
+        }
+        return true;
+    };
 
-const handleCheckoutComplete = async (orderId) => {
-  const stockUpdated = await updateProductStock(cart);
-  if (!stockUpdated) return;
+    const updateProductStock = async (cart) => {
+        const updates = {};
+        for (const item of cart) {
+            const currentStock = productStocks[item.id] ?? 0;
+            const newStock = Math.max(currentStock - item.quantity, 0);
+            updates[`products/${item.id}/stock`] = newStock;
+        }
+        try {
+            await update(ref(database), updates);
+            return true;
+        } catch (error) {
+            console.error("Error updating stock:", error);
+            toast.error("Failed to update product stocks");
+            return false;
+        }
+    };
 
-  setOrderCompleted(true);
-  setShowOrderModal(false);
-  setCurrentOrderId(orderId);
-  clearCart();
+    const handleCheckoutComplete = async (orderId, voucherDiscount = 0) => {
+        setAppliedVoucherDiscount(voucherDiscount);
+        
+        if (!validateStockBeforeCheckout()) return;
+        
+        const stockUpdated = await updateProductStock(cart);
+        if (!stockUpdated) return;
 
-  toast.success('Order placed successfully!', {
-    action: {
-      label: 'View Orders',
-      onClick: () => navigate('/customer/profile')
-    }
-  });
-};
+        setOrderCompleted(true);
+        setShowOrderModal(false);
+        setCurrentOrderId(orderId);
+        clearCart();
+
+        toast.success('Order placed successfully!', {
+            action: {
+                label: 'View Orders',
+                onClick: () => navigate('/customer/profile')
+            }
+        });
+    };
 
     const handleShowDetailsModal = async (product) => {
         if (!product) {
@@ -225,9 +272,35 @@ const handleCheckoutComplete = async (orderId) => {
         }
     }, [userOrders, currentOrderId, navigate]);
 
+    const renderSearchResults = () => {
+        if (!searchFilter || filteredProducts.length === 0) return null;
+        
+        return (
+            <div className="absolute z-20 bg-white shadow-lg mt-1 max-h-60 w-full sm:w-72 overflow-y-auto rounded border">
+                {filteredProducts.map((product) => (
+                    <div
+                        key={product.id}
+                        className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleProductSelect(product)}
+                    >
+                        <img
+                            src={product.image || elmoLogo}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                        />
+                        <div>
+                            <p className="text-sm font-medium">{product.name}</p>
+                            <p className="text-xs text-gray-500">{product.category}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="w-full min-h-screen flex flex-col space-y-4 items-center justify-start p-4 bg-gray-950">
-            {/* Order Table Section - UNCHANGED */}
+            {/* Order Table Section */}
             <div className="w-full max-w-screen-lg bg-gray-50 rounded-xl flex flex-col relative overflow-x-auto">
                 <div className="w-full min-w-[600px] h-16 bg-[#2E2E2E] flex items-center justify-between rounded-t-xl px-6 top-0 z-10">
                     <div className="flex items-center">
@@ -333,15 +406,26 @@ const handleCheckoutComplete = async (orderId) => {
                             </div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-gray-600">Discount: </span>
-                                <span className="text-red-500">{formatPrice(totalDiscount)}</span>
+                                <span className="text-red-500">
+                                    {formatPrice(Math.max(appliedVoucherDiscount, totalDiscount))}
+                                </span>
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                 <span className="font-bold text-lg">Grand Total:</span>
-                                <span className="font-bold text-lg">{formatPrice(totalPrice)}</span>
+                                <span className="font-bold text-lg">
+                                    {formatPrice(totalPrice - Math.max(appliedVoucherDiscount, totalDiscount))}
+                                </span>
                             </div>
 
                             <button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center"
-                                onClick={() => setShowOrderModal(true)}
+                                onClick={() => {
+                                    if (cart.length === 0) {
+                                        toast.warning("Your cart is empty");
+                                        return;
+                                    }
+                                    if (!validateStockBeforeCheckout()) return;
+                                    setShowOrderModal(true);
+                                }}
                             >
                                 <CreditCard size={18} className="mr-2" />
                                 Checkout
@@ -351,7 +435,7 @@ const handleCheckoutComplete = async (orderId) => {
                 </div>
             </div>
 
-            {/* Add More Products Section - UPDATED with centered carousel */}
+            {/* Add More Products Section */}
             <div className="w-full max-w-screen-lg bg-[#2E2E2E] rounded-xl flex flex-col">
                 <div className="w-full h-auto rounded-t-xl flex flex-col sm:flex-row items-center justify-between px-3 py-4">
                     <div className="flex flex-row items-center mb-4 sm:mb-0">
@@ -370,10 +454,11 @@ const handleCheckoutComplete = async (orderId) => {
                             onChange={(e) => setSearchFilter(e.target.value)}
                             value={searchFilter}
                         />
+                        {renderSearchResults()}
                     </div>
                 </div>
 
-                {filteredProducts.length > 0 && (
+                {randomProducts.length > 0 && (
                     <div className="w-full px-3 relative mb-2 py-4">
                         <style>{`
                             .product-carousel {
@@ -405,7 +490,7 @@ const handleCheckoutComplete = async (orderId) => {
                             ref={carouselRef}
                             className="product-carousel flex overflow-x-auto w-full gap-4 px-4 py-4 no-scrollbar"
                         >
-                            {filteredProducts.map((product, index) => (
+                            {randomProducts.map((product, index) => (
                                 <div 
                                     key={product.id}
                                     className={`flex-shrink-0 w-[280px] ${index === currentBatch ? 'center-item' : ''}`}
@@ -427,7 +512,7 @@ const handleCheckoutComplete = async (orderId) => {
                         </div>
 
                         <div className="flex justify-center gap-2 mt-4">
-                            {filteredProducts.map((_, index) => (
+                            {randomProducts.map((_, index) => (
                                 <button
                                     key={index}
                                     onClick={() => setCurrentBatch(index)}
@@ -453,6 +538,8 @@ const handleCheckoutComplete = async (orderId) => {
                 show={showOrderModal}
                 onClose={() => setShowOrderModal(false)}
                 onComplete={handleCheckoutComplete}
+                appliedVoucherDiscount={appliedVoucherDiscount}
+                setAppliedVoucherDiscount={setAppliedVoucherDiscount}
             />
             <ProductDetailsModal
                 viewProduct={viewProduct}

@@ -322,7 +322,7 @@ function HomePage() {
         </div>
       </section>
 
-      <section id="about-section" className="w-full bg-[#181818] py-10">
+      <section id="features-section" className="w-full bg-[#181818] py-10">
         <h2 className="text-center text-white text-lg md:text-xl font-bold tracking-widest mb-10 uppercase">Our Features & Facilities</h2>
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 px-4">
           <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md">
@@ -454,7 +454,7 @@ function HomePage() {
               <div>
                 <Link to="#" className="text-white no-underline hover:text-orange-500 transition" onClick={() => {
                   setTimeout(() => {
-                    const section = document.getElementById('about-section');
+                    const section = document.getElementById('features-section');
                     section?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}>About Us</Link>
@@ -465,7 +465,7 @@ function HomePage() {
               <div>
                 <Link to="#" className="text-white no-underline hover:text-orange-500 transition" onClick={() => {
                   setTimeout(() => {
-                    const section = document.getElementById('about-section');
+                    const section = document.getElementById('features-section');
                     section?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}>Our Services</Link>
