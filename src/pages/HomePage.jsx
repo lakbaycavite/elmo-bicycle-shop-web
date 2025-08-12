@@ -24,7 +24,7 @@ function HomePage() {
   const [currentAddingProduct, setCurrentAddingProduct] = useState(null);
   const navigate = useNavigate();
 
-  const { loading: cartLoading } = useCart();
+  const { cart, loading: cartLoading } = useCart();
   const { wishlist, addItem: addToWishlist, removeItem: removeFromWishlist, refreshWishlist } = useWishlist();
 
   useEffect(() => {
@@ -81,6 +81,12 @@ function HomePage() {
         return;
       }
 
+      // Check if product is already in cart
+      if (cart.some(item => item.id === product.id)) {
+        toast.error(`${product.name} is already in your cart`);
+        return;
+      }
+
       if (product.availableStock <= 0) {
         toast.error('This product is out of stock');
         return;
@@ -99,12 +105,6 @@ function HomePage() {
         return;
       }
 
-      // Optimistically update UI
-      setLatestBikes(prev => updateProductStock(prev, product.id, product.availableStock - 1));
-      setGears(prev => updateProductStock(prev, product.id, product.availableStock - 1));
-      setParts(prev => updateProductStock(prev, product.id, product.availableStock - 1));
-      setAccessories(prev => updateProductStock(prev, product.id, product.availableStock - 1));
-
       const cartItem = {
         id: product.id,
         name: product.name,
@@ -117,7 +117,7 @@ function HomePage() {
         description: product.description || "",
         discountedFinalPrice: product.discountedFinalPrice || 0,
         discount: product.discount || 0,
-        stock: currentProduct.stock - 1,
+        stock: currentProduct.stock, // Keep original stock value
         addedAt: Date.now()
       };
 
@@ -126,12 +126,6 @@ function HomePage() {
       toast.success(`${product.name} added to cart successfully!`);
     } catch (error) {
       console.error('Error adding to cart:', error);
-      // Revert optimistic update on error
-      setLatestBikes(prev => updateProductStock(prev, product.id, product.availableStock));
-      setGears(prev => updateProductStock(prev, product.id, product.availableStock));
-      setParts(prev => updateProductStock(prev, product.id, product.availableStock));
-      setAccessories(prev => updateProductStock(prev, product.id, product.availableStock));
-
       if (error.message.includes('PERMISSION_DENIED')) {
         toast.error('You do not have permission to perform this action. Please contact support.');
       } else {
@@ -277,12 +271,11 @@ function HomePage() {
     </div>
   );
 
-
   return (
     <div className="min-h-screen bg-[#181818] text-white">
       <Navbar isLoggedIn={userLoggedIn} />
 
-      <section className="w-full px-4 md:px-0 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto pt-12 pb-8">
+      <section className="w-full px-4 md:px-0 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto pt-15 pb-8">
         <div className="flex-1 md:pr-12">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">Elmo Bike Shop</h1>
           <p className="text-gray-300 mb-6 max-w-lg">
