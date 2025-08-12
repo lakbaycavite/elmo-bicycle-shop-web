@@ -325,7 +325,8 @@ const Inventory = () => {
     'Helmet', 'Bike Lock', 'Lights (Front/Rear)', 'Bell or Horn', 'Water Bottle', 'Water Bottle Cage', 'Bike Pump',
     'Saddle Bag', 'Phone Mount', 'Bike Computer', 'Mirror', 'Kickstand', 'Mudguards/Fenders', 'Panniers',
     'Handlebar Grips/Tape', 'Chain Lube', 'Multi-tool', 'Tire Levers', 'Spare Tube', 'Patch Kit', 'Cycling Gloves',
-    'Cycling Glasses', 'Bike Rack (for car or storage)', 'Frame Bag', 'Bike Cover'
+    'Cycling Glasses', 'Bike Rack (for car or storage)', 'Frame Bag', 'Bike Cover','Cycling Shorts', 'Cycling Pants',
+    'Cycling Shoes', 'Cycling Jersey', 'Cycling Jacket', 'Cycling Socks', 'Cycling Cap'
   ];
 
   const gears_types = [

@@ -511,9 +511,8 @@ function OrdersOverview() {
                 onChange={(e) => handleFilterChange('payment', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
-                <option value="all">All Methods</option>
+
                 <option value="Walk-in">Walk-in</option>
-                <option value="Gcash">GCash Payment</option>
               </select>
             </div>
           </div>
@@ -761,7 +760,6 @@ function OrdersOverview() {
                   disabled={selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'}
                 >
                   <option value="Walk-in">Walk-in</option>
-                  <option value="Gcash">GCash Payment</option>
                 </select>
 
               </div>

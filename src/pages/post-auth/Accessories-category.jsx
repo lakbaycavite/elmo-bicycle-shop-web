@@ -40,6 +40,7 @@ const ThemeStyles = () => (
     .filter-btn:hover { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
     .btn-check:checked + .filter-btn { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
     .btn-add-to-cart { background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-primary); }
+    .btn-add-to-cart:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-details { background-color: var(--secondary-button); border-color: var(--secondary-button); color: var(--text-primary); }
     .wishlist-heart { cursor: pointer; transition: all 0.2s ease; }
     .wishlist-heart:hover { transform: scale(1.1); }
@@ -55,6 +56,17 @@ const ThemeStyles = () => (
       font-size: 0.8rem;
       font-weight: bold;
     }
+    .out-of-stock-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #dc3545;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
   `}</style>
 );
 
@@ -63,6 +75,7 @@ const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist,
   const discountedPrice = hasDiscount ? 
     Number(accessory.price) * (1 - (Number(accessory.discount) / 100)) : 
     Number(accessory.price);
+  const isOutOfStock = Number(accessory.stock) <= 0;
 
   return (
     <div className="col">
@@ -74,7 +87,14 @@ const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist,
           </div>
         )}
         
-        <img src={accessory.image || "/images/bike.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={accessory.name} />
+        {/* Out of stock badge */}
+        {isOutOfStock && (
+          <div className="out-of-stock-badge">
+            Out of Stock
+          </div>
+        )}
+        
+        <img src={accessory.image || "/images/accessory.png"} className="card-img-top" style={{ borderBottom: `1px solid var(--border-color)` }} alt={accessory.name} />
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-start">
             <h5 className="card-title mb-1" style={{ color: 'var(--primary-accent)' }}>{accessory.name}</h5>
@@ -88,6 +108,7 @@ const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist,
           </div>
           <p className="fw-bold mb-2">{accessory.brand}</p>
           <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {accessory.type}</p>
+          <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Stock: {accessory.stock}</p>
 
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -125,9 +146,9 @@ const AccessoryCard = ({ accessory, onAddToCart, isInWishlist, onToggleWishlist,
             <button 
               className="btn btn-add-to-cart w-100" 
               onClick={() => onAddToCart(accessory)}
-              disabled={isAddingToCart}
+              disabled={isAddingToCart || isOutOfStock}
             >
-              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+              {isOutOfStock ? 'Out of Stock' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </button>
             <button 
               className="btn btn-details w-100" 
@@ -187,7 +208,7 @@ const AccessoryListings = ({
         </button>
       </div>
       <h1 style={{ color: 'var(--primary-accent)' }}>Accessory Listings</h1>
-      <p style={{ color: 'var(--text-secondary)' }}>Browse our newly released and high-quality accessories</p>
+      <p style={{ color: 'var(--text-secondary)' }}>Browse our high-quality bike accessories</p>
       <hr style={{ borderColor: 'var(--border-color)' }} />
       <div className="row mb-4 align-items-center">
         <div className="col-md-8 col-lg-6">
@@ -310,7 +331,7 @@ const AccessoriesCategory = () => {
   const location = useLocation();
 
   const { products, getProduct } = useProducts();
-  const { addToCart } = useCart();
+  const { cart,addToCart } = useCart();
   const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist();
 
   const handleShowDetailsModal = async (product) => {
@@ -438,14 +459,21 @@ const AccessoriesCategory = () => {
     });
   }, [accessories, selectedTypes, searchTerm, selectedRatingFilter, ratingsMap]);
 
- const handleAddToCart = async (accessory) => {
-  if (isAddingToCart) return;
-  
+  const handleAddToCart = async (accessory) => {
+  if (isAddingToCart || Number(accessory.stock) <= 0) return;
+
+  // Check if bike is already in cart
+  const isAlreadyInCart = cart.some(item => item.productId === accessory.id);
+  if (isAlreadyInCart) {
+    toast.info(`${accessory.name} is already in your cart.`);
+    return; // Stop here, don’t add again
+  }
+
   setIsAddingToCart(true);
   try {
-    await addToCart(accessory.id, 1, {  // Explicitly set quantity to 1
+    await addToCart(accessory.id, 1, {
       ...accessory,
-      quantity: 1,  // Ensure quantity is always 1 for new additions
+      quantity: 1,
     });
     toast.success(`${accessory.name} added to cart!`);
   } catch (error) {
@@ -454,6 +482,7 @@ const AccessoriesCategory = () => {
     setIsAddingToCart(false);
   }
 };
+
 
   const handleToggleWishlist = async (accessory) => {
     try {
@@ -472,7 +501,7 @@ const AccessoriesCategory = () => {
           id: accessory.id,
           name: accessory.name,
           price: accessory.price,
-          image: accessory.image || "/images/bike.png",
+          image: accessory.image || "/images/accessory.png",
           category: accessory.category,
           brand: accessory.brand,
           type: accessory.type,

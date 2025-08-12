@@ -4,37 +4,21 @@ import Slider from 'react-slick'
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { CircleArrowRight, Heart } from 'lucide-react';
+import { ref, onValue } from 'firebase/database';
+import { database } from '../../firebase/firebase';
+import { useEffect, useState } from 'react';
 
 function Products() {
   const navigate = useNavigate()
+  const [products, setProducts] = useState({
+    bikes: [],
+    accessories: [],
+    gearsParts: []
+  });
+  const [loading, setLoading] = useState(true);
 
   // Replace with your actual authentication logic
   const isLoggedIn = false
-
-  // Example product data with discount
-  const bikes = [
-    { image: '/images/bike-pd-1.jpg', discount: 15 },
-    { image: '/images/bike-pd-1.jpg', discount: 10 },
-    { image: '/images/bike-pd-1.jpg', discount: 20 },
-    { image: '/images/bike-pd-1.jpg', discount: 5 },
-    { image: '/images/bike-pd-1.jpg', discount: 0 },
-    { image: '/images/bike-pd-1.jpg', discount: 12 },
-    { image: '/images/bike-pd-1.jpg', discount: 8 },
-  ]
-
-  const accessories = [
-    { image: '/images/bikehelmet1.png', discount: 5 },
-    { image: '/images/bikehelmet1.png', discount: 0 },
-    { image: '/images/bikehelmet1.png', discount: 10 },
-    { image: '/images/bikehelmet1.png', discount: 7 },
-  ]
-
-  const gearsParts = [
-    { image: '/images/bikehelmet1.png', discount: 12 },
-    { image: '/images/bikehelmet1.png', discount: 0 },
-    { image: '/images/bikehelmet1.png', discount: 8 },
-    { image: '/images/bikehelmet1.png', discount: 15 },
-  ]
 
   const sectionTitles = [
     "Shimano Racing Gears",
@@ -44,6 +28,51 @@ function Products() {
     "Ergonomic Handlebars",
     "Advanced Suspension Systems"
   ]
+
+  // Fetch products from Firebase
+  useEffect(() => {
+    const productsRef = ref(database, 'products');
+    
+    onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Organize products by category
+        const bikes = [];
+        const accessories = [];
+        const gearsParts = [];
+        
+        Object.values(data).forEach(product => {
+          // Add random discount between 0-20% for demo purposes
+          const productWithDiscount = {
+            ...product,
+            discount: Math.floor(Math.random() * 21) // 0-20% discount
+          };
+          
+          if (product.category === 'bike') {
+            bikes.push(productWithDiscount);
+          } else if (product.category === 'accessory') {
+            accessories.push(productWithDiscount);
+          } else if (product.category === 'gear') {
+            gearsParts.push(productWithDiscount);
+          }
+        });
+
+        setProducts({
+          bikes,
+          accessories,
+          gearsParts
+        });
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching products:", error);
+      setLoading(false);
+    });
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
 
   // Settings for the product slider
   const sliderSettings = {
@@ -104,6 +133,15 @@ function Products() {
     ]
   }
 
+  if (loading) {
+    return (
+      <div className="h-full bg-[#181818] text-white flex items-center justify-center">
+        <Navbar isLoggedIn={isLoggedIn} userType="customer" />
+        <div className="text-2xl">Loading products...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full bg-[#181818] text-white">
       <Navbar isLoggedIn={isLoggedIn} userType="customer" />
@@ -153,85 +191,93 @@ function Products() {
           <h1>Featured <span className='text-orange-400'>Bikes</span></h1>
         </label>
 
-        {/* Product Slider */}
+        {/* Bikes Slider */}
         <div className='w-full px-2 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 mt-8'>
-          <Slider {...sliderSettings}>
-            {bikes.map((bike, index) => (
-              <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
-                <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
-                  {/* Discount badge */}
-                  {bike.discount > 0 && (
-                    <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
-                      {bike.discount}% OFF
-                    </span>
-                  )}
-                  {/* Heart icon only if logged in */}
-                  {isLoggedIn && (
-                    <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
-                      <Heart className="text-orange-500" />
-                    </button>
-                  )}
-                  <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
-                    <img
-                      src={bike.image}
-                      alt={`Bike ${index + 1}`}
-                      className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
-                    />
-                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
-                      <button
-                        className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
-                        onClick={() => navigate(`/product/${index + 1}`)}
-                      >
-                        View Details
+          {products.bikes.length > 0 ? (
+            <Slider {...sliderSettings}>
+              {products.bikes.map((bike, index) => (
+                <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
+                  <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
+                    {/* Discount badge */}
+                    {bike.discount > 0 && (
+                      <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
+                        {bike.discount}% OFF
+                      </span>
+                    )}
+                    {/* Heart icon only if logged in */}
+                    {isLoggedIn && (
+                      <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
+                        <Heart className="text-orange-500" />
                       </button>
+                    )}
+                    <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
+                      <img
+                        src={bike.imageUrl || '/images/bike-pd-1.jpg'}
+                        alt={bike.name || `Bike ${index + 1}`}
+                        className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
+                      />
+                      <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                        <button
+                          className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
+                          onClick={() => navigate(`/product/${bike.id || index + 1}`)}
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </Slider>
+              ))}
+            </Slider>
+          ) : (
+            <p className="text-center text-gray-400">No bikes available at the moment</p>
+          )}
         </div>
       </div>
 
       {/* Accessories Section */}
-      <div className='flex flex-col items-center justify-center h-full py-12  bg-gray-800'>
+      <div className='flex flex-col items-center justify-center h-full py-12 bg-gray-800'>
         <h1><span className="text-3xl font-bold text-orange-500 mb-2">Accessories</span></h1>
         <div className='w-full px-2 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 mt-8'>
-          <Slider {...sliderSettings}>
-            {accessories.map((acc, index) => (
-              <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
-                <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
-                  {/* Discount badge */}
-                  {acc.discount > 0 && (
-                    <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
-                      {acc.discount}% OFF
-                    </span>
-                  )}
-                  {/* Heart icon only if logged in */}
-                  {isLoggedIn && (
-                    <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
-                      <Heart className="text-orange-500" />
-                    </button>
-                  )}
-                  <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
-                    <img
-                      src={acc.image}
-                      alt={`Accessory ${index + 1}`}
-                      className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
-                    />
-                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
-                      <button
-                        className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
-                        onClick={() => navigate(`/accessory/${index + 1}`)}
-                      >
-                        View Details
+          {products.accessories.length > 0 ? (
+            <Slider {...sliderSettings}>
+              {products.accessories.map((accessory, index) => (
+                <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
+                  <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
+                    {/* Discount badge */}
+                    {accessory.discount > 0 && (
+                      <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
+                        {accessory.discount}% OFF
+                      </span>
+                    )}
+                    {/* Heart icon only if logged in */}
+                    {isLoggedIn && (
+                      <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
+                        <Heart className="text-orange-500" />
                       </button>
+                    )}
+                    <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
+                      <img
+                        src={accessory.imageUrl || '/images/bikehelmet1.png'}
+                        alt={accessory.name || `Accessory ${index + 1}`}
+                        className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
+                      />
+                      <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                        <button
+                          className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
+                          onClick={() => navigate(`/accessory/${accessory.id || index + 1}`)}
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </Slider>
+              ))}
+            </Slider>
+          ) : (
+            <p className="text-center text-gray-400">No accessories available at the moment</p>
+          )}
         </div>
       </div>
 
@@ -239,41 +285,45 @@ function Products() {
       <div className='flex flex-col items-center justify-center h-full py-12'>
         <h1><span className="text-3xl font-bold text-orange-500 mb-2">Gears and Parts</span></h1>
         <div className='w-full px-2 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 mt-8'>
-          <Slider {...sliderSettings}>
-            {gearsParts.map((gear, index) => (
-              <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
-                <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
-                  {/* Discount badge */}
-                  {gear.discount > 0 && (
-                    <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
-                      {gear.discount}% OFF
-                    </span>
-                  )}
-                  {/* Heart icon only if logged in */}
-                  {isLoggedIn && (
-                    <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
-                      <Heart className="text-orange-500" />
-                    </button>
-                  )}
-                  <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
-                    <img
-                      src={gear.image}
-                      alt={`Gear ${index + 1}`}
-                      className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
-                    />
-                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
-                      <button
-                        className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
-                        onClick={() => navigate(`/gear/${index + 1}`)}
-                      >
-                        View Details
+          {products.gearsParts.length > 0 ? (
+            <Slider {...sliderSettings}>
+              {products.gearsParts.map((gear, index) => (
+                <div key={index} className='px-3 sm:px-3 lg:px-4 outline-none'>
+                  <div className='relative h-72 rounded-xl overflow-hidden group transform transition-transform duration-700 hover:scale-105 hover:z-10'>
+                    {/* Discount badge */}
+                    {gear.discount > 0 && (
+                      <span className="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
+                        {gear.discount}% OFF
+                      </span>
+                    )}
+                    {/* Heart icon only if logged in */}
+                    {isLoggedIn && (
+                      <button className="absolute top-3 right-3 bg-white/80 rounded-full p-2 z-10">
+                        <Heart className="text-orange-500" />
                       </button>
+                    )}
+                    <div className='absolute inset-0 rounded-xl shadow-lg shadow-black/50 transform transition-transform duration-700 group-hover:rotate-y-12 group-hover:translate-z-20'>
+                      <img
+                        src={gear.imageUrl || '/images/bikehelmet1.png'}
+                        alt={gear.name || `Gear ${index + 1}`}
+                        className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
+                      />
+                      <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                        <button
+                          className='px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors'
+                          onClick={() => navigate(`/gear/${gear.id || index + 1}`)}
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </Slider>
+              ))}
+            </Slider>
+          ) : (
+            <p className="text-center text-gray-400">No gears and parts available at the moment</p>
+          )}
         </div>
       </div>
 

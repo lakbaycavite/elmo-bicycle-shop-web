@@ -289,10 +289,16 @@ function HomePage() {
             From sleek road bikes built for speed to rugged mountain bikes designed for off-road adventures, our slider celebrates the diversity of cycling disciplines.
           </p>
           <div className="flex gap-4 mb-4">
-            <button 
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded transition" 
+   <button 
+              className="bg-orange-600 text-white font-semibold px-6 py-3 rounded transition" 
               type='button' 
-              onClick={() => navigate('/customer/products')}
+              onClick={() => {
+                navigate('/customer/home');
+                setTimeout(() => {
+                  const section = document.getElementById('categories-section');
+                  section?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
             >
               Shop Now
             </button>

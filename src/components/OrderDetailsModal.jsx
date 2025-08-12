@@ -258,7 +258,7 @@ const OrderDetailsModal = ({ show, onClose, onComplete }) => {
                                         }}
                                     >
                                         <option value="Walk-in">Walk-in</option>
-                                        <option value="Gcash">Gcash</option>
+                                
                                     </select>
                                 </div>
                             </div>

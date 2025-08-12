@@ -23,7 +23,7 @@ const theme = {
 const gearPartsCategories = [
   'Bottom Bracket',
   'Cassette',
-  'Chaining',
+  'Chainring',
   'Cranks',
   'Derailleur Hanger',
   'Electronic Shifters',
@@ -62,6 +62,7 @@ const ThemeStyles = () => (
     .filter-btn:hover { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
     .btn-check:checked + .filter-btn { color: var(--text-primary); background-color: var(--primary-accent); border-color: var(--primary-accent); }
     .btn-add-to-cart { background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-primary); }
+    .btn-add-to-cart:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-details { background-color: var(--secondary-button); border-color: var(--secondary-button); color: var(--text-primary); }
     .wishlist-heart { cursor: pointer; transition: all 0.2s ease; }
     .wishlist-heart:hover { transform: scale(1.1); }
@@ -77,6 +78,17 @@ const ThemeStyles = () => (
       font-size: 0.8rem;
       font-weight: bold;
     }
+    .out-of-stock-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #dc3545;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
   `}</style>
 );
 
@@ -85,6 +97,7 @@ const GearCard = ({ gear, onAddToCart, isInWishlist, onToggleWishlist, averageRa
   const discountedPrice = hasDiscount ? 
     Number(gear.price) * (1 - (Number(gear.discount) / 100)) : 
     Number(gear.price);
+  const isOutOfStock = Number(gear.stock) <= 0;
 
   return (
     <div className="col">
@@ -93,6 +106,13 @@ const GearCard = ({ gear, onAddToCart, isInWishlist, onToggleWishlist, averageRa
         {hasDiscount && (
           <div className="discount-badge">
             {gear.discount}% OFF
+          </div>
+        )}
+        
+        {/* Out of stock badge */}
+        {isOutOfStock && (
+          <div className="out-of-stock-badge">
+            Out of Stock
           </div>
         )}
         
@@ -110,6 +130,7 @@ const GearCard = ({ gear, onAddToCart, isInWishlist, onToggleWishlist, averageRa
           </div>
           <p className="fw-bold mb-2">{gear.brand}</p>
           <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Type: {gear.type}</p>
+          <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Stock: {gear.stock}</p>
 
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -147,9 +168,9 @@ const GearCard = ({ gear, onAddToCart, isInWishlist, onToggleWishlist, averageRa
             <button 
               className="btn btn-add-to-cart w-100" 
               onClick={() => onAddToCart(gear)}
-              disabled={isAddingToCart}
+              disabled={isAddingToCart || isOutOfStock}
             >
-              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+              {isOutOfStock ? 'Out of Stock' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </button>
             <button 
               className="btn btn-details w-100" 
@@ -361,7 +382,7 @@ const GearsCategory = () => {
   const location = useLocation();
 
   const { products, getProduct } = useProducts();
-  const { addToCart } = useCart();
+  const { cart,addToCart } = useCart();
   const { wishlist, addItem, removeItem, refreshWishlist } = useWishlist();
 
   const handleShowDetailsModal = async (product) => {
@@ -508,21 +529,29 @@ const GearsCategory = () => {
   }, [gears, selectedTypes, searchTerm, selectedRatingFilter, ratingsMap, selectedCategoryFilter]);
 
   const handleAddToCart = async (gear) => {
-    if (isAddingToCart) return;
-    
-    setIsAddingToCart(true);
-    try {
-      await addToCart(gear.id, 1, {
-        ...gear,
-        quantity: 1
-      });
-      toast.success(`${gear.name} added to cart!`);
-    } catch (error) {
-      toast.error(`Error adding to cart: ${error.message}`);
-    } finally {
-      setIsAddingToCart(false);
-    }
-  };
+  if (isAddingToCart || Number(gear.stock) <= 0) return;
+
+  // Check if bike is already in cart
+  const isAlreadyInCart = cart.some(item => item.productId === gear.id);
+  if (isAlreadyInCart) {
+    toast.info(`${gear.name} is already in your cart.`);
+    return; // Stop here, don’t add again
+  }
+
+  setIsAddingToCart(true);
+  try {
+    await addToCart(gear.id, 1, {
+      ...gear,
+      quantity: 1,
+    });
+    toast.success(`${gear.name} added to cart!`);
+  } catch (error) {
+    toast.error(`Error adding to cart: ${error.message}`);
+  } finally {
+    setIsAddingToCart(false);
+  }
+};
+
 
   const handleToggleWishlist = async (gear) => {
     try {

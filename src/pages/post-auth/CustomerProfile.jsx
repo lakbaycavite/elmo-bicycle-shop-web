@@ -48,6 +48,11 @@ const CustomerProfile = () => {
         phone: '',
         image: ''
     });
+    const [nameErrors, setNameErrors] = useState({
+        firstName: false,
+        lastName: false,
+        phone: false
+    });
 
     // Order history states
     const [expandedOrder, setExpandedOrder] = useState(null);
@@ -114,43 +119,33 @@ const CustomerProfile = () => {
     };
 
     const handleChangePassword = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+        e.preventDefault();
+        setLoading(true);
 
-  // Check password length
-  if (passwordData.newPassword.length < 8) {
-    toast.error("Password must be at least 8 characters long.");
-    setLoading(false);
-    return;
-  }
-
-  if (passwordData.newPassword !== passwordData.confirmPassword) {
-    toast.error("New password and confirm password do not match.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
-      .then(() => {
-        toast.success("Password changed successfully");
-        setPasswordData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        });
-        setIsChangePasswordModalOpen(false);
-      })
-      .catch((error) => {
-        toast.error(error.message || "Password change failed. Please check your current password.");
-      });
-  } catch (error) {
-    toast.error(`Error changing password: ${error.message}`);
-    console.error("Error changing password:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error("New password and confirm password do not match.");
+            setLoading(false);
+            return;
+        } else {
+            await doPasswordChange(passwordData.currentPassword, passwordData.newPassword)
+                .then(() => {
+                    toast.success("Password changed successfully");
+                    setPasswordData({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                    });
+                    setIsChangePasswordModalOpen(false);
+                })
+                .catch(() => {
+                    toast.error("New password and confirm password do not match or wrong current password");
+                })
+                .finally(() => {
+                    setLoading(false);
+                    setIsChangePasswordModalOpen(false);
+                })
+        }
+    };
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -161,16 +156,38 @@ const CustomerProfile = () => {
                 phone: currentUserData.phone || '',
                 image: currentUserData.image
             });
+            setNameErrors({
+                firstName: false,
+                lastName: false
+            });
         }
         setIsEditing(!isEditing);
     };
 
     const handleProfileInputChange = (e) => {
-        const { name, value } = e.target;
+    const { name, value } = e.target;
+    
+    // Only allow letters and spaces for name fields
+    if (name === 'firstName' || name === 'lastName') {
+        const onlyLetters = value.replace(/[^A-Za-z\s]/g, '');
+        setProfileData(prev => ({
+            ...prev,
+            [name]: onlyLetters
+        }));
+    } else {
         setProfileData(prev => ({
             ...prev,
             [name]: value
         }));
+    }
+        
+        // Clear error when user starts typing
+        if (name === 'firstName' || name === 'lastName') {
+            setNameErrors(prev => ({
+                ...prev,
+                [name]: false
+            }));
+        }
     };
 
     const handleImageChange = (e) => {
@@ -193,23 +210,42 @@ const CustomerProfile = () => {
             return;
         }
 
-        setEditLoading(true);
-        try {
-            await editUser(currentUserData.id, {
-                firstName: profileData.firstName,
-                lastName: profileData.lastName,
-                phone: profileData.phone,
-                image: profileData.image
-            });
-
-            setIsEditing(false);
-        } catch (error) {
-            toast.error("Failed to update profile");
-            console.error("Profile update error:", error);
-        } finally {
-            setEditLoading(false);
+        // Validate name fields
+        const newErrors = {
+            firstName: !profileData.firstName.trim(),
+            lastName: !profileData.lastName.trim(),
+            phone: !profileData.phone || profileData.phone.length !== 11
+        };
+        
+        setNameErrors(newErrors);
+    
+    if (newErrors.firstName || newErrors.lastName || newErrors.phone) {
+        if (newErrors.phone) {
+            toast.error("Phone number must be exactly 11 digits");
+        } else {
+            toast.error("First name and last name cannot be blank");
         }
-    };
+        return;
+    }
+        
+       setEditLoading(true);
+    try {
+        await editUser(currentUserData.id, {
+            firstName: profileData.firstName.trim(),
+            lastName: profileData.lastName.trim(),
+            phone: profileData.phone,
+            image: profileData.image || null
+        });
+
+        setIsEditing(false);
+        toast.success("Profile updated successfully");
+    } catch (error) {
+        toast.error("Failed to update profile");
+        console.error("Profile update error:", error);
+    } finally {
+        setEditLoading(false);
+    }
+};
 
     // Order history handlers
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -353,18 +389,32 @@ const CustomerProfile = () => {
                                         </button>
                                     ) : (
                                         <div className="flex gap-2">
-                                            <button
-                                                onClick={handleSaveProfile}
-                                                disabled={editLoading}
-                                                className="flex items-center gap-2 bg-[#ff6900] hover:bg-[#e55e00] text-white px-3 py-2 rounded-md disabled:opacity-50"
-                                            >
-                                                {editLoading ? (
-                                                    <Loader2 size={16} className="animate-spin" />
-                                                ) : (
-                                                    <Save size={16} />
-                                                )}
-                                                Save
-                                            </button>
+                            <button
+    onClick={handleSaveProfile}
+    disabled={
+        editLoading || 
+        !profileData.firstName.trim() || 
+        !profileData.lastName.trim() ||
+        !profileData.phone ||
+        profileData.phone.length !== 11
+    }
+    className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+        editLoading || 
+        !profileData.firstName.trim() || 
+        !profileData.lastName.trim() ||
+        !profileData.phone ||
+        profileData.phone.length !== 11
+            ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+            : "bg-[#ff6900] hover:bg-[#e55e00] text-white"
+    }`}
+>
+    {editLoading ? (
+        <Loader2 size={16} className="animate-spin" />
+    ) : (
+        <Save size={16} />
+    )}
+    Save
+</button>
                                             <button
                                                 onClick={handleEditToggle}
                                                 className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-md"
@@ -383,30 +433,39 @@ const CustomerProfile = () => {
                                     <div className="flex-1">
                                         <span className="text-gray-400 font-medium">Name:</span>
                                         {isEditing ? (
-                                            <div className="flex gap-2 mt-2">
-                                               <input
-  type="text"
-  name="firstName"
-  value={profileData.firstName}
-  onChange={(e) => {
-    const onlyLetters = e.target.value.replace(/[^A-Za-z\s]/g, '');
-    setProfileData((prev) => ({ ...prev, firstName: onlyLetters }));
-  }}
-  placeholder="First Name"
-  className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
-/>
-
-<input
-  type="text"
-  name="lastName"
-  value={profileData.lastName}
-  onChange={(e) => {
-    const onlyLetters = e.target.value.replace(/[^A-Za-z\s]/g, '');
-    setProfileData((prev) => ({ ...prev, lastName: onlyLetters }));
-  }}
-  placeholder="Last Name"
-  className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
-/>
+                                            <div className="flex flex-col gap-2 mt-2">
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1">
+                                                        <input
+                                                            type="text"
+                                                            name="firstName"
+                                                            value={profileData.firstName}
+                                                            onChange={handleProfileInputChange}
+                                                            className={`bg-gray-800 text-white px-3 py-2 rounded border ${
+                                                                nameErrors.firstName ? 'border-red-500' : 'border-gray-600'
+                                                            } focus:border-[#ff6900] focus:outline-none w-full`}
+                                                            placeholder="First Name"
+                                                        />
+                                                        {nameErrors.firstName && (
+                                                            <p className="text-red-400 text-xs mt-1">First name is required</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <input
+                                                            type="text"
+                                                            name="lastName"
+                                                            value={profileData.lastName}
+                                                            onChange={handleProfileInputChange}
+                                                            className={`bg-gray-800 text-white px-3 py-2 rounded border ${
+                                                                nameErrors.lastName ? 'border-red-500' : 'border-gray-600'
+                                                            } focus:border-[#ff6900] focus:outline-none w-full`}
+                                                            placeholder="Last Name"
+                                                        />
+                                                        {nameErrors.lastName && (
+                                                            <p className="text-red-400 text-xs mt-1">Last name is required</p>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         ) : (
                                             <span className="ml-2 text-white">{fullName}</span>
@@ -430,26 +489,27 @@ const CustomerProfile = () => {
                                     <div className="flex-1">
                                         <span className="text-gray-400 font-medium">Phone:</span>
                                         {isEditing ? (
-                                           
-<input
-  type="tel"
-  name="phone"
-  value={profileData.phone}
-  onChange={(e) => {
-    const onlyDigits = e.target.value.replace(/\D/g, '');
-    if (onlyDigits.length <= 11) {
-      setProfileData((prev) => ({ ...prev, phone: onlyDigits }));
-    }
-  }}
-  placeholder="Phone Number"
-  className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
-/>
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                value={profileData.phone}
+                                                onChange={(e) => {
+                                                    const onlyDigits = e.target.value.replace(/\D/g, '');
+                                                    if (onlyDigits.length <= 11) {
+                                                        setProfileData((prev) => ({ ...prev, phone: onlyDigits }));
+                                                    }
+                                                }}
+                                                placeholder="Phone Number (11 digits)"
+                                                className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
+                                            />
                                         ) : (
                                             <span className="ml-2 text-white">{phone}</span>
                                         )}
                                     </div>
                                 </div>
                             </div>
+
+ 
 
                             {/* Account Action Buttons */}
                             <div className="flex flex-wrap gap-3 mt-6">
@@ -683,112 +743,80 @@ const CustomerProfile = () => {
                 </div>
             </div>
 
-{/* Change Password Modal */}
-{isChangePasswordModalOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div className="bg-gray-800 text-white rounded-lg p-6 w-full max-w-md border border-gray-700">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-[#ff6900]">Change Password</h2>
-        <button
-          onClick={() => setIsChangePasswordModalOpen(false)}
-          className="text-gray-400 hover:text-gray-200"
-        >
-          <X className="h-6 w-6" />
-        </button>
-      </div>
+            {/* Change Password Modal */}
+            {isChangePasswordModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 text-white rounded-lg p-6 w-full max-w-md border border-gray-700">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-[#ff6900]">Change Password</h2>
+                            <button
+                                onClick={() => setIsChangePasswordModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-200"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
 
-      <form onSubmit={handleChangePassword}>
-        <div className="mb-4">
-          <label className="block text-gray-300 mb-2">Current Password</label>
-          <input
-            type="password"
-            name="currentPassword"
-            value={passwordData.currentPassword}
-            onChange={handlePasswordInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
-            required
-          />
-        </div>
+                        <form onSubmit={handleChangePassword}>
+                            <div className="mb-4">
+                                <label className="block text-gray-300 mb-2">Current Password</label>
+                                <input
+                                    type="password"
+                                    name="currentPassword"
+                                    value={passwordData.currentPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
+                                    required
+                                />
+                            </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-300 mb-2">New Password</label>
-          <input
-            type="password"
-            name="newPassword"
-            value={passwordData.newPassword}
-            onChange={handlePasswordInputChange}
-            className={`w-full p-2 bg-gray-700 border ${
-              passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 
-                ? 'border-red-500' 
-                : 'border-gray-600'
-            } rounded text-white focus:border-[#ff6900] focus:outline-none`}
-            required
-            minLength={8}
-          />
-          {passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 && (
-            <p className="text-red-400 text-xs mt-1">Password must be at least 8 characters</p>
-          )}
-        </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-300 mb-2">New Password</label>
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    value={passwordData.newPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
+                                    required
+                                />
+                            </div>
 
-        <div className="mb-6">
-          <label className="block text-gray-300 mb-2">Confirm New Password</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={passwordData.confirmPassword}
-            onChange={handlePasswordInputChange}
-            className={`w-full p-2 bg-gray-700 border ${
-              passwordData.confirmPassword.length > 0 && 
-              (passwordData.confirmPassword !== passwordData.newPassword || 
-               passwordData.confirmPassword.length < 8)
-                ? 'border-red-500' 
-                : 'border-gray-600'
-            } rounded text-white focus:border-[#ff6900] focus:outline-none`}
-            required
-            minLength={8}
-          />
-          {passwordData.confirmPassword.length > 0 && 
-            passwordData.confirmPassword !== passwordData.newPassword && (
-            <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
-          )}
-          {passwordData.confirmPassword.length > 0 && 
-            passwordData.confirmPassword.length < 8 && (
-            <p className="text-red-400 text-xs mt-1">Password must be at least 8 characters</p>
-          )}
-        </div>
+                            <div className="mb-6">
+                                <label className="block text-gray-300 mb-2">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={passwordData.confirmPassword}
+                                    onChange={handlePasswordInputChange}
+                                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-[#ff6900] focus:outline-none"
+                                    required
+                                />
+                            </div>
 
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={() => setIsChangePasswordModalOpen(false)}
-            className="px-4 py-2 border border-gray-600 rounded text-gray-300 hover:bg-gray-700"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className={`px-4 py-2 rounded flex items-center justify-center ${
-              passwordData.newPassword.length >= 8 && 
-              passwordData.confirmPassword.length >= 8 &&
-              passwordData.newPassword === passwordData.confirmPassword
-                ? 'bg-[#ff6900] hover:bg-[#e55e00] text-white'
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            }`}
-            disabled={
-              passwordData.newPassword.length < 8 || 
-              passwordData.confirmPassword.length < 8 ||
-              passwordData.newPassword !== passwordData.confirmPassword
-            }
-          >
-            {loading ? (
-              <Loader2 className="animate-spin h-5 w-5" />
-            ) : "Save Password"}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsChangePasswordModalOpen(false)}
+                                    className="px-4 py-2 border border-gray-600 rounded text-gray-300 hover:bg-gray-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-[#ff6900] text-white rounded hover:bg-[#e55e00] flex items-center justify-center"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <Loader2 className="animate-spin h-5 w-5" />
+                                    ) : "Save Password"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* Rating Modal */}
             <ProductRatingModal
                 show={showRatingModal}

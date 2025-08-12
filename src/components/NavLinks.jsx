@@ -52,11 +52,23 @@ function NavLinks({ className = '', isLoggedIn = false, onNavigate }) {
     }
   };
 
+
+  
   return (
     <div className={`flex flex-col md:flex-row gap-6 ${className}`}>
       <button onClick={() => handleNavigation('home')}>Home</button>
-      <button onClick={() => handleNavigation('shop')}>Shop</button>
       <button onClick={() => handleNavigation('about')}>About</button>
+        <button
+        onClick={() => {
+          navigate('/customer/home');
+          setTimeout(() => {
+            const section = document.getElementById('categories-section');
+            section?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }}
+      >
+        Shop
+      </button>
       <button onClick={() => handleNavigation('contact')}>Contact</button>
       <button onClick={() => handleNavigation('spin-wheel')}>Spin</button>
     </div>
