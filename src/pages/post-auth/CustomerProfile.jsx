@@ -60,6 +60,8 @@ const CustomerProfile = () => {
     const [currentOrderItems, setCurrentOrderItems] = useState([]);
     const [currentRatingOrderId, setCurrentRatingOrderId] = useState(null);
     const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+    const [productRatings, setProductRatings] = useState({}); // Store ratings state
+    const [ratingValidationError, setRatingValidationError] = useState(false); // Add this line for validation state
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
@@ -165,22 +167,22 @@ const CustomerProfile = () => {
     };
 
     const handleProfileInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    // Only allow letters and spaces for name fields
-    if (name === 'firstName' || name === 'lastName') {
-        const onlyLetters = value.replace(/[^A-Za-z\s]/g, '');
-        setProfileData(prev => ({
-            ...prev,
-            [name]: onlyLetters
-        }));
-    } else {
-        setProfileData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    }
+        const { name, value } = e.target;
         
+        // Only allow letters and spaces for name fields
+        if (name === 'firstName' || name === 'lastName') {
+            const onlyLetters = value.replace(/[^A-Za-z\s]/g, '');
+            setProfileData(prev => ({
+                ...prev,
+                [name]: onlyLetters
+            }));
+        } else {
+            setProfileData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+            
         // Clear error when user starts typing
         if (name === 'firstName' || name === 'lastName') {
             setNameErrors(prev => ({
@@ -219,33 +221,33 @@ const CustomerProfile = () => {
         
         setNameErrors(newErrors);
     
-    if (newErrors.firstName || newErrors.lastName || newErrors.phone) {
-        if (newErrors.phone) {
-            toast.error("Phone number must be exactly 11 digits");
-        } else {
-            toast.error("First name and last name cannot be blank");
+        if (newErrors.firstName || newErrors.lastName || newErrors.phone) {
+            if (newErrors.phone) {
+                toast.error("Phone number must be exactly 11 digits");
+            } else {
+                toast.error("First name and last name cannot be blank");
+            }
+            return;
         }
-        return;
-    }
-        
-       setEditLoading(true);
-    try {
-        await editUser(currentUserData.id, {
-            firstName: profileData.firstName.trim(),
-            lastName: profileData.lastName.trim(),
-            phone: profileData.phone,
-            image: profileData.image || null
-        });
+            
+        setEditLoading(true);
+        try {
+            await editUser(currentUserData.id, {
+                firstName: profileData.firstName.trim(),
+                lastName: profileData.lastName.trim(),
+                phone: profileData.phone,
+                image: profileData.image || null
+            });
 
-        setIsEditing(false);
-        toast.success("Profile updated successfully");
-    } catch (error) {
-        toast.error("Failed to update profile");
-        console.error("Profile update error:", error);
-    } finally {
-        setEditLoading(false);
-    }
-};
+            setIsEditing(false);
+            toast.success("Profile updated successfully");
+        } catch (error) {
+            toast.error("Failed to update profile");
+            console.error("Profile update error:", error);
+        } finally {
+            setEditLoading(false);
+        }
+    };
 
     // Order history handlers
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -297,22 +299,46 @@ const CustomerProfile = () => {
         setCurrentOrderItems(orderItems);
         setCurrentRatingOrderId(order.id);
         setShowRatingModal(true);
+        setRatingValidationError(false); // Reset validation error when opening modal
     };
 
     const handleRatingSubmit = async (ratings) => {
         if (!currentRatingOrderId) return;
+        
+        // Check if all products have ratings
+        const hasUnratedProducts = ratings.some(rating => rating.value === 0);
+        if (hasUnratedProducts) {
+            setRatingValidationError(true);
+            toast.error('Please rate all products before submitting');
+            return;
+        }
 
         try {
             setIsSubmittingRating(true);
+            setRatingValidationError(false);
+            
+            // Normalize ratings data structure
+            const newRatings = Array.isArray(ratings) 
+                ? ratings.reduce((acc, rating) => {
+                    acc[rating.productId] = rating.value;
+                    return acc;
+                  }, {})
+                : { [ratings.productId]: ratings.value };
+
+            setProductRatings(prev => ({
+                ...prev,
+                [currentRatingOrderId]: newRatings
+            }));
+            
             await updateOrderRatedStatus(currentRatingOrderId, true);
             toast.success('Thank you for rating your products!');
-            setShowRatingModal(false);
-            setCurrentRatingOrderId(null);
         } catch (error) {
-            console.error("Error submitting ratings:", error);
-            toast.error("Failed to submit ratings. Please try again.");
+            console.error("Rating submission error:", error);
+            toast.error("Failed to submit ratings");
         } finally {
             setIsSubmittingRating(false);
+            setShowRatingModal(false);
+            setCurrentRatingOrderId(null);
         }
     };
 
@@ -352,11 +378,32 @@ const CustomerProfile = () => {
                         <div className="flex flex-col items-center">
                             <div className="relative">
                                 {profileData.image ? (
-                                    <img
-                                        src={profileData.image}
-                                        alt="Profile"
-                                        className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
-                                    />
+                                    <>
+                                        <img
+                                            src={profileData.image}
+                                            alt="Profile"
+                                            className="rounded-full w-32 h-32 object-cover border-4 border-[#ff6900]"
+                                        />
+                                        {isEditing && (
+                                            <>
+                                                <label className="absolute bottom-0 right-0 bg-[#ff6900] hover:bg-[#e55e00] rounded-full p-2 cursor-pointer">
+                                                    <Camera size={16} className="text-white" />
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageChange}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                                <button
+                                                    className="absolute top-0 right-0 bg-red-600 hover:bg-red-700 rounded-full p-1 cursor-pointer"
+                                                    onClick={() => setProfileData(prev => ({...prev, image: ''}))}
+                                                >
+                                                    <X size={16} className="text-white" />
+                                                </button>
+                                            </>
+                                        )}
+                                    </>
                                 ) : (
                                     <CircleUser className="h-32 w-32 text-orange-600 bg-gray-200 rounded-full p-2" />
                                 )}
@@ -389,32 +436,32 @@ const CustomerProfile = () => {
                                         </button>
                                     ) : (
                                         <div className="flex gap-2">
-                            <button
-    onClick={handleSaveProfile}
-    disabled={
-        editLoading || 
-        !profileData.firstName.trim() || 
-        !profileData.lastName.trim() ||
-        !profileData.phone ||
-        profileData.phone.length !== 11
-    }
-    className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-        editLoading || 
-        !profileData.firstName.trim() || 
-        !profileData.lastName.trim() ||
-        !profileData.phone ||
-        profileData.phone.length !== 11
-            ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-            : "bg-[#ff6900] hover:bg-[#e55e00] text-white"
-    }`}
->
-    {editLoading ? (
-        <Loader2 size={16} className="animate-spin" />
-    ) : (
-        <Save size={16} />
-    )}
-    Save
-</button>
+                                            <button
+                                                onClick={handleSaveProfile}
+                                                disabled={
+                                                    editLoading || 
+                                                    !profileData.firstName.trim() || 
+                                                    !profileData.lastName.trim() ||
+                                                    !profileData.phone ||
+                                                    profileData.phone.length !== 11
+                                                }
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+                                                    editLoading || 
+                                                    !profileData.firstName.trim() || 
+                                                    !profileData.lastName.trim() ||
+                                                    !profileData.phone ||
+                                                    profileData.phone.length !== 11
+                                                        ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                                                        : "bg-[#ff6900] hover:bg-[#e55e00] text-white"
+                                                }`}
+                                            >
+                                                {editLoading ? (
+                                                    <Loader2 size={16} className="animate-spin" />
+                                                ) : (
+                                                    <Save size={16} />
+                                                )}
+                                                Save
+                                            </button>
                                             <button
                                                 onClick={handleEditToggle}
                                                 className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-md"
@@ -508,8 +555,6 @@ const CustomerProfile = () => {
                                     </div>
                                 </div>
                             </div>
-
- 
 
                             {/* Account Action Buttons */}
                             <div className="flex flex-wrap gap-3 mt-6">
@@ -646,6 +691,23 @@ const CustomerProfile = () => {
                                                                 <div className="text-sm text-gray-400">
                                                                     Qty: {item.quantity} × {formatPrice(item.price)}
                                                                 </div>
+                                                                {/* Display rating if it exists */}
+                                                                {productRatings[order.id]?.[item.productId] && (
+                                                                    <div className="flex items-center mt-1">
+                                                                        <div className="flex">
+                                                                            {[...Array(5)].map((_, i) => (
+                                                                                <Star 
+                                                                                    key={i}
+                                                                                    size={14}
+                                                                                    className={`${i < productRatings[order.id][item.productId] ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'}`}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                        <span className="text-xs text-gray-400 ml-1">
+                                                                            ({productRatings[order.id][item.productId]}/5)
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="font-medium text-gray-200">
                                                                 {formatPrice(item.price * item.quantity)}
@@ -823,10 +885,12 @@ const CustomerProfile = () => {
                 onClose={() => {
                     setShowRatingModal(false);
                     setCurrentRatingOrderId(null);
+                    setRatingValidationError(false);
                 }}
                 cartItems={currentOrderItems}
                 onSubmitRatings={handleRatingSubmit}
                 isSubmitting={isSubmittingRating}
+                validationError={ratingValidationError}
             />
         </div>
     );

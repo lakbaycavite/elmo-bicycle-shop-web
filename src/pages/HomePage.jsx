@@ -22,11 +22,13 @@ function HomePage() {
   const [viewProduct, setViewProduct] = useState(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [currentAddingProduct, setCurrentAddingProduct] = useState(null);
+  const [ratingsMap, setRatingsMap] = useState({});
   const navigate = useNavigate();
 
   const { cart, loading: cartLoading } = useCart();
   const { wishlist, addItem: addToWishlist, removeItem: removeFromWishlist, refreshWishlist } = useWishlist();
 
+  // Load products
   useEffect(() => {
     const productsRef = ref(database, 'products');
     onValue(productsRef, (snapshot) => {
@@ -35,7 +37,8 @@ function HomePage() {
         const allProducts = Object.keys(data).map(key => ({
           id: key,
           ...data[key],
-          availableStock: data[key].stock
+          availableStock: data[key].stock,
+          canBeRated: true
         }));
 
         allProducts.forEach(product => {
@@ -62,6 +65,29 @@ function HomePage() {
     });
   }, []);
 
+  // Load ratings
+  useEffect(() => {
+    const ratingsRef = ref(database, 'ratings');
+    const unsubscribe = onValue(ratingsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const processedRatings = {};
+        Object.keys(data).forEach(productId => {
+          const productRatings = data[productId];
+          if (productRatings && typeof productRatings === 'object') {
+            processedRatings[productId] = productRatings;
+          }
+        });
+        setRatingsMap(processedRatings);
+      } else {
+        setRatingsMap({});
+      }
+    }, (error) => {
+      console.error('Error loading ratings:', error);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const updateProductStock = (products, productId, newStock) => {
     return products.map(product => 
       product.id === productId ? { ...product, availableStock: newStock } : product
@@ -81,7 +107,6 @@ function HomePage() {
         return;
       }
 
-      // Check if product is already in cart
       if (cart.some(item => item.id === product.id)) {
         toast.error(`${product.name} is already in your cart`);
         return;
@@ -107,6 +132,7 @@ function HomePage() {
 
       const cartItem = {
         id: product.id,
+        productId: product.id, // Added for consistency with rating system
         name: product.name,
         price: product.price,
         image: product.imageUrl || product.image || "/images/bike.png",
@@ -117,12 +143,12 @@ function HomePage() {
         description: product.description || "",
         discountedFinalPrice: product.discountedFinalPrice || 0,
         discount: product.discount || 0,
-        stock: currentProduct.stock, // Keep original stock value
-        addedAt: Date.now()
+        stock: currentProduct.stock,
+        addedAt: Date.now(),
+        canBeRated: true // Explicitly enable rating
       };
 
       await update(ref(database, `users/${auth.currentUser.uid}/cart/${product.id}`), cartItem);
-      
       toast.success(`${product.name} added to cart successfully!`);
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -190,86 +216,118 @@ function HomePage() {
     return `₱${numPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
   };
 
-  const ProductCard = ({ product, isLatestBike = false }) => (
-    <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md relative">
-      {product.availableStock <= 0 && (
-        <div className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-          OUT OF STOCK
-        </div>
-      )}
+  const ProductCard = ({ product, isLatestBike = false }) => {
+    // Calculate average rating
+    const productRatings = ratingsMap[product.id] || {};
+    const ratingsArray = Object.values(productRatings);
+    let averageRating = null;
+    let totalRatings = 0;
+    
+    if (ratingsArray.length > 0) {
+      const validRatings = ratingsArray.filter(rating =>
+        rating && rating.rating && !isNaN(Number(rating.rating))
+      );
       
-      {product.discount > 0 && product.availableStock > 0 && (
-        <div className="absolute top-3 left-3 bg-orange-600 text-white text-xs font-bold px-2 py-1 rounded">
-          {product.discount}% OFF
-        </div>
-      )}
-      
-      {userLoggedIn && (
-        <div
-          className="absolute top-3 right-3 cursor-pointer transition-all duration-200 hover:scale-110 z-10"
-          onClick={() => handleToggleWishlist(product)}
-          style={{
-            color: isInWishlist(product.id) ? '#ff8c00' : '#9ca3af',
-            opacity: isInWishlist(product.id) ? 1 : 0.6
-          }}
-        >
-          <Heart
-            size={20}
-            fill={isInWishlist(product.id) ? "currentColor" : "none"}
-            className="transition-all duration-200"
-          />
-        </div>
-      )}
+      if (validRatings.length > 0) {
+        const sum = validRatings.reduce((total, rating) => total + Number(rating.rating), 0);
+        averageRating = (sum / validRatings.length).toFixed(1);
+        totalRatings = validRatings.length;
+      }
+    }
 
-      <img
-        src={product.imageUrl || product.image || (isLatestBike ? "/images/bike.png" : "/images/bikehelmet1.png")}
-        alt={product.name}
-        className="w-32 h-28 object-contain mb-4"
-      />
-      <div className="w-full text-center">
-        <h3 className="text-white font-semibold text-base mb-1">{product.name}</h3>
-        <div className="text-gray-400 text-xs mb-1">{product.brand || product.category}</div>
-        <div className="text-orange-400 text-sm mb-2">
-          {Number(product.discount) <= 0 || !product.discount ? (
-            <>{product.price ? formatPrice(product.price) : '₱0.00'}</>
+    return (
+      <div className="bg-[#232323] rounded-lg flex flex-col items-center p-6 shadow-md relative">
+        {product.availableStock <= 0 && (
+          <div className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+            OUT OF STOCK
+          </div>
+        )}
+        
+        {product.discount > 0 && product.availableStock > 0 && (
+          <div className="absolute top-3 left-3 bg-orange-600 text-white text-xs font-bold px-2 py-1 rounded">
+            {product.discount}% OFF
+          </div>
+        )}
+        
+        {userLoggedIn && (
+          <div
+            className="absolute top-3 right-3 cursor-pointer transition-all duration-200 hover:scale-110 z-10"
+            onClick={() => handleToggleWishlist(product)}
+            style={{
+              color: isInWishlist(product.id) ? '#ff8c00' : '#9ca3af',
+              opacity: isInWishlist(product.id) ? 1 : 0.6
+            }}
+          >
+            <Heart
+              size={20}
+              fill={isInWishlist(product.id) ? "currentColor" : "none"}
+              className="transition-all duration-200"
+            />
+          </div>
+        )}
+
+        <img
+          src={product.imageUrl || product.image || (isLatestBike ? "/images/bike.png" : "/images/bikehelmet1.png")}
+          alt={product.name}
+          className="w-32 h-28 object-contain mb-4"
+        />
+        <div className="w-full text-center">
+          <h3 className="text-white font-semibold text-base mb-1">{product.name}</h3>
+          <div className="text-gray-400 text-xs mb-1">{product.brand || product.category}</div>
+          
+          {/* Ratings display */}
+          {averageRating && totalRatings > 0 ? (
+            <div className="mb-1">
+              <span style={{ color: 'gold' }}>★ {averageRating}</span>
+              <small className="text-gray-400 ml-1">({totalRatings})</small>
+            </div>
           ) : (
-            <>
-              <span className="text-gray-500 line-through">
-                {product.price ? formatPrice(product.price) : '₱0.00'}
-              </span>
-              {(() => {
-                const price = Number(product.price);
-                const discount = Number(product.discount);
-                if (isNaN(price) || isNaN(discount) || price <= 0) return '₱0.00';
-                const discountedPrice = price * (1 - (discount / 100));
-                return ` ₱${discountedPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
-              })()}
-            </>
+            <div className="text-gray-400 text-xs mb-1">No ratings yet</div>
           )}
-        </div>
-        <div className="flex justify-center gap-2 mt-2">
-          <button
-            className={`bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded ${
-              cartLoading || product.availableStock <= 0 || (isAddingToCart && currentAddingProduct === product.id)
-                ? 'opacity-50 cursor-not-allowed' 
-                : ''
-            }`}
-            onClick={() => handleAddToCart(product)}
-            disabled={cartLoading || product.availableStock <= 0 || (isAddingToCart && currentAddingProduct === product.id)}
-          >
-            {(isAddingToCart && currentAddingProduct === product.id) ? 'Adding...' : 'Add to Cart'}
-          </button>
-          <button
-            className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200"
-            type='button'
-            onClick={() => handleProductDetails(product, isLatestBike)}
-          >
-            Details
-          </button>
+          
+          <div className="text-orange-400 text-sm mb-2">
+            {Number(product.discount) <= 0 || !product.discount ? (
+              <>{product.price ? formatPrice(product.price) : '₱0.00'}</>
+            ) : (
+              <>
+                <span className="text-gray-500 line-through">
+                  {product.price ? formatPrice(product.price) : '₱0.00'}
+                </span>
+                {(() => {
+                  const price = Number(product.price);
+                  const discount = Number(product.discount);
+                  if (isNaN(price) || isNaN(discount) || price <= 0) return '₱0.00';
+                  const discountedPrice = price * (1 - (discount / 100));
+                  return ` ₱${discountedPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
+                })()}
+              </>
+            )}
+          </div>
+          <div className="flex justify-center gap-2 mt-2">
+            <button
+              className={`bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-3 py-1 rounded ${
+                cartLoading || product.availableStock <= 0 || (isAddingToCart && currentAddingProduct === product.id)
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : ''
+              }`}
+              onClick={() => handleAddToCart(product)}
+              disabled={cartLoading || product.availableStock <= 0 || (isAddingToCart && currentAddingProduct === product.id)}
+            >
+              {(isAddingToCart && currentAddingProduct === product.id) ? 'Adding...' : 'Add to Cart'}
+            </button>
+            <button
+              className="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded hover:bg-gray-200"
+              type='button'
+              onClick={() => handleProductDetails(product, isLatestBike)}
+            >
+              Details
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
 
   return (
     <div className="min-h-screen bg-[#181818] text-white">

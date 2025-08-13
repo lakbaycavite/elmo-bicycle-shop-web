@@ -501,20 +501,7 @@ function OrdersOverview() {
               </select>
             </div>
 
-            {/* Payment Method Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Payment Method
-              </label>
-              <select
-                value={paymentFilter}
-                onChange={(e) => handleFilterChange('payment', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-
-                <option value="Walk-in">Walk-in</option>
-              </select>
-            </div>
+     
           </div>
 
           {/* Clear Filters and Results Count */}
