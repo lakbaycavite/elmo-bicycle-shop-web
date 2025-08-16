@@ -3,11 +3,32 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
+import emailjs from '@emailjs/browser';
+import ReCAPTCHA from "react-google-recaptcha";
+
+function handleSignup(userName, userEmail) {
+  const now = new Date();
+  const timeString = now.toLocaleString();
+
+  const templateParams = {
+    name: userName,
+    shopName: "Elmo Bicycle Shop",
+    time: timeString,
+    email: userEmail
+  };
+
+  emailjs.send(
+    'service_qm2hw0u',
+    'template_9myo6pg',
+    templateParams,
+    'Yebq7cqZ1qQCTWxhx'
+  )
+    .then(response => console.log('Welcome email sent!', response.status, response.text))
+    .catch(error => console.error('Failed to send welcome email:', error));
+}
 
 function Signup() {
   const navigate = useNavigate();
-
-  // Input states
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -15,13 +36,14 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Validation state
   const [errors, setErrors] = useState({});
+  const [captchaToken, setCaptchaToken] = useState(null);
+
+  const handleCaptchaChange = (token) => {
+    setCaptchaToken(token);
+  };
 
   const validate = () => {
     const newErrors = {};
@@ -37,6 +59,7 @@ function Signup() {
     if (!password) newErrors.password = 'Password is required.';
     else if (password.length < 8) newErrors.password = 'Password must be at least 8 characters.';
     if (confirmPassword !== password) newErrors.confirmPassword = 'Passwords do not match.';
+    if (!captchaToken) newErrors.captcha = 'Please verify the reCAPTCHA.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -44,107 +67,85 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
 
-    if (validate()) {
-      setLoading(true);
+    setLoading(true);
 
-      const additionalUserData = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-      };
+    const userName = `${firstName.trim()} ${lastName.trim()}`;
+    const additionalUserData = { firstName, lastName, phone };
 
-      await doCreateUserWithEmailAndPassword(email, password, additionalUserData)
-.then(async () => {
-  toast.success('Account created successfully!', {
-    position: 'bottom-right',
-    duration: 3000,
-  });
+    try {
+      await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
+      toast.success('Account created! Please verify your email before logging in.', {
+        position: 'bottom-right',
+        duration: 3000
+      });
 
-  setLoading(false);
+      // Send welcome email
+      handleSignup(userName, email);
 
-  // Sign out user to allow navigation to login page
-  const { getAuth, signOut } = await import('firebase/auth');
-  const auth = getAuth();
-  await signOut(auth);
+      // Sign out the user so they can log in
+      const { getAuth, signOut } = await import('firebase/auth');
+      const auth = getAuth();
+      await signOut(auth);
 
-  navigate('/login');
-})
-        .catch((error) => {
-          console.error("Signup failed", error);
-          setLoading(false);
-
-          if (error.code === 'auth/email-already-in-use') {
-            toast.error('Email is already taken.');
-          } else {
-            toast.error('Signup failed. Please try again.');
-          }
-        });
-    } else {
-      console.log("Validation failed", errors);
+      navigate('/login');
+    } catch (error) {
+      console.error("Signup failed", error);
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Email is already taken.');
+      } else {
+        toast.error('Signup failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-900 to-orange-500 flex items-center justify-center px-4">
       <div className="flex flex-col lg:flex-row items-center justify-between w-full max-w-7xl gap-8 py-12">
-        {/* Left Side - Branding */}
+        {/* Left Side */}
         <div className="hidden lg:flex w-full text-center text-white flex-col items-center justify-center">
-          <h1 className="text-lg sm:text-xl font-light uppercase mb-2 tracking-wide">Welcome back to</h1>
+          <h1 className="text-lg sm:text-xl font-light uppercase mb-2 tracking-wide">Welcome to</h1>
           <div className="flex flex-row gap-3 mb-3">
             <label className="text-amber-500">
-              <h2 className="text-4xl sm:text-5xl font-extrabold mb-6 drop-shadow-lg">ELMO's</h2>
+              <h2 className="text-4xl sm:text-5xl font-extrabold mb-6 drop-shadow-lg">ELMO</h2>
             </label>
             <h2>Bike Shop</h2>
           </div>
           <img src="/images/logos/login-bike.png" alt="Elmo Bicycle Shop" className="max-h-[500px] w-auto" />
         </div>
-    
+
         {/* Right Side - Form */}
         <div className="bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl rounded-2xl p-10 w-full max-w-md text-white">
           <div className="flex justify-center mb-6">
             <img src="/images/logos/elmo.png" alt="Elmo Logo" className="h-12 w-auto" />
           </div>
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+            {/* First & Last Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* First Name */}
               <div>
                 <label className="block text-sm font-semibold mb-1">First Name</label>
                 <input
                   type="text"
                   value={firstName}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
-                    setFirstName(value);
-                  }}
-                  placeholder="Enter First Name"
-                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                    errors.firstName ? 'border-red-500' : 'border-transparent'
-                  } focus:ring-2 focus:ring-orange-500`}
+                  onChange={(e) => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
+                  placeholder="First Name"
                 />
-                {errors.firstName && (
-                  <p className="text-sm text-red-300 mt-1">{errors.firstName}</p>
-                )}
+                {errors.firstName && <p className="text-sm text-red-300 mt-1">{errors.firstName}</p>}
               </div>
-
-              {/* Last Name */}
               <div>
                 <label className="block text-sm font-semibold mb-1">Last Name</label>
                 <input
                   type="text"
                   value={lastName}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
-                    setLastName(value);
-                  }}
-                  placeholder="Enter Last Name"
-                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                    errors.lastName ? 'border-red-500' : 'border-transparent'
-                  } focus:ring-2 focus:ring-orange-500`}
+                  onChange={(e) => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
+                  placeholder="Last Name"
                 />
-                {errors.lastName && (
-                  <p className="text-sm text-red-300 mt-1">{errors.lastName}</p>
-                )}
+                {errors.lastName && <p className="text-sm text-red-300 mt-1">{errors.lastName}</p>}
               </div>
             </div>
 
@@ -155,33 +156,20 @@ function Signup() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter Email"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.email ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500`}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.email ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
+                placeholder="Email"
               />
-              {errors.email && (
-                <p className="text-sm text-red-300 mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-sm text-red-300 mt-1">{errors.email}</p>}
             </div>
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-semibold mb-1">Phone Number</label>
+              <label className="block text-sm font-semibold mb-1">Phone</label>
               <input
                 type="tel"
-                name="phone"
                 value={phone}
-                onChange={(e) => {
-                  const onlyDigits = e.target.value.replace(/\D/g, '');
-                  if (onlyDigits.length <= 11) {
-                    setPhone(onlyDigits);
-                  }
-                }}
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.phone ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500`}
-                required
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.phone ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                 placeholder="+63XXXXXXXXXX"
               />
               {errors.phone && <p className="text-sm text-red-300 mt-1">{errors.phone}</p>}
@@ -194,17 +182,10 @@ function Signup() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.password ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500 pr-10`}
                 placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.password ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500 pr-10`}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute top-[38px] right-3 text-gray-600 hover:text-orange-500 focus:outline-none"
-                tabIndex={-1}
-              >
+              <button type="button" onClick={() => setShowPassword(prev => !prev)} className="absolute top-[38px] right-3">
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
               {errors.password && <p className="text-sm text-red-300 mt-1">{errors.password}</p>}
@@ -217,48 +198,37 @@ function Signup() {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.confirmPassword ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500 pr-10`}
                 placeholder="••••••••"
-                className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-transparent'
-                } focus:ring-2 focus:ring-orange-500 pr-10`}
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword((prev) => !prev)}
-                className="absolute top-[38px] right-3 text-gray-600 hover:text-orange-500 focus:outline-none"
-                tabIndex={-1}
-              >
+              <button type="button" onClick={() => setShowConfirmPassword(prev => !prev)} className="absolute top-[38px] right-3">
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-300 mt-1">{errors.confirmPassword}</p>
-              )}
+              {errors.confirmPassword && <p className="text-sm text-red-300 mt-1">{errors.confirmPassword}</p>}
             </div>
 
-            {/* Submit Button */}
+            {/* reCAPTCHA */}
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                sitekey="6Lc64acrAAAAAMiOKD4SyJOnnMZqty9uH0UMekPL"
+                onChange={handleCaptchaChange}
+              />
+            </div>
+            {errors.captcha && <p className="text-sm text-red-300 text-center">{errors.captcha}</p>}
+
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full ${
-                loading ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'
-              } text-white py-2 rounded-lg font-semibold transition-all duration-300 shadow-md flex items-center justify-center`}
+              className={`w-full ${loading ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'} text-white py-2 rounded-lg font-semibold flex items-center justify-center`}
             >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
-              ) : (
-                'SIGN UP'
-              )}
+              {loading ? <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div> : 'SIGN UP'}
             </button>
 
-            {/* Login Link */}
+            {/* Sign in link */}
             <p className="text-sm text-center mt-2 text-white/80">
               Already have an account?{' '}
-              <span
-                className="text-orange-300 hover:underline cursor-pointer"
-                onClick={() => navigate('/login')}
-              >
-                Sign in
-              </span>
+              <span className="text-orange-300 hover:underline cursor-pointer" onClick={() => navigate('/login')}>Sign in</span>
             </p>
           </form>
         </div>

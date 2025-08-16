@@ -215,45 +215,7 @@ const ProductDetailsModal = ({ showDetailsModal, viewProduct, setShowDetailsModa
                         <div className="mb-4 px-3 py-2 bg-gray-100 rounded-md">
                             <span className="font-semibold">Product ID:</span> {viewProduct.id}
                         </div>
-
-                        {/* Specifications */}
-                        {/* <div className="border-t border-gray-200 pt-4 mb-6">
-                            <h4 className="text-lg font-semibold mb-3">Specifications</h4>
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <tbody className="divide-y divide-gray-200">
-                                    {viewProduct.spec1Label && viewProduct.spec1 && (
-                                        <tr>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-700">{viewProduct.spec1Label}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec1}</td>
-                                        </tr>
-                                    )}
-                                    {!viewProduct.spec1Label && viewProduct.spec1 && (
-                                        <tr>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-700">Specification 1</td>
-                                            <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec1}</td>
-                                        </tr>
-                                    )}
-                                    {viewProduct.spec2Label && viewProduct.spec2 && (
-                                        <tr>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-700">{viewProduct.spec2Label}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec2}</td>
-                                        </tr>
-                                    )}
-                                    {!viewProduct.spec2Label && viewProduct.spec2 && (
-                                        <tr>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-700">Specification 2</td>
-                                            <td className="px-4 py-3 text-sm text-gray-500">{viewProduct.spec2}</td>
-                                        </tr>
-                                    )}
-                                    {!viewProduct.spec1 && !viewProduct.spec2 && (
-                                        <tr>
-                                            <td colSpan="2" className="px-4 py-3 text-sm text-gray-500 text-center">No specifications available</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div> */}
-
+    
                         {/* Customer Reviews Section */}
                         <div className="border-t border-gray-200 pt-4">
                             <h4 className="text-lg font-semibold mb-4">Customer Reviews</h4>

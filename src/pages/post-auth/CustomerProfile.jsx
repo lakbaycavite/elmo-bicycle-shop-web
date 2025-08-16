@@ -26,11 +26,17 @@ import { useOrder } from '../../hooks/useOrder';
 import { doPasswordChange, doSignOut } from '../../firebase/auth';
 import { toast } from 'sonner';
 import ProductRatingModal from '../../components/ProductRatingModal';
+import { ref, update } from "firebase/database";
+import { database } from "../../firebase/firebase";
+import { useAuth } from "../../context/authContext/createAuthContext";
+
+
 
 const CustomerProfile = () => {
     const { currentUserData, editUser, loading: userLoading } = useUsers();
     const { userOrders, loading: ordersLoading, error: ordersError, updateOrderRatedStatus } = useOrder();
     const navigate = useNavigate();
+    
 
     // Profile states
     const [passwordData, setPasswordData] = useState({
@@ -302,18 +308,23 @@ const CustomerProfile = () => {
         setRatingValidationError(false); // Reset validation error when opening modal
     };
 
-    const handleRatingSubmit = async (ratings) => {
-        if (!currentRatingOrderId) return;
-        
-        // Check if all products have ratings
-        const hasUnratedProducts = ratings.some(rating => rating.value === 0);
-        if (hasUnratedProducts) {
-            setRatingValidationError(true);
-            toast.error('Please rate all products before submitting');
-            return;
-        }
+const { currentUser } = useAuth();
+const userId = currentUser?.uid;
 
-        try {
+const handleRatingSubmit = async (ratings, orderId) => {
+    if (!userId) {
+        toast.error("User not logged in");
+        return;
+    }
+
+    const hasUnratedProducts = ratings.some(r => !r.rating || r.rating < 1);
+    if (hasUnratedProducts) {
+        setRatingValidationError(true);
+        toast.error('Please rate all products before submitting');
+        return;
+    }
+
+    try {
             setIsSubmittingRating(true);
             setRatingValidationError(false);
             
@@ -329,18 +340,19 @@ const CustomerProfile = () => {
                 ...prev,
                 [currentRatingOrderId]: newRatings
             }));
-            
+
             await updateOrderRatedStatus(currentRatingOrderId, true);
             toast.success('Thank you for rating your products!');
-        } catch (error) {
-            console.error("Rating submission error:", error);
-            toast.error("Failed to submit ratings");
+    } catch (error) {
+        console.error("Error submitting ratings:", error);
+        toast.error("Failed to submit ratings");
         } finally {
             setIsSubmittingRating(false);
             setShowRatingModal(false);
             setCurrentRatingOrderId(null);
-        }
-    };
+    }
+};
+
 
     if (!currentUserData) {
         return (
@@ -603,12 +615,21 @@ const CustomerProfile = () => {
                             <ShoppingBag className="mx-auto text-gray-500 mb-4" size={48} />
                             <h2 className="text-xl font-semibold text-gray-300 mb-2">No Orders Yet</h2>
                             <p className="text-gray-400 mb-6">You haven't placed any orders yet.</p>
-                            <button
-                                onClick={() => navigate('/customer/products')}
-                                className="bg-[#ff6900] hover:bg-[#e55e00] text-white px-6 py-2 rounded-lg transition-colors"
-                            >
-                                Browse Products
-                            </button>
+        <button
+    onClick={() => {
+        navigate('/customer/home');
+        // This will scroll to the categories section after navigation
+        setTimeout(() => {
+            const element = document.getElementById('categories-section');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100); // Small delay to ensure page has loaded
+    }}
+    className="bg-[#ff6900] hover:bg-[#e55e00] text-white px-6 py-2 rounded-lg transition-colors"
+>
+    Browse Products
+</button>
                         </div>
                     )}
 
