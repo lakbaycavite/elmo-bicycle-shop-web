@@ -76,7 +76,7 @@ function Signup() {
 
     try {
       await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
-      toast.success('Account created! Please verify your email before logging in.', {
+      toast.success('Account created! check your email before logging in.', {
         position: 'bottom-right',
         duration: 3000
       });
