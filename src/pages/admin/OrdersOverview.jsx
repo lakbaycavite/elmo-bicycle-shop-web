@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { useOrder } from '../../hooks/useOrder';
 import jsPDF from 'jspdf';
@@ -8,11 +8,15 @@ import { toast } from 'sonner';
 import { useDiscount } from '../../hooks/useDiscount';
 import { deleteOrder } from '../../services/orderSerivce';
 import { FileWarning } from 'lucide-react';
+import { ref, update, onValue } from 'firebase/database';
+import { database } from '../../firebase/firebase';
+import { useVoucher } from '../../hooks/useVoucher';
 
 function OrdersOverview() {
   const { adminOrders, updateOrderStatus, loading: orderLoading } = useOrder();
   const { returnVoucherOnCancel, deleteUsedVoucher } = useDiscount();
-
+  const { syncVouchersWithOrder } = useVoucher();
+  
   // Modal states
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -24,6 +28,7 @@ function OrdersOverview() {
   const [editablePaymentMethod, setEditablePaymentMethod] = useState('');
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productStocks, setProductStocks] = useState({});
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,70 +144,149 @@ function OrdersOverview() {
 
   // Handle view button click
   const handleViewOrder = (order) => {
-
     setSelectedOrder(order);
     setEditablePaymentMethod(order.paymentMethod);
     setShowDetailsModal(true);
   };
 
-  // Handle approve button click
+  // Stock reduction/restoration function
+  const updateProductStock = async (cart, isAddingStock = false) => {
+    const updates = {};
+    for (const item of cart) {
+        const currentStock = productStocks[item.id] ?? 0;
+        const newStock = isAddingStock 
+            ? currentStock + item.quantity
+            : Math.max(currentStock - item.quantity, 0);
+        updates[`products/${item.id}/stock`] = newStock;
+    }
+    try {
+        await update(ref(database), updates);
+        return true;
+    } catch (error) {
+        console.error("Error updating stock:", error);
+        toast.error("Failed to update product stocks");
+        return false;
+    }
+  };
+
+  // Handle order approval (reduce stock + consume vouchers)
+  const handleConfirmApprove = async () => {
+    try {
+        // 1. First reduce stock
+        const stockUpdated = await updateProductStock(selectedOrder.products);
+        if (!stockUpdated) return;
+
+        // 2. Update order status
+        const updatedOrder = { 
+            ...selectedOrder, 
+            status: 'paid', 
+            paymentMethod: editablePaymentMethod 
+        };
+
+        await updateOrderStatus(selectedOrder.id, updatedOrder);
+        await syncVouchersWithOrder(updatedOrder);
+
+        // 3. DELETE VOUCHERS (only for approved orders)
+        const vouchersToDelete = selectedOrder.products
+            .filter(item => item.voucherId)
+            .map(item => item.voucherId);
+        
+        if (vouchersToDelete.length > 0) {
+            await deleteUsedVoucher(vouchersToDelete);
+        }
+
+        toast.success('Order approved! Stock reduced.');
+        setShowConfirmModal(false);
+        setShowDetailsModal(false);
+        setShowPDFPreview(true);
+        
+    } catch (error) {
+        console.error('Approval error:', error);
+        toast.error('Failed to approve order');
+    }
+  };
+
+const handleConfirmCancel = async () => {
+  try {
+    // 1. Check what type of reward was used (voucher or spin attempt)
+    const rewardsToReturn = selectedOrder.products
+      .filter(item => item.voucherId || item.isSpinReward)
+      .map(item => ({
+        type: item.isSpinReward ? 'spin' : 'voucher',
+        id: item.voucherId || null,
+        userId: selectedOrder.userId
+      }));
+
+    // 2. Return rewards to user
+    if (rewardsToReturn.length > 0) {
+      for (const reward of rewardsToReturn) {
+        if (reward.type === 'spin') {
+          // Return spin attempt
+          await returnSpinAttempt(selectedOrder.userId);
+        } else {
+          // Return voucher
+          await returnVoucherOnCancel(reward.id, reward.userId);
+        }
+      }
+    }
+
+    // 3. Update order status
+    const updatedOrder = { 
+      ...selectedOrder, 
+      status: 'cancelled',
+      cancelReason: cancelReason
+    };
+
+    await updateOrderStatus(selectedOrder.id, updatedOrder);
+    
+    toast.success('Order cancelled.');
+    setShowCancelModal(false);
+    setCancelReason('');
+    setShowDetailsModal(false);
+    
+  } catch (error) {
+    console.error('Cancellation error:', error);
+    toast.error('Failed to cancel order');
+  }
+};
+
+  // Track product stocks
+  useEffect(() => {
+    const productsRef = ref(database, 'products');
+    const unsubscribe = onValue(productsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const stocks = {};
+            snapshot.forEach((childSnapshot) => {
+                stocks[childSnapshot.key] = childSnapshot.val().stock || 0;
+            });
+            setProductStocks(stocks);
+        }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const validateStockBeforeApproval = () => {
+    if (!selectedOrder || !selectedOrder.products) return false;
+    
+    for (const item of selectedOrder.products) {
+        const availableStock = productStocks[item.id] || 0;
+        if (item.quantity > availableStock) {
+            toast.error(`Not enough stock for ${item.name}. Only ${availableStock} available`);
+            return false;
+        }
+    }
+    return true;
+  };
+
   const handleApprove = () => {
+    if (!validateStockBeforeApproval()) return;
     setConfirmAction('approve');
     setShowConfirmModal(true);
   };
 
-  // Handle cancel button click
   const handleCancel = () => {
     setShowDetailsModal(false);
     setShowCancelModal(true);
-  };
-
-
-
-  // Handle confirm approval
-  const handleConfirmApprove = async () => {
-    try {
-
-      const updatedOrder = { ...selectedOrder, status: 'paid', paymentMethod: editablePaymentMethod };
-
-      await updateOrderStatus(selectedOrder.id, updatedOrder)
-        .then(() => {
-          toast.success('Order approved successfully!');
-        })
-      const usedVouchers = selectedOrder.products.filter(item => item.voucherId);
-
-      await deleteUsedVoucher(usedVouchers.map(voucher => voucher.voucherId)); // Delete vouchers if used
-      setShowConfirmModal(false);
-      setShowDetailsModal(false);
-      setShowPDFPreview(true);
-    } catch (error) {
-      console.error('Error approving order:', error);
-      alert('Error approving order. Please try again.');
-    }
-  };
-
-  // Handle confirm cancellation
-  const handleConfirmCancel = async () => {
-    try {
-      // Store the cancel reason in the selectedOrder for immediate UI update
-      const updatedOrder = { ...selectedOrder, cancelReason: cancelReason, status: 'cancelled' };
-      setSelectedOrder(updatedOrder);
-
-      // Update order status - you might need to modify your updateOrderStatus to handle reason
-      await updateOrderStatus(selectedOrder.id, updatedOrder)
-        .then(() => {
-          toast.success('Order cancelled successfully!');
-        })
-
-      await returnVoucherOnCancel(selectedOrder.products.map(item => item.voucherCode));
-
-      setShowCancelModal(false);
-      setCancelReason('');
-      setShowDetailsModal(false);
-    } catch (error) {
-      console.error('Error cancelling order:', error);
-      alert('Error cancelling order. Please try again.');
-    }
   };
 
   // Convert image to base64 for PDF
@@ -217,6 +301,8 @@ function OrdersOverview() {
 
   // Generate and download PDF receipt
   const generatePDFReceipt = () => {
+    if (!selectedOrder) return;
+
     const doc = new jsPDF();
 
     // Add logo
@@ -231,7 +317,6 @@ function OrdersOverview() {
         toast.error('Failed to add logo to PDF. Please check the image URL.');
       }
 
-      // Complete the PDF generation
       completePDFGeneration(doc);
     };
 
@@ -241,26 +326,22 @@ function OrdersOverview() {
     };
 
     img.src = elmoLogo;
-
-    // Return the doc object for immediate use if needed
-    return doc;
   };
 
-  // Complete PDF generation (separated for async logo handling)
+  // Complete PDF generation
   const completePDFGeneration = (doc) => {
-    // Get page dimensions for dynamic positioning in landscape
-    // These values will reflect the landscape A4 size (approx 297mm x 210mm)
+    if (!selectedOrder) return;
+
     const pageWidth = doc.internal.pageSize.getWidth();
-    // const pageHeight = doc.internal.pageSize.getHeight(); // Not strictly needed for this layout
 
     // Add shop name
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('ELMO BIKE SHOP', 50, 25); // Start closer to left edge
+    doc.text('ELMO BIKE SHOP', 50, 25);
 
     // Add a line under the header
     doc.setLineWidth(0.5);
-    doc.line(20, 40, pageWidth - 20, 40); // Line stretches across the page, with 20mm margin
+    doc.line(20, 40, pageWidth - 20, 40);
 
     // Receipt details
     doc.setFontSize(12);
@@ -273,27 +354,21 @@ function OrdersOverview() {
     const itemTableRows = [];
 
     const subtotal = selectedOrder.products.reduce((sum, item) => {
-      const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0
-      let itemPrice = Number(item.price) || 0; // Default to original price
+      const quantity = Number(item.quantity) || 0;
+      let itemPrice = Number(item.price) || 0;
 
-      // Check if item has a valid discounted price and use it
-      // The `item.discountedFinalPrice` should be the price *after* discount for that specific item.
-      // Also ensure `item.discount` is handled if that's your primary indicator of a discount.
       const discountedFinalPrice = Number(item.discountedFinalPrice);
-      const originalPrice = Number(item.originalPrice); // Assuming you store originalPrice
+      const originalPrice = Number(item.originalPrice);
 
-      // Prioritize the discounted price if it's explicitly set and valid (greater than 0)
-      // You might also check if a discount percentage (item.discount) exists and is > 0
       if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
         itemPrice = discountedFinalPrice;
       } else if (originalPrice > 0 && !isNaN(originalPrice)) {
-        // Fallback to originalPrice if no valid discountedPrice
         itemPrice = originalPrice;
       }
-      // If both are 0 or invalid, itemPrice remains 0
 
       return sum + (itemPrice * quantity);
     }, 0);
+    
     const discount = selectedOrder.products.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
     const total = subtotal - discount;
 
@@ -320,13 +395,13 @@ function OrdersOverview() {
         cellPadding: 3,
       },
       headStyles: {
-        fillColor: [255, 140, 0], // Orange color
+        fillColor: [255, 140, 0],
         textColor: 255,
         fontStyle: 'bold'
       },
     });
 
-    // --- Voucher Used Table ---
+    // Voucher Used Table
     const voucherTableRows = [];
 
     selectedOrder.products.forEach(item => {
@@ -347,43 +422,35 @@ function OrdersOverview() {
       }
     });
 
-    // Add a heading for the voucher table
-    let currentY = doc.lastAutoTable.finalY + 15; // Position after the first table
+    let currentY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('Voucher Details', 20, currentY);
 
-    // Generate voucher table
     autoTable(doc, {
       head: [['Status', 'Code', 'Discount %', 'Applied To Item']],
       body: voucherTableRows,
-      startY: currentY + 10, // Start below the "Voucher Details" heading
+      startY: currentY + 10,
       theme: 'grid',
       styles: {
         fontSize: 10,
         cellPadding: 3,
       },
       headStyles: {
-        fillColor: [255, 140, 0], // Orange color
+        fillColor: [255, 140, 0],
         textColor: 255,
         fontStyle: 'bold'
       },
     });
 
-
-
-    // Add total
-    const finalY = doc.lastAutoTable.finalY + 10; // Position after the last table (voucher table)
+    const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFont('helvetica', 'bold');
-    // Position "Total" using pageWidth to align it to the right
     doc.text(`Total: PHP ${total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, pageWidth - 60, finalY);
 
-    // Add footer
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text('Thank you for your purchase!', pageWidth / 2, finalY + 20, { align: 'center' });
 
-    // Auto-download the PDF
     doc.save(`receipt-${selectedOrder.id}.pdf`);
   };
 
@@ -399,34 +466,26 @@ function OrdersOverview() {
 
   // Calculate subtotal (without discount)
   const calculateSubtotal = (items) => {
-
     return items.reduce((sum, item) => {
-      const quantity = Number(item.quantity) || 0; // Ensure quantity is a number, default to 0
-      let itemPrice = Number(item.price) || 0; // Default to original price
+      const quantity = Number(item.quantity) || 0;
+      let itemPrice = Number(item.price) || 0;
 
-      // Check if item has a valid discounted price and use it
-      // The `item.discountedFinalPrice` should be the price *after* discount for that specific item.
-      // Also ensure `item.discount` is handled if that's your primary indicator of a discount.
       const discountedFinalPrice = Number(item.discountedFinalPrice);
-      const originalPrice = Number(item.originalPrice); // Assuming you store originalPrice
+      const originalPrice = Number(item.originalPrice);
 
-      // Prioritize the discounted price if it's explicitly set and valid (greater than 0)
-      // You might also check if a discount percentage (item.discount) exists and is > 0
       if (discountedFinalPrice > 0 && !isNaN(discountedFinalPrice)) {
         itemPrice = discountedFinalPrice;
       } else if (originalPrice > 0 && !isNaN(originalPrice)) {
-        // Fallback to originalPrice if no valid discountedPrice
         itemPrice = originalPrice;
       }
-      // If both are 0 or invalid, itemPrice remains 0
 
       return sum + (itemPrice * quantity);
     }, 0);
   };
 
-  // Placeholder discount (0% for demo)
-  const calculateDiscount = (subtotal) => {
-    return subtotal.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
+  // Calculate discount
+  const calculateDiscount = (items) => {
+    return items.reduce((sum, item) => sum + (item.discountAmount || 0), 0);
   };
 
   const confirmDelete = useCallback((orderId) => {
@@ -434,30 +493,26 @@ function OrdersOverview() {
     setShowDeleteModal(true);
   }, []);
 
-  // Function to close the confirmation modal
   const cancelDelete = useCallback(() => {
     setOrderToDelete(null);
     setShowDeleteModal(false);
   }, []);
 
   const handleDelete = async () => {
-    if (!orderToDelete) return; // Should not happen if called correctly
+    if (!orderToDelete) return;
 
-    setShowDeleteModal(false); // Close the modal immediately after confirmation
+    setShowDeleteModal(false);
 
-    // Implement delete functionality here
     await deleteOrder(orderToDelete)
       .then(() => {
         toast.success('Order deleted successfully!');
-        // Optionally, refresh the order list or update the UI
       })
       .catch((error) => {
         console.log('Error deleting order:', error);
         toast.error('Failed to delete order.');
       })
       .finally(() => {
-        setOrderToDelete(null); // Clear the ID after operation
-
+        setOrderToDelete(null);
       })
   };
 
@@ -500,8 +555,6 @@ function OrdersOverview() {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-
-     
           </div>
 
           {/* Clear Filters and Results Count */}
@@ -672,9 +725,6 @@ function OrdersOverview() {
               </div>
 
               {/* Order Items */}
-
-
-              {/* Order Items */}
               <div className="mb-6">
                 <h3 className="text-lg font-bold mb-3">Order Items</h3>
                 <div className="overflow-x-auto">
@@ -748,14 +798,11 @@ function OrdersOverview() {
                 >
                   <option value="Walk-in">Walk-in</option>
                 </select>
-
               </div>
 
               <div className="mb-6">
                 <label className="block text-sm font-bold mb-2">Vouchers Used:</label>
                 <select
-                  // value={editablePaymentMethod}
-                  // onChange={(e) => setEditablePaymentMethod(e.target.value)}
                   className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-orange-500"
                 >
                   {selectedOrder.products.map((item) => (
@@ -764,17 +811,13 @@ function OrdersOverview() {
                     </option>
                   ))}
                 </select>
-
               </div>
-
 
               {/* Order Summary */}
               <div className="mb-6 bg-gray-50 p-4 rounded">
                 <h3 className="text-lg font-bold mb-3">Order Summary</h3>
                 {(() => {
-                  // const subtotal = calculateSubtotal(selectedOrder.products);
                   const subtotal = calculateSubtotal(selectedOrder.products);
-
                   const discount = calculateDiscount(selectedOrder.products);
                   const total = subtotal - discount;
 
@@ -870,7 +913,8 @@ function OrdersOverview() {
                 >
                   <option value="">Select a reason</option>
                   <option value="Pricing error">Pricing error</option>
-                  <option value="Payment issues">Payment issues</option>
+                  <option value="Misinformation">Misinformation Details</option>
+                  <option value="Change of Mind">Change of Mind</option>
                 </select>
               </div>
               <p className="mb-6 text-red-600">Are you sure you want to cancel this order?</p>
@@ -1025,51 +1069,32 @@ function OrdersOverview() {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-bold mb-4 text-center">Confirm Deletion</h3>
+              <p className="mb-6 text-red-600 text-center">Are you sure you want to delete this order?</p>
+              <div className="flex space-x-4 justify-center gap-2 mt-4">
+                <button
+                  onClick={cancelDelete}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150"
+                >
+                  No
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={orderLoading}
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {orderLoading ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      {/* {showConfirmModal && (
-        <div className="confirmation-modal-overlay">
-          <div className="confirmation-modal-content">
-            <h2>Confirm Deletion</h2>
-            <p>Are you sure you want to delete order <strong>{orderToDelete}</strong>?</p>
-            <p>This action cannot be undone.</p>
-            <div className="modal-actions">
-              <button onClick={handleDelete} className="confirm-delete-button" disabled={orderLoading}>
-                {orderLoading ? 'Deleting...' : 'Delete'}
-              </button>
-              <button onClick={cancelDelete} className="cancel-button" disabled={orderLoading}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            {/* <p className="mb-6 text-red-600 text-center w-full"><FileWarning size={50} /></p> */}
-
-            <h3 className="text-lg font-bold mb-4 text-center">Confirm Deletion</h3>
-            <p className="mb-6 text-red-600 text-center">Are you sure you want to cancel this order?</p>
-            <div className="flex space-x-4 justify-center gap-2 mt-4">
-              <button
-                onClick={cancelDelete}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150"
-              >
-                No
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={orderLoading}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-
-                {orderLoading ? 'Deleting...' : 'Yes, Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AdminLayout>
   );
 }

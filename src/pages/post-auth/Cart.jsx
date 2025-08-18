@@ -186,31 +186,11 @@ const Cart = () => {
         return true;
     };
 
-    const updateProductStock = async (cart) => {
-        const updates = {};
-        for (const item of cart) {
-            const currentStock = productStocks[item.id] ?? 0;
-            const newStock = Math.max(currentStock - item.quantity, 0);
-            updates[`products/${item.id}/stock`] = newStock;
-        }
-        try {
-            await update(ref(database), updates);
-            return true;
-        } catch (error) {
-            console.error("Error updating stock:", error);
-            toast.error("Failed to update product stocks");
-            return false;
-        }
-    };
-
     const handleCheckoutComplete = async (orderId, voucherDiscount = 0) => {
         setAppliedVoucherDiscount(voucherDiscount);
         
         if (!validateStockBeforeCheckout()) return;
         
-        const stockUpdated = await updateProductStock(cart);
-        if (!stockUpdated) return;
-
         setOrderCompleted(true);
         setShowOrderModal(false);
         setCurrentOrderId(orderId);

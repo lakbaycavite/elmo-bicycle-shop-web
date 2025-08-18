@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { useUsers } from '../../hooks/useUser';
 
-function UserActivity() {
+function UserInfo() {
   const { users, loading, error } = useUsers();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,9 +88,9 @@ if (!matchesStatus) return false;
     <AdminLayout>
       <div className="flex min-h-screen bg-white">
         <div className="flex-1 p-10 sm:p-4">
-          <div className="bg-white shadow-xl rounded-lg w-full p-2 sm:p-4">
+          <div className="bg-white shadow-xl rounded-lg w-full p-6 sm:p-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-              <h1><span className="text-orange-500 font-semibold text-xl sm:text-4xl">USERS</span></h1>
+              <h1><span className="font-semibold text-xl sm:text-4xl">USERS</span></h1>
               <div className="text-xs sm:text-sm text-gray-500">
                 {filteredAccounts.length} users found
               </div>
@@ -257,4 +257,4 @@ if (!matchesStatus) return false;
   );
 }
 
-export default UserActivity;
+export default UserInfo;

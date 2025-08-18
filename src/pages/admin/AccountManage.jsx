@@ -491,8 +491,8 @@ function AccountManage() {
       <div className="flex min-h-screen bg-white">
         <div className="flex-1 p-2 sm:p-4">
           {/* Header */}
-          <div className="bg-orange-500 w-full py-3 sm:py-4 px-4 sm:px-6">
-            <h1 className="text-white text-xl sm:text-2xl md:text-3xl font-bold">Admin Profile</h1>
+          <div className=" w-full py-3 sm:py-4 px-4 sm:px-6">
+            <h1 className=" text-xl sm:text-2xl md:text-3xl font-bold">ADMIN PROFILE</h1>
           </div>
 
           {/* Profile Card */}
@@ -521,7 +521,7 @@ function AccountManage() {
                   </button>
                   <button
                     onClick={() => setIsEditProfileModalOpen(true)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base flex items-center gap-1"
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base flex items-center gap-1"
                   >
                     <Edit className="h-4 w-4" />
                     Edit Profile
@@ -539,7 +539,7 @@ function AccountManage() {
               </button>
               <button
                 onClick={() => setIsChangeEmailModalOpen(true)}
-                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base flex items-center gap-1"
+                className="bg-black hover:bg-gray-600 text-white px-3 py-1 sm:px-4 sm:py-2 rounded text-sm sm:text-base flex items-center gap-1"
               >
                 <Mail className="h-4 w-4" />
                 Change Email

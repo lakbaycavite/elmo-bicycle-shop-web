@@ -3,29 +3,8 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
-import emailjs from '@emailjs/browser';
+import { getAuth, sendEmailVerification, signOut } from 'firebase/auth';
 import ReCAPTCHA from "react-google-recaptcha";
-
-function handleSignup(userName, userEmail) {
-  const now = new Date();
-  const timeString = now.toLocaleString();
-
-  const templateParams = {
-    name: userName,
-    shopName: "Elmo Bicycle Shop",
-    time: timeString,
-    email: userEmail
-  };
-
-  emailjs.send(
-    'service_qm2hw0u',
-    'template_9myo6pg',
-    templateParams,
-    'Yebq7cqZ1qQCTWxhx'
-  )
-    .then(response => console.log('Welcome email sent!', response.status, response.text))
-    .catch(error => console.error('Failed to send welcome email:', error));
-}
 
 function Signup() {
   const navigate = useNavigate();
@@ -71,21 +50,21 @@ function Signup() {
 
     setLoading(true);
 
-    const userName = `${firstName.trim()} ${lastName.trim()}`;
     const additionalUserData = { firstName, lastName, phone };
 
     try {
-      await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
-      toast.success('Account created! check your email before logging in.', {
+      const userCredential = await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
+      const user = userCredential.user;
+
+      // 🔹 Send Firebase verification email
+      await sendEmailVerification(user);
+
+      toast.success('Account created! Please check your email to verify before logging in.', {
         position: 'bottom-right',
-        duration: 3000
+        duration: 4000
       });
 
-      // Send welcome email
-      handleSignup(userName, email);
-
-      // Sign out the user so they can log in
-      const { getAuth, signOut } = await import('firebase/auth');
+      // 🔹 Sign out so they must verify first
       const auth = getAuth();
       await signOut(auth);
 
@@ -130,7 +109,7 @@ function Signup() {
                 <input
                   type="text"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                  onChange={(e) => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 12))}
                   className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                   placeholder="First Name"
                 />
@@ -141,7 +120,7 @@ function Signup() {
                 <input
                   type="text"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                  onChange={(e) => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 12))}
                   className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                   placeholder="Last Name"
                 />

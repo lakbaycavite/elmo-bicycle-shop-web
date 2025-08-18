@@ -155,8 +155,8 @@ function UserManagement() {
       <div className="flex min-h-screen bg-white">
         <div className="flex-1 p-4 md:p-6">
           <div className="bg-white shadow-xl rounded-lg w-full p-4 md:p-6">
-            <label className="text-orange-500 font-bold text-xl md:text-2xl mb-4">
-              <h1>Staff</h1>
+            <label className=" font-bold text-xl md:text-2xl mb-4">
+              <h1>STAFFS</h1>
             </label>
             <div className='flex flex-col sm:flex-row gap-4 mb-6'>
               <input
@@ -211,7 +211,7 @@ function UserManagement() {
                             <td className="py-3 px-4">
                               <button
                                 onClick={() => openEditModal(account)}
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded flex items-center text-sm md:text-base"
+                                className="bg-orange-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded flex items-center text-sm md:text-base"
                               >
                                 <Edit size={16} className="mr-1" /> Edit Access
                               </button>
@@ -364,38 +364,11 @@ function UserManagement() {
                 </div>
               </div>
 
-              {/* Editable Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email:</label>
-                <div className="flex items-center">
-                  {editingFields.email ? (
-                    <>
-                      <input
-                        type="email"
-                        value={editedValues.email}
-                        onChange={(e) => handleFieldChange('email', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                      <button 
-                        onClick={() => toggleEditField('email')}
-                        className="ml-2 p-1 text-green-500 hover:text-green-700"
-                      >
-                        ✓
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-gray-800">{editedValues.email}</p>
-                      <button 
-                        onClick={() => toggleEditField('email')}
-                        className="ml-2 p-1 text-gray-500 hover:text-orange-500"
-                      >
-                        <Edit size={16} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+{/* Email - Non-editable */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+  <p className="text-gray-800">{editedValues.email}</p>
+</div>
 
               {/* Page Access Selection */}
               <div className="mt-4">

@@ -353,19 +353,16 @@ function HomePage() {
             >
               Shop Now
             </button>
-            <button 
-              className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200" 
-              type='button' 
-              onClick={() => {
-                navigate('/customer/home');
-                setTimeout(() => {
-                  const section = document.getElementById('categories-section');
-                  section?.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-              }}
-            >
-              Explore Products
-            </button>
+           <button
+  className="bg-white text-gray-900 font-semibold px-6 py-3 rounded transition hover:bg-gray-200"
+  type="button"
+  onClick={() => {
+    navigate('/customer/bikes-category');
+  }}
+>
+  Explore Products
+</button>
+
           </div>
         </div>
         <div className="flex-1 flex flex-col items-center md:items-end mt-8 md:mt-0">

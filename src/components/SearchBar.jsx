@@ -92,16 +92,19 @@ const handleProductSelect = (product) => {
   );
 
   const SearchInput = (
-    <div className="relative w-full">
-      <input
-        type="text"
-        placeholder="Search by name or category..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="w-full px-4 py-2 border rounded shadow-sm focus:outline-none"
-      />
-      {filteredProducts.length > 0 && renderSearchResults()}
-    </div>
+   <div className="flex justify-center">
+  <div className="relative w-99">
+    <input
+      type="text"
+      placeholder="Search by name or category..."
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      className="w-full px-4 py-2 border rounded shadow-sm focus:outline-none"
+    />
+    {filteredProducts.length > 0 && renderSearchResults()}
+  </div>
+</div>
+
   );
 
   return (

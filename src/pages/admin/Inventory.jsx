@@ -498,7 +498,7 @@ const Inventory = () => {
         <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-auto">
           {/* Header */}
           <div className="mb-4 md:mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Inventory</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">INVENTORY</h1>
           </div>
 
           {/* Controls Container */}

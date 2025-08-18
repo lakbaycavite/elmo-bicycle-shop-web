@@ -177,7 +177,7 @@ const CustomerProfile = () => {
         
         // Only allow letters and spaces for name fields
         if (name === 'firstName' || name === 'lastName') {
-            const onlyLetters = value.replace(/[^A-Za-z\s]/g, '');
+            const onlyLetters = value.replace(/[^A-Za-z\s]/g, '').slice(0, 12);
             setProfileData(prev => ({
                 ...prev,
                 [name]: onlyLetters
@@ -493,38 +493,39 @@ const handleRatingSubmit = async (ratings, orderId) => {
                                         <span className="text-gray-400 font-medium">Name:</span>
                                         {isEditing ? (
                                             <div className="flex flex-col gap-2 mt-2">
-                                                <div className="flex gap-2">
-                                                    <div className="flex-1">
-                                                        <input
-                                                            type="text"
-                                                            name="firstName"
-                                                            value={profileData.firstName}
-                                                            onChange={handleProfileInputChange}
-                                                            className={`bg-gray-800 text-white px-3 py-2 rounded border ${
-                                                                nameErrors.firstName ? 'border-red-500' : 'border-gray-600'
-                                                            } focus:border-[#ff6900] focus:outline-none w-full`}
-                                                            placeholder="First Name"
-                                                        />
-                                                        {nameErrors.firstName && (
-                                                            <p className="text-red-400 text-xs mt-1">First name is required</p>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <input
-                                                            type="text"
-                                                            name="lastName"
-                                                            value={profileData.lastName}
-                                                            onChange={handleProfileInputChange}
-                                                            className={`bg-gray-800 text-white px-3 py-2 rounded border ${
-                                                                nameErrors.lastName ? 'border-red-500' : 'border-gray-600'
-                                                            } focus:border-[#ff6900] focus:outline-none w-full`}
-                                                            placeholder="Last Name"
-                                                        />
-                                                        {nameErrors.lastName && (
-                                                            <p className="text-red-400 text-xs mt-1">Last name is required</p>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                               <div className="flex gap-[5px]">
+    <div className="flex-1">
+        <input
+            type="text"
+            name="firstName"
+            value={profileData.firstName}
+            onChange={handleProfileInputChange}
+            className={`bg-gray-800 text-white px-2 py-2 rounded border ${
+                nameErrors.firstName ? 'border-red-500' : 'border-gray-600'
+            } focus:border-[#ff6900] focus:outline-none w-full sm:w-64 md:w-35`}
+            placeholder="First Name"
+        />
+        {nameErrors.firstName && (
+            <p className="text-red-400 text-xs mt-1">First name is required</p>
+        )}
+    </div>
+    <div className="flex-1">
+        <input
+            type="text"
+            name="lastName"
+            value={profileData.lastName}
+            onChange={handleProfileInputChange}
+            className={`bg-gray-800 text-white px-2 py-2 rounded border ${
+                nameErrors.lastName ? 'border-red-500' : 'border-gray-600'
+            } focus:border-[#ff6900] focus:outline-none w-full sm:w-64 md:w-35`}
+            placeholder="Last Name"
+        />
+        {nameErrors.lastName && (
+            <p className="text-red-400 text-xs mt-1">Last name is required</p>
+        )}
+    </div>
+</div>
+
                                             </div>
                                         ) : (
                                             <span className="ml-2 text-white">{fullName}</span>
@@ -543,29 +544,34 @@ const handleRatingSubmit = async (ratings, orderId) => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <Phone className="text-[#ff6900]" size={20} />
-                                    <div className="flex-1">
-                                        <span className="text-gray-400 font-medium">Phone:</span>
-                                        {isEditing ? (
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={profileData.phone}
-                                                onChange={(e) => {
-                                                    const onlyDigits = e.target.value.replace(/\D/g, '');
-                                                    if (onlyDigits.length <= 11) {
-                                                        setProfileData((prev) => ({ ...prev, phone: onlyDigits }));
-                                                    }
-                                                }}
-                                                placeholder="Phone Number (11 digits)"
-                                                className="bg-gray-800 text-white px-3 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none flex-1"
-                                            />
-                                        ) : (
-                                            <span className="ml-2 text-white">{phone}</span>
-                                        )}
-                                    </div>
-                                </div>
+<div className="flex items-center gap-3">
+  <Phone className="text-[#ff6900]" size={20} />
+  <div className="flex items-center"> {/* removed flex-1 */}
+    <span className="text-gray-400 font-medium mr-2 whitespace-nowrap min-w-fit">
+      Phone:
+    </span>
+    {isEditing ? (
+      <input
+        type="tel"
+        name="phone"
+        value={profileData.phone}
+        onChange={(e) => {
+          const onlyDigits = e.target.value.replace(/\D/g, '');
+          if (onlyDigits.length <= 11) {
+            setProfileData((prev) => ({ ...prev, phone: onlyDigits }));
+          }
+        }}
+        placeholder="Phone Number (11 digits)"
+        className="bg-gray-800 text-white px-2 py-2 rounded border border-gray-600 focus:border-[#ff6900] focus:outline-none w-full sm:w-64 md:w-28"
+      />
+    ) : (
+      <span className="text-white">{phone}</span>
+    )}
+  </div>
+</div>
+
+
+
                             </div>
 
                             {/* Account Action Buttons */}

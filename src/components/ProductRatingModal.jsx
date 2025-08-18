@@ -153,7 +153,10 @@ const ProductRatingModal = ({ show, onClose, cartItems, onSubmitRatings, isSubmi
 
                     {/* Comment */}
                     <div className="mb-6">
-                        <p className="font-medium mb-2">Share your thoughts (optional)</p>
+                       <p className="font-medium mb-2">
+  Share your thoughts <span className="text-gray-500">(optional)</span>
+</p>
+
                         <textarea
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             rows="3"

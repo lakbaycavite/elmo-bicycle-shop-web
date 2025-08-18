@@ -19,7 +19,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 import AccountManage from './pages/admin/AccountManage'
 import OrdersOverview from './pages/admin/OrdersOverview';
 import UserManagement from './pages/admin/UserManagement';
-import UserActivity from './pages/admin/UserActivity';
+import UserInfo from './pages/admin/UserInfo';
 import POS from './pages/admin/POS'; 
 
 // Staff pages
@@ -109,9 +109,9 @@ function App() {
               <OrdersOverview />
             </ProtectedRoute>
           } />
-          <Route path="/admin/user-activity" element={
+          <Route path="/admin/user-info" element={
             <ProtectedRoute requiredRoles={['admin', 'staff']}>
-              <UserActivity />
+              <UserInfo/>
             </ProtectedRoute>
           } />
           <Route path="/admin/pos" element={
