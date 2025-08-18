@@ -3,8 +3,29 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
-import { getAuth, sendEmailVerification, signOut } from 'firebase/auth';
+import emailjs from '@emailjs/browser';
 import ReCAPTCHA from "react-google-recaptcha";
+
+function handleSignup(userName, userEmail) {
+  const now = new Date();
+  const timeString = now.toLocaleString();
+
+  const templateParams = {
+    name: userName,
+    shopName: "Elmo Bicycle Shop",
+    time: timeString,
+    email: userEmail
+  };
+
+  emailjs.send(
+    'service_qm2hw0u',
+    'template_9myo6pg',
+    templateParams,
+    'Yebq7cqZ1qQCTWxhx'
+  )
+    .then(response => console.log('Welcome email sent!', response.status, response.text))
+    .catch(error => console.error('Failed to send welcome email:', error));
+}
 
 function Signup() {
   const navigate = useNavigate();
@@ -50,21 +71,21 @@ function Signup() {
 
     setLoading(true);
 
+    const userName = `${firstName.trim()} ${lastName.trim()}`;
     const additionalUserData = { firstName, lastName, phone };
 
     try {
-      const userCredential = await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
-      const user = userCredential.user;
-
-      // 🔹 Send Firebase verification email
-      await sendEmailVerification(user);
-
-      toast.success('Account created! Please check your email to verify before logging in.', {
+      await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
+      toast.success('Account created! check your email before logging in.', {
         position: 'bottom-right',
-        duration: 4000
+        duration: 3000
       });
 
-      // 🔹 Sign out so they must verify first
+      // Send welcome email
+      handleSignup(userName, email);
+
+      // Sign out the user so they can log in
+      const { getAuth, signOut } = await import('firebase/auth');
       const auth = getAuth();
       await signOut(auth);
 
