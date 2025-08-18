@@ -28,6 +28,21 @@ function HomePage() {
   const { cart, loading: cartLoading } = useCart();
   const { wishlist, addItem: addToWishlist, removeItem: removeFromWishlist, refreshWishlist } = useWishlist();
 
+  // ===== EMAIL VERIFICATION CHECK =====
+  useEffect(() => {
+    if (!userLoggedIn) {
+      navigate('/login');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (user && !user.emailVerified) {
+      toast.warning("Please verify your email to access the homepage");
+      navigate('/verify-email'); // redirect to your verification page
+    }
+  }, [userLoggedIn, navigate]);
+  // ====================================
+
   // Load products
   useEffect(() => {
     const productsRef = ref(database, 'products');
