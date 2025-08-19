@@ -50,11 +50,11 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/customer/home" element={<HomePage />} />
-          <Route path="/customer/products" element={<Products />} /> {/* Shop is now public */}
+          <Route path="/customer/products" element={<Products />} /> 
 
           {/* Pre-auth routes */}
           <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
-          <Route path="/signup" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Signup />} />
+           <Route path="/signup" element={<Signup />} />
 
           {/* Customer-only routes */}
          <Route path="/customer/bikes-category" element={<BikesCategory />} />

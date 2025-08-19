@@ -3,29 +3,8 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
-import emailjs from '@emailjs/browser';
-import ReCAPTCHA from "react-google-recaptcha";
-
-function handleSignup(userName, userEmail) {
-  const now = new Date();
-  const timeString = now.toLocaleString();
-
-  const templateParams = {
-    name: userName,
-    shopName: "Elmo Bicycle Shop",
-    time: timeString,
-    email: userEmail
-  };
-
-  emailjs.send(
-    'service_qm2hw0u',
-    'template_9myo6pg',
-    templateParams,
-    'Yebq7cqZ1qQCTWxhx'
-  )
-    .then(response => console.log('Welcome email sent!', response.status, response.text))
-    .catch(error => console.error('Failed to send welcome email:', error));
-}
+import { getDatabase, ref, set } from 'firebase/database';
+import { getAuth, sendEmailVerification, signOut } from 'firebase/auth';
 
 function Signup() {
   const navigate = useNavigate();
@@ -39,12 +18,8 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [captchaToken, setCaptchaToken] = useState(null);
 
-  const handleCaptchaChange = (token) => {
-    setCaptchaToken(token);
-  };
-
+  // --- Validation ---
   const validate = () => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,44 +34,51 @@ function Signup() {
     if (!password) newErrors.password = 'Password is required.';
     else if (password.length < 8) newErrors.password = 'Password must be at least 8 characters.';
     if (confirmPassword !== password) newErrors.confirmPassword = 'Passwords do not match.';
-    if (!captchaToken) newErrors.captcha = 'Please verify the reCAPTCHA.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // --- Handle form submit ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setLoading(true);
 
-    const userName = `${firstName.trim()} ${lastName.trim()}`;
-    const additionalUserData = { firstName, lastName, phone };
-
     try {
-      await doCreateUserWithEmailAndPassword(email, password, additionalUserData);
-      toast.success('Account created! check your email before logging in.', {
-        position: 'bottom-right',
-        duration: 3000
+      // Create Firebase user (new account)
+      const userCredential = await doCreateUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+
+      // Save additional user info in Realtime DB
+      const db = getDatabase();
+      await set(ref(db, 'users/' + user.uid), {
+        firstName,
+        lastName,
+        phone,
+        email,
+        role: 'customer',
+        verified: false, // still tracked in your DB
       });
 
-      // Send welcome email
-      handleSignup(userName, email);
+      // Send Firebase verification email (only affects this new account)
+      await sendEmailVerification(user);
 
-      // Sign out the user so they can log in
-      const { getAuth, signOut } = await import('firebase/auth');
+      toast.success(
+        'Account created! Please check your email to verify your account before logging in.',
+        { position: 'bottom-right', duration: 5000 }
+      );
+
+      // Sign out immediately
       const auth = getAuth();
       await signOut(auth);
 
       navigate('/login');
     } catch (error) {
-      console.error("Signup failed", error);
-      if (error.code === 'auth/email-already-in-use') {
-        toast.error('Email is already taken.');
-      } else {
-        toast.error('Signup failed. Please try again.');
-      }
+      console.error('Signup failed', error);
+      if (error.code === 'auth/email-already-in-use') toast.error('Email is already taken.');
+      else toast.error('Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -130,7 +112,7 @@ function Signup() {
                 <input
                   type="text"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 12))}
+                  onChange={e => setFirstName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 12))}
                   className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                   placeholder="First Name"
                 />
@@ -141,7 +123,7 @@ function Signup() {
                 <input
                   type="text"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 12))}
+                  onChange={e => setLastName(e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 12))}
                   className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                   placeholder="Last Name"
                 />
@@ -155,7 +137,7 @@ function Signup() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.email ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                 placeholder="Email"
               />
@@ -168,7 +150,7 @@ function Signup() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
                 className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.phone ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500`}
                 placeholder="+63XXXXXXXXXX"
               />
@@ -181,7 +163,7 @@ function Signup() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.password ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500 pr-10`}
                 placeholder="••••••••"
               />
@@ -197,7 +179,7 @@ function Signup() {
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={e => setConfirmPassword(e.target.value)}
                 className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.confirmPassword ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500 pr-10`}
                 placeholder="••••••••"
               />
@@ -206,15 +188,6 @@ function Signup() {
               </button>
               {errors.confirmPassword && <p className="text-sm text-red-300 mt-1">{errors.confirmPassword}</p>}
             </div>
-
-            {/* reCAPTCHA */}
-            <div className="flex justify-center">
-              <ReCAPTCHA
-                sitekey="6Lc64acrAAAAAMiOKD4SyJOnnMZqty9uH0UMekPL"
-                onChange={handleCaptchaChange}
-              />
-            </div>
-            {errors.captcha && <p className="text-sm text-red-300 text-center">{errors.captcha}</p>}
 
             {/* Submit */}
             <button

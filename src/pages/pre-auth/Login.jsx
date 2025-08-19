@@ -1,12 +1,15 @@
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Eye, EyeOff, Mail, X, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Eye, EyeOff, Mail, Loader } from 'lucide-react';
 import { doSignInWithEmailAndPassword, doPasswordReset } from '../../firebase/auth';
 import { getUserById } from '../../services/userService';
 import { toast } from 'sonner';
+import { getAuth, signOut, applyActionCode } from 'firebase/auth';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const auth = getAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,103 +18,97 @@ function Login() {
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // Password reset modal states
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetEmailError, setResetEmailError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
+  // ===== Handle verification token (oobCode) =====
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('oobCode');
+    if (code) {
+      (async () => {
+        try {
+          await applyActionCode(auth, code);
+          toast.success('Email verified successfully! You can now log in.');
+          navigate('/login');
+        } catch (err) {
+          console.error('Verification error:', err);
+          toast.error('Invalid or expired verification link.');
+        }
+      })();
+    }
+  }, [location.search, auth, navigate]);
+
+  // ===== Validation =====
   const validate = () => {
     const newErrors = { email: '', password: '' };
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!email) {
-      newErrors.email = 'Email is required.';
-    } else if (!emailRegex.test(email)) {
-      newErrors.email = 'Enter a valid email.';
-    }
+    if (!email) newErrors.email = 'Email is required.';
+    else if (!emailRegex.test(email)) newErrors.email = 'Enter a valid email.';
 
-    if (!password) {
-      newErrors.password = 'Password is required.';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters.';
-    }
+    if (!password) newErrors.password = 'Password is required.';
+    else if (password.length < 8) newErrors.password = 'Password must be at least 8 characters.';
 
     setErrors(newErrors);
-    return Object.values(newErrors).every((msg) => msg === '');
+    return Object.values(newErrors).every(msg => msg === '');
   };
 
+  // ===== Login =====
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      setLoading(true);
-
-      if (!isSigningIn) {
-        setIsSigningIn(true);
-        await doSignInWithEmailAndPassword(email, password)
-          .then(async (userCredential) => {
-
-            // Get user from userCredential
-            const user = userCredential.user;
-
-            try {
-              const userRecord = await getUserById(user.uid);
-              const role = userRecord.role || 'customer';
-
-toast.success('Successfully logged in!', {
-  position: 'bottom-right',
-  duration: 3000,
-});
-
-              // Redirect based on role
-              // Redirect based on role
-if (role === 'admin') {
-  navigate('/admin/dashboard');
-} else if (role === 'staff') {
-  navigate('/admin/pos');
-} else {
-  navigate('/customer/home');
-}
-
-            } catch (error) {
-              if (error.message === 'ACCOUNT_DISABLED') {
-                toast.error('Your account has been disabled. Please contact support.');
-              } else {
-                toast.error(error.code === 'auth/invalid-credential'
-                  ? 'Invalid email or password'
-                  : `Invalid email or password`);
-              }
-              navigate('/login');
-            }
-
-            setIsSigningIn(false);
-            setLoading(false);
-          })
-          .catch((error) => {
-            if (error.message === 'ACCOUNT_DISABLED') {
-              toast.error('Your account has been disabled. Please contact support.');
-            } else {
-              toast.error(error.code === 'auth/invalid-credential'
-                ? 'Invalid email or password'
-                : `Invalid email or password`);
-            }
-          })
-          .finally(() => {
-            setLoading(false);
-            setIsSigningIn(false);
-          });
-      }
-    } else {
+    if (!validate()) {
       toast.error('Validation failed. Please check your inputs.');
+      return;
+    }
+
+    if (isSigningIn) return;
+    setLoading(true);
+    setIsSigningIn(true);
+
+    try {
+      const userCredential = await doSignInWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+
+      // Fetch additional user data
+      const userRecord = await getUserById(user.uid);
+      const role = userRecord.role || 'customer';
+
+      // Strict check: customers must verify email
+      if (role === 'customer' && !user.emailVerified) {
+        await signOut(auth);
+        toast.error('Please verify your email before logging in!');
+        setLoading(false);
+        setIsSigningIn(false);
+        return;
+      }
+
+      toast.success('Successfully logged in!', { position: 'bottom-right', duration: 3000 });
+
+      // Redirect based on role
+      if (role === 'admin') navigate('/admin/dashboard');
+      else if (role === 'staff') navigate('/admin/pos');
+      else navigate('/customer/home');
+
+    } catch (error) {
+      console.error('Login error:', error);
+      let message = 'Invalid email or password';
+      if (error.message === 'ACCOUNT_DISABLED') {
+        message = 'Your account has been disabled. Please contact support.';
+      }
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setIsSigningIn(false);
     }
   };
 
+  // ===== Password Reset =====
   const handlePasswordReset = () => {
     setShowResetModal(true);
-    // Pre-fill the reset email if the user has already entered an email in the login form
-    if (email) {
-      setResetEmail(email);
-    }
+    if (email) setResetEmail(email);
   };
 
   const validateResetEmail = () => {
@@ -129,26 +126,17 @@ if (role === 'admin') {
 
   const handleResetSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateResetEmail()) {
-      return;
-    }
+    if (!validateResetEmail()) return;
 
     setResetLoading(true);
-
     try {
       await doPasswordReset(resetEmail);
       toast.success("Password reset email sent successfully!");
       closeResetModal();
     } catch (error) {
       let errorMessage = 'Failed to send reset email. Please try again later';
-
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account exists with this email address';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email format';
-      }
-
+      if (error.code === 'auth/user-not-found') errorMessage = 'No account exists with this email address';
+      else if (error.code === 'auth/invalid-email') errorMessage = 'Invalid email format';
       toast.error(errorMessage);
       console.error('Password reset error:', error);
     } finally {
@@ -163,6 +151,7 @@ if (role === 'admin') {
     setResetLoading(false);
   };
 
+  // ===== UI (unchanged) =====
   return (
     <>
       <div className="min-h-screen bg-gradient-to-b from-stone-900 to-orange-500 flex items-center justify-center px-4">
@@ -180,7 +169,6 @@ if (role === 'admin') {
               </label>
               <h2>Bike Shop</h2>
             </div>
-            {/* Added responsive classes here: hidden on small screens, block on large screens */}
             <img
               src="/images/logos/login-bike.png"
               alt="Elmo Bicycle Shop"
@@ -205,8 +193,7 @@ if (role === 'admin') {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter Email"
-                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.email ? 'border-red-500' : 'border-transparent'
-                    } focus:ring-2 focus:ring-orange-500 focus:outline-none`}
+                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.email ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500 focus:outline-none`}
                 />
                 {errors.email && (
                   <p className="text-sm text-red-300 mt-[2px]">{errors.email}</p>
@@ -220,20 +207,15 @@ if (role === 'admin') {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter Password"
-                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.password ? 'border-red-500' : 'border-transparent'
-                    } focus:ring-2 focus:ring-orange-500 focus:outline-none pr-10`}
+                  className={`w-full px-4 py-2 bg-white/80 text-black rounded-lg border ${errors.password ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-orange-500 focus:outline-none pr-10`}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
+                  onClick={() => setShowPassword(prev => !prev)}
                   className="absolute top-[38px] right-3 text-gray-600 hover:text-orange-500 focus:outline-none"
                   tabIndex={-1}
                 >
-                  {showPassword ? (
-                    <Eye className="w-5 h-5" />
-                  ) : (
-                    <EyeOff className="w-5 h-5" />
-                  )}
+                  {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                 </button>
                 {errors.password && (
                   <p className="text-sm text-red-300 mt-1">{errors.password}</p>
@@ -243,8 +225,7 @@ if (role === 'admin') {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full ${loading ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'
-                  } text-white py-2 rounded-lg font-semibold transition-all duration-300 shadow-md flex items-center justify-center`}
+                className={`w-full ${loading ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'} text-white py-2 rounded-lg font-semibold transition-all duration-300 shadow-md flex items-center justify-center`}
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
@@ -275,30 +256,20 @@ if (role === 'admin') {
         </div>
       </div>
 
-      {/* Password Reset Modal - Bootstrap with Tailwind styling */}
+      {/* Password Reset Modal */}
       {showResetModal && (
         <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
-              {/* Modal Header */}
               <div className="modal-header bg-stone-900 text-white border-0">
                 <h5 className="modal-title font-semibold">Reset Password</h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={closeResetModal}
-                  aria-label="Close"
-                >
-                  {/* <X className="w-5 h-5" /> */}
-                </button>
+                <button type="button" className="btn-close btn-close-white" onClick={closeResetModal} aria-label="Close" />
               </div>
 
-              {/* Modal Body */}
               <div className="modal-body p-4">
                 <p className="text-gray-600 mb-4">
                   Enter your email address and we'll send you a link to reset your password.
                 </p>
-
 
                 <form onSubmit={handleResetSubmit}>
                   <div className="mb-3">
@@ -318,11 +289,8 @@ if (role === 'admin') {
                           if (resetEmailError) validateResetEmail();
                         }}
                       />
-                      {resetEmailError && (
-                        <div className="invalid-feedback">{resetEmailError}</div>
-                      )}
+                      {resetEmailError && <div className="invalid-feedback">{resetEmailError}</div>}
                     </div>
-
                   </div>
 
                   <p className='text-sm text-gray-500 mb-4 border-t border-gray-100 pt-2'>
@@ -330,11 +298,7 @@ if (role === 'admin') {
                   </p>
 
                   <div className="d-flex justify-content-end gap-2 mt-2">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={closeResetModal}
-                    >
+                    <button type="button" className="btn btn-outline-secondary" onClick={closeResetModal}>
                       Cancel
                     </button>
                     <button
