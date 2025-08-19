@@ -59,17 +59,15 @@ function Signup() {
       });
 
       // ✅ Save additional user info in Realtime DB
-     await set(ref(db, 'users/' + user.uid), {
-  profile: {
-    firstName,
-    lastName,
-    phone,
-    email,
-    role: 'customer',
-    verified: false,
-    createdAt: new Date().toISOString(),
-  }
-});
+      await set(ref(db, 'users/' + user.uid + '/profile'), {
+        firstName,
+        lastName,
+        phone,
+        email,
+        role: 'customer',
+        verified: false,
+        createdAt: new Date().toISOString(),
+      });
 
       // ✅ Send Firebase verification email
       await sendEmailVerification(user);
