@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
 import { getDatabase, ref, set } from 'firebase/database';
 import { getAuth, sendEmailVerification, signOut } from 'firebase/auth';
+import { app } from "../../firebase/firebase";
 
 function Signup() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const db = getDatabase(app);
 
   // --- Validation ---
   const validate = () => {
