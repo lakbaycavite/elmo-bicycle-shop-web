@@ -4,10 +4,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
 import { getDatabase, ref, set } from 'firebase/database';
-import { getAuth, sendEmailVerification, signOut } from 'firebase/auth';
+import { getAuth, sendEmailVerification, signOut, updateProfile } from 'firebase/auth'; // ✅ merged updateProfile here
 import { app } from "../../firebase/firebase";
-import { updateProfile } from "firebase/auth";
-import { db } from "../../firebase/firebase"; 
 
 function Signup() {
   const navigate = useNavigate();
@@ -51,26 +49,27 @@ function Signup() {
     setLoading(true);
 
     try {
-      // Create Firebase user (new account)
+      // Create Firebase user
       const userCredential = await doCreateUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
 
-      // Save additional user info in Realtime DB
-    await set(ref(db, 'users/' + user.uid + '/profile'), {
-  firstName,
-  lastName,
-  phone,
-  email,
-  role: 'customer',
-  verified: false,
-  createdAt: new Date().toISOString()
-});
+      // ✅ Update Firebase Auth profile (displayName)
+      await updateProfile(user, {
+        displayName: `${firstName} ${lastName}`,
+      });
 
-  // Update Firebase Auth profile (used for notifications etc.)
-    await updateProfile(user, {
-      displayName: `${firstName} ${lastName}`,
-    });
-      // Send Firebase verification email (only affects this new account)
+      // ✅ Save additional user info in Realtime DB
+      await set(ref(db, 'users/' + user.uid + '/profile'), {
+        firstName,
+        lastName,
+        phone,
+        email,
+        role: 'customer',
+        verified: false,
+        createdAt: new Date().toISOString(),
+      });
+
+      // ✅ Send Firebase verification email
       await sendEmailVerification(user);
 
       toast.success(
@@ -78,7 +77,7 @@ function Signup() {
         { position: 'bottom-right', duration: 5000 }
       );
 
-      // Sign out immediately
+      // ✅ Sign out immediately
       const auth = getAuth();
       await signOut(auth);
 
