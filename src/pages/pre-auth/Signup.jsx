@@ -53,13 +53,8 @@ function Signup() {
       const userCredential = await doCreateUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
 
-      // ✅ Update Firebase Auth profile (displayName)
-      await updateProfile(user, {
-        displayName: `${firstName} ${lastName}`,
-      });
-
       // ✅ Save additional user info in Realtime DB
-      await set(ref(db, 'users/' + user.uid + '/profile'), {
+      await set(ref(db, `users/${user.uid}`), {
         firstName,
         lastName,
         phone,
