@@ -6,6 +6,8 @@ import { doCreateUserWithEmailAndPassword } from '../../firebase/auth';
 import { getDatabase, ref, set } from 'firebase/database';
 import { getAuth, sendEmailVerification, signOut } from 'firebase/auth';
 import { app } from "../../firebase/firebase";
+import { updateProfile } from "firebase/auth";
+import { db } from "../../firebase/firebase"; 
 
 function Signup() {
   const navigate = useNavigate();
@@ -64,7 +66,10 @@ function Signup() {
   createdAt: new Date().toISOString()
 });
 
-
+  // Update Firebase Auth profile (used for notifications etc.)
+    await updateProfile(user, {
+      displayName: `${firstName} ${lastName}`,
+    });
       // Send Firebase verification email (only affects this new account)
       await sendEmailVerification(user);
 
