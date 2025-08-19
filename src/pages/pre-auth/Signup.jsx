@@ -64,10 +64,6 @@ function Signup() {
   createdAt: new Date().toISOString()
 });
 
-// Update Firebase Auth profile so admin notifications can read it properly
-await updateProfile(user, {
-  displayName: `${firstName} ${lastName}`,
-});
 
       // Send Firebase verification email (only affects this new account)
       await sendEmailVerification(user);
