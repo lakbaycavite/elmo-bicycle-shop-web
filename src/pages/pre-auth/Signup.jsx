@@ -52,15 +52,15 @@ function Signup() {
       const user = userCredential.user;
 
       // Save additional user info in Realtime DB
-      const db = getDatabase();
-      await set(ref(db, 'users/' + user.uid), {
-        firstName,
-        lastName,
-        phone,
-        email,
-        role: 'customer',
-        verified: false, // still tracked in your DB
-      });
+    await set(ref(db, 'users/' + user.uid + '/profile'), {
+  firstName,
+  lastName,
+  phone,
+  email,
+  role: 'customer',
+  verified: false,
+  createdAt: new Date().toISOString()
+});
 
       // Send Firebase verification email (only affects this new account)
       await sendEmailVerification(user);
