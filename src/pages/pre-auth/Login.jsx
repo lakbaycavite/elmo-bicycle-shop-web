@@ -58,43 +58,52 @@ function Login() {
 
   // ===== Login =====
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setIsSigningIn(true);
-
-  try {
-    const userCredential = await doSignInWithEmailAndPassword(email, password);
-    const user = userCredential.user;
-
-    // Strict check: customers must verify email before anything else
-    if (!user.emailVerified) {
-      await signOut(auth);
-      toast.error('Please verify your email before logging in!');
-      return; // 🚨 EXIT before any navigation happens
+    e.preventDefault();
+    if (!validate()) {
+      toast.error('Validation failed. Please check your inputs.');
+      return;
     }
 
-    // Fetch user role
-    const role = await getUserById(user.uid).then((res) => res?.role);
+    if (isSigningIn) return;
+    setLoading(true);
+    setIsSigningIn(true);
 
-    // Redirect based on role
-    if (role === 'admin') navigate('/admin/dashboard');
-    else if (role === 'staff') navigate('/admin/pos');
-    else navigate('/customer/home');
+    try {
+      const userCredential = await doSignInWithEmailAndPassword(email, password);
+      const user = userCredential.user;
 
-  } catch (error) {
-    console.error('Login error:', error);
-    let message = 'Invalid email or password';
-    if (error.message === 'ACCOUNT_DISABLED') {
-      message = 'Your account has been disabled. Please contact support.';
+      // Fetch additional user data
+      const userRecord = await getUserById(user.uid);
+      const role = userRecord.role || 'customer';
+
+      // Strict check: customers must verify email
+      if (role === 'customer' && !user.emailVerified) {
+        await signOut(auth);
+        toast.error('Please verify your email before logging in!');
+        setLoading(false);
+        setIsSigningIn(false);
+        return;
+      }
+
+      toast.success('Successfully logged in!', { position: 'bottom-right', duration: 3000 });
+
+      // Redirect based on role
+      if (role === 'admin') navigate('/admin/dashboard');
+      else if (role === 'staff') navigate('/admin/pos');
+      else navigate('/customer/home');
+
+    } catch (error) {
+      console.error('Login error:', error);
+      let message = 'Invalid email or password';
+      if (error.message === 'ACCOUNT_DISABLED') {
+        message = 'Your account has been disabled. Please contact support.';
+      }
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setIsSigningIn(false);
     }
-    toast.error(message);
-
-  } finally {
-    setLoading(false);
-    setIsSigningIn(false);
-  }
-};
-
+  };
 
   // ===== Password Reset =====
   const handlePasswordReset = () => {
