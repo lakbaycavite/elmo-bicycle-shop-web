@@ -914,7 +914,7 @@ const handleConfirmCancel = async () => {
                   <option value="">Select a reason</option>
                   <option value="Pricing error">Pricing error</option>
                   <option value="Misinformation">Misinformation Details</option>
-                  <option value="Change of Mind">Change of Mind</option>
+                  <option value="Others">Others</option>
                 </select>
               </div>
               <p className="mb-6 text-red-600">Are you sure you want to cancel this order?</p>

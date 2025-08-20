@@ -53,7 +53,15 @@ function App() {
           <Route path="/customer/products" element={<Products />} /> 
 
           {/* Pre-auth routes */}
-          <Route path="/login" element={userLoggedIn ? <Navigate to="/customer/home" /> : <Login />} />
+          <Route 
+  path="/login" 
+  element={
+    userLoggedIn && userLoggedIn.emailVerified 
+      ? <Navigate to="/customer/home" /> 
+      : <Login />
+  } 
+/>
+
            <Route path="/signup" element={<Signup />} />
 
           {/* Customer-only routes */}
