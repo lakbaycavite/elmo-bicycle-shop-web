@@ -37,7 +37,7 @@ function OrdersOverview() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 10;
 
   // Filter and search logic
   const filteredOrders = useMemo(() => {
@@ -616,13 +616,6 @@ const handleConfirmCancel = async () => {
                           onClick={() => handleViewOrder(order)}
                         >
                           View
-                        </button>
-                        <button
-                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded shadow transition-colors duration-150"
-                          onClick={() => confirmDelete(order.id)}
-                          disabled={orderLoading}
-                        >
-                          Delete
                         </button>
                       </td>
                     </tr>
