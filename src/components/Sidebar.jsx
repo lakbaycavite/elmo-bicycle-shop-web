@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { doSignOut } from '../firebase/auth'
 import { useUsers } from '../hooks/useUser';
 import { useEffect, useState, useLayoutEffect } from 'react';
+import { toast } from 'sonner';
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -99,6 +100,7 @@ function Sidebar() {
       localStorage.removeItem('elmo_user_role');
       localStorage.removeItem('elmo_user_email');
       await doSignOut();
+      toast.success("Logout successfully"); 
       navigate('/login');
     } catch (error) {
       console.error("Logout failed", error);

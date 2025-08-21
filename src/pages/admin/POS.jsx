@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useProducts } from "../../hooks/useProduct";
-import { ShoppingCart, Minus, Plus, X, Search, Download } from "lucide-react";
+import { ShoppingCart, X, Search, Download } from "lucide-react";
 import AdminLayout from "./AdminLayout";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -25,6 +25,7 @@ const usePersistentCart = () => {
 
 const useCart = () => {
   const [cartItems, setCartItems] = usePersistentCart();
+  const [originalStocks, setOriginalStocks] = useState({});
 
   const calculateTotals = () => {
     const subtotal = cartItems.reduce((sum, item) => 
@@ -67,6 +68,12 @@ const addToCart = (product, updateProduct) => {
       ? product.price * (1 - product.discount / 100)
       : product.price;
 
+    // Store original stock for potential reset
+    setOriginalStocks(prev => ({
+      ...prev,
+      [product.id]: product.stock
+    }));
+
     toast.success(`${product.name} added to cart`);
     return [...prevItems, { 
       ...product, 
@@ -77,14 +84,23 @@ const addToCart = (product, updateProduct) => {
   });
 };
 
-const increaseQuantity = (productId, products, updateProduct) => {
+const updateQuantity = (productId, newQuantity, products, updateProduct) => {
+  // Ensure quantity is a valid integer
+  const quantity = Math.max(1, Math.floor(newQuantity));
+  
   setCartItems(prevItems =>
     prevItems.map(item => {
       if (item.id === productId) {
         const product = products.find(p => p.id === productId);
-        // Remove the quantity < stock check
-        updateProduct(productId, { ...product, stock: product.stock - 1 });
-        return { ...item, quantity: item.quantity + 1 };
+        const quantityDifference = quantity - item.quantity;
+        
+        if (quantityDifference !== 0) {
+          const newStock = product.stock - quantityDifference;
+          if (newStock >= 0) {
+            updateProduct(productId, { ...product, stock: newStock });
+            return { ...item, quantity };
+          }
+        }
       }
       return item;
     })
@@ -113,16 +129,32 @@ const increaseQuantity = (productId, products, updateProduct) => {
     });
   };
 
+  const resetCartToOriginalState = (products, updateProduct) => {
+    cartItems.forEach(item => {
+      const originalStock = originalStocks[item.id] || item.originalStock;
+      if (originalStock !== undefined) {
+        const product = products.find(p => p.id === item.id);
+        if (product) {
+          updateProduct(item.id, { ...product, stock: originalStock });
+        }
+      }
+    });
+    setCartItems([]);
+    setOriginalStocks({});
+  };
+
   const clearCart = () => {
     setCartItems([]);
+    setOriginalStocks({});
   };
 
   return { 
     cartItems, 
     addToCart, 
-    increaseQuantity, 
+    updateQuantity, 
     decreaseQuantity,
     clearCart,
+    resetCartToOriginalState,
     calculateTotals
   };
 };
@@ -132,9 +164,10 @@ const POS = () => {
   const { 
     cartItems, 
     addToCart, 
-    increaseQuantity, 
+    updateQuantity, 
     decreaseQuantity,
     clearCart,
+    resetCartToOriginalState,
     calculateTotals
   } = useCart();
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -145,6 +178,17 @@ const POS = () => {
 
   const categories = ["All", "Bikes", "Gears", "Parts", "Accessories"];
   const { subtotal, totalDiscount, grandTotal, itemCount } = calculateTotals();
+
+  const handleCloseCheckoutModal = () => {
+    // Reset quantities to original state when closing with X button
+    resetCartToOriginalState(products, updateProduct);
+    setShowCheckoutModal(false);
+  };
+
+  const handleContinueShopping = () => {
+    // Just close the modal without resetting quantities
+    setShowCheckoutModal(false);
+  };
 
   const generateReceiptPDF = async () => {
     try {
@@ -383,7 +427,7 @@ const POS = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
           <div className="bg-white p-6 rounded-lg w-full max-w-md mx-4 shadow-lg relative">
             <button
-              onClick={() => setShowCheckoutModal(false)}
+              onClick={handleCloseCheckoutModal}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             >
               <X size={20} />
@@ -405,24 +449,20 @@ const POS = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <button 
-                          onClick={() => decreaseQuantity(item.id, products, updateProduct)}
-                          className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className="font-medium">{item.quantity}</span>
-                        <button 
-                          onClick={() => increaseQuantity(item.id, products, updateProduct)}
-                          disabled={item.quantity >= item.stock}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            item.quantity >= item.stock
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-gray-100 hover:bg-gray-200"
-                          }`}
-                        >
-                          <Plus size={16} />
-                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max={item.stock}
+                          value={item.quantity}
+                          onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1, products, updateProduct)}
+                          className="w-16 px-2 py-1 border rounded text-center"
+                          onKeyDown={(e) => {
+                            // Prevent decimal input
+                            if (e.key === '.' || e.key === ',') {
+                              e.preventDefault();
+                            }
+                          }}
+                        />
                         {item.discount > 0 && (
                           <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded ml-2">
                             {item.discount}% OFF
@@ -469,7 +509,7 @@ const POS = () => {
 
                 <div className="flex justify-between gap-4">
                   <button
-                    onClick={() => setShowCheckoutModal(false)}
+                    onClick={handleContinueShopping}
                     className="flex-1 py-2 border border-gray-300 rounded hover:bg-gray-100"
                   >
                     Continue Shopping
