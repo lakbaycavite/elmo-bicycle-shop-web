@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { onValue, ref } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ProductDetailsModal from '../../components/ProductsDetailsModal';
+import { getAuth } from "firebase/auth";
 
 const theme = {
   primaryAccent: '#ff8c00',
@@ -484,41 +485,46 @@ const handleAddToCart = async (bike) => {
 };
 
 
-  const handleToggleWishlist = async (bike) => {
-    try {
-      const inWishlist = wishlist.some(item => item.productId === bike.id);
 
-      if (inWishlist) {
-        const wishlistItem = wishlist.find(item => item.productId === bike.id);
-        if (wishlistItem) {
-          await removeItem(wishlistItem.id)
-            .then(() => {
-              toast.success(`${bike.brand} ${bike.name} removed from wishlist!`);
-            })
-        }
-      } else {
-        await addItem({
-          id: bike.id,
-          name: bike.name,
-          price: bike.price,
-          image: bike.image || "/images/bike.png",
-          category: bike.category,
-          brand: bike.brand,
-          type: bike.type,
-          description: bike.description || ""
-        })
-          .then(() => {
-            toast.success(`${bike.brand} ${bike.name} added to wishlist!`);
-          })
+const handleToggleWishlist = async (bike) => {
+  const auth = getAuth();
+  const user = auth.currentUser; // check if logged in
+
+  if (!user) {
+    toast.error("Please log in to use the wishlist!"); 
+    console.error("Wishlist clicked by non-logged user.");
+    return;
+  }
+
+  try {
+    const inWishlist = wishlist.some(item => item.productId === bike.id);
+
+    if (inWishlist) {
+      const wishlistItem = wishlist.find(item => item.productId === bike.id);
+      if (wishlistItem) {
+        await removeItem(wishlistItem.id);
+        toast.success(`${bike.brand} ${bike.name} removed from wishlist!`);
       }
-
-      refreshWishlist();
-    } catch (error) {
-      console.error("Error updating wishlist:", error);
-      toast.error(`Error updating wishlist: ${error.message}`);
+    } else {
+      await addItem({
+        id: bike.id,
+        name: bike.name,
+        price: bike.price,
+        image: bike.image || "/images/bike.png",
+        category: bike.category,
+        brand: bike.brand,
+        type: bike.type,
+        description: bike.description || ""
+      });
+      toast.success(`${bike.brand} ${bike.name} added to wishlist!`);
     }
-  };
 
+    refreshWishlist();
+  } catch (error) {
+    console.error("Error updating wishlist:", error);
+    toast.error(`Error updating wishlist: ${error.message}`);
+  }
+};
   return (
     <>
       <ThemeStyles />

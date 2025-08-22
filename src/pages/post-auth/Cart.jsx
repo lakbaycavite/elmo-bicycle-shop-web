@@ -508,11 +508,8 @@ const Cart = () => {
                    <button 
 className="w-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition-colors"
         onClick={() => {
-          navigate('/customer/home');
-          setTimeout(() => {
-            const section = document.getElementById('categories-section');
-            section?.scrollIntoView({ behavior: 'smooth' });
-          }, 100);
+          navigate('/customer/bikes-category');
+          
         }}
       >
         Show more products

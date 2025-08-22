@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { onValue, ref } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ProductDetailsModal from '../../components/ProductsDetailsModal';
+import { getAuth } from "firebase/auth";
 
 const theme = {
   primaryAccent: '#ff8c00',
@@ -553,40 +554,45 @@ const GearsCategory = () => {
 };
 
 
-  const handleToggleWishlist = async (gear) => {
-    try {
-      const inWishlist = wishlist.some(item => item.productId === gear.id);
+ const handleToggleWishlist = async (gear) => {
+  const auth = getAuth();
+  const user = auth.currentUser; // check if logged in
 
-      if (inWishlist) {
-        const wishlistItem = wishlist.find(item => item.productId === gear.id);
-        if (wishlistItem) {
-          await removeItem(wishlistItem.id)
-            .then(() => {
-              toast.success(`${gear.brand} ${gear.name} removed from wishlist!`);
-            })
-        }
-      } else {
-        await addItem({
-          id: gear.id,
-          name: gear.name,
-          price: gear.price,
-          image: gear.image || "/images/bikehelmet1.png",
-          category: gear.category,
-          brand: gear.brand,
-          type: gear.type,
-          description: gear.description || ""
-        })
-          .then(() => {
-            toast.success(`${gear.brand} ${gear.name} added to wishlist!`);
-          })
+  if (!user) {
+    toast.error("Please log in to use the wishlist!"); 
+    console.error("Wishlist clicked by non-logged user.");
+    return;
+  }
+
+  try {
+    const inWishlist = wishlist.some(item => item.productId === gear.id);
+
+    if (inWishlist) {
+      const wishlistItem = wishlist.find(item => item.productId === gear.id);
+      if (wishlistItem) {
+        await removeItem(wishlistItem.id);
+        toast.success(`${gear.brand} ${gear.name} removed from wishlist!`);
       }
-
-      refreshWishlist();
-    } catch (error) {
-      console.error("Error updating wishlist:", error);
-      toast.error(`Error updating wishlist: ${error.message}`);
+    } else {
+      await addItem({
+        id: gear.id,
+        name: gear.name,
+        price: gear.price,
+        image: gear.image || "/images/bikehelmet1.png",
+        category: gear.category,
+        brand: gear.brand,
+        type: gear.type,
+        description: gear.description || ""
+      });
+      toast.success(`${gear.brand} ${gear.name} added to wishlist!`);
     }
-  };
+
+    refreshWishlist();
+  } catch (error) {
+    console.error("Error updating wishlist:", error);
+    toast.error(`Error updating wishlist: ${error.message}`);
+  }
+};
 
   return (
     <>

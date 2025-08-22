@@ -121,7 +121,7 @@ const Wishlist = () => {
                                     <h2 className="text-xl font-bold mb-2">Your wishlist is empty</h2>
                                     <p className="text-gray-400 mb-6">Find items you love and add them to your wishlist!</p>
                                     <button
-                                        onClick={() => navigate('/customer/products')}
+                                        onClick={() => navigate('/customer/bikes-category')}
                                         className="bg-[#ff6900] hover:bg-[#e55e00] text-white py-2 px-6 rounded-full"
                                     >
                                         Start Shopping

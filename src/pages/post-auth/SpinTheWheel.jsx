@@ -115,7 +115,8 @@ const SpinTheWheel = ({ isAdmin = false }) => {
             </div>
 
             {/* User Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-lg text-center">
                     <RotateCcw className="mx-auto mb-2" size={24} />
                     <div className="text-2xl font-bold">{userSpinAttempts}</div>
@@ -125,11 +126,6 @@ const SpinTheWheel = ({ isAdmin = false }) => {
                     <Ticket className="mx-auto mb-2" size={24} />
                     <div className="text-2xl font-bold">{availableVouchers.length}</div>
                     <div className="text-sm opacity-90">Available Vouchers</div>
-                </div>
-                <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-lg text-center">
-                    <Gift className="mx-auto mb-2" size={24} />
-                    <div className="text-2xl font-bold">{userVouchers.length}</div>
-                    <div className="text-sm opacity-90">Total Vouchers</div>
                 </div>
             </div>
 
