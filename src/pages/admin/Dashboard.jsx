@@ -70,14 +70,16 @@ function Dashboard() {
     localStorage.setItem('readNotifications', JSON.stringify(allIds));
   };
 
-  // Calculate today's metrics
+  // Calculate today's metrics - ONLY include paid orders in income calculation
   const todaysOrders = adminOrders.filter(order => {
     const orderDate = new Date(order.createdAt);
     const orderDateStr = orderDate.toISOString().split('T')[0];
     return orderDateStr === todayStr;
   });
 
-  const todaysIncome = todaysOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  // Only include paid orders in income calculation
+  const paidOrders = todaysOrders.filter(order => order.status === 'paid');
+  const todaysIncome = paidOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
   const todaysOrderCount = todaysOrders.length;
 
   const todaysCustomers = users.filter(user => {
@@ -235,6 +237,7 @@ function Dashboard() {
 
         {/* Top Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 md:mb-8">
+        
           {/* Total Income Card */}
           <div className="bg-orange-500 text-white p-4 sm:p-6 rounded-lg">
             <div className="text-xs sm:text-sm font-medium mb-1 sm:mb-2">TODAY</div>
