@@ -623,14 +623,7 @@ const handleRatingSubmit = async (ratings, orderId) => {
                             <p className="text-gray-400 mb-6">You haven't placed any orders yet.</p>
         <button
     onClick={() => {
-        navigate('/customer/home');
-        // This will scroll to the categories section after navigation
-        setTimeout(() => {
-            const element = document.getElementById('categories-section');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-            }
-        }, 100); // Small delay to ensure page has loaded
+        navigate('/customer/bikes-category');
     }}
     className="bg-[#ff6900] hover:bg-[#e55e00] text-white px-6 py-2 rounded-lg transition-colors"
 >
