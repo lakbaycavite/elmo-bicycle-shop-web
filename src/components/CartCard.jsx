@@ -62,7 +62,7 @@ const CartCard = ({
                 {/* Add to Cart button */}
                 <button
                     onClick={() => addToCart(productId, 1, { ...productDetails })}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition duration-200"
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded transition duration-200"
                 >
                     Add to Cart
                 </button>
